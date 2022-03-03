@@ -9,7 +9,13 @@ EMBED_PTX(
 
 add_executable(experiment01 "hostCode.cpp")
 target_link_libraries(experiment01 PRIVATE
+	# PTX file
 	experiment01-ptx
+
+	# my logger lib
+	simpleLogger
+
+	# external lib
 	owl::owl
 	fmt::fmt
 	stb_image
