@@ -25,6 +25,10 @@ endif()
 
 # CONFIGURE EXTERNAL LIBRARIES
 
+set(log_dir "${CMAKE_CURRENT_SOURCE_DIR}/simpleLogger")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/simpleLogger")
+add_subdirectory(${log_dir} EXCLUDE_FROM_ALL)
+
 set(OptiX_ROOT_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0")
 
 set(owl_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/owl")
@@ -37,7 +41,6 @@ add_subdirectory(${fmt_dir} EXCLUDE_FROM_ALL)
 
 set(obj_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/tinyobjloader")
 add_subdirectory(${obj_dir} EXCLUDE_FROM_ALL)
-
 
 # Include sub-projects.
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/bachelorThesis")
