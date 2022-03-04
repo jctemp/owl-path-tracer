@@ -1,1 +1,2 @@
 add_subdirectory("01_cmdline")
+add_subdirectory("02_optix7course")
