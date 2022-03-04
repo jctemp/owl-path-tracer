@@ -145,23 +145,31 @@ int main(int argc, char* argv[])
 
 	LOG("BUILDING SBT TO TRACE GROUPS");
 
+
+	LOG("Build Programs, Pipeline and SBT");
+
 	owlBuildPrograms(context);
 	owlBuildPipeline(context);
 	owlBuildSBT(context);
 
-	LOG("launch rayGen");
+	OK("Building successful...");
+
+
+	LOG("Launch rayGen");
 
 	owlRayGenLaunch2D(rayGenProgram, fbSize.x, fbSize.y);
 
-	OK("done rayGen launch");
+	OK("Done rayGen launch");
 
-	LOG("writing picture");
+
+	LOG("Writing picture");
 
 	const uint32_t* fb{ (const uint32_t*)owlBufferGetPointer(frameBuffer, 0) };
 	assert(fb);
 	stbi_write_png("simpleTracer.png", fbSize.x, fbSize.y, 4, fb, fbSize.x * sizeof(uint32_t));
 	
-	OK("written image to file");
+	OK("Written image to file");
+
 
 	LOG("clean up ...");
 	owlModuleRelease(cudaModule);
