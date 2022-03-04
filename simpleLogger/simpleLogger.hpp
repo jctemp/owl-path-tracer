@@ -11,23 +11,23 @@
 #define S_ERROR fmt::terminal_color::red
 
 #define LOG(msg) \
-	fmt::print(fmt::fg(S_MESSAGE), "LOCATION[{}] IN LINE[{}]: {}", \
-		__FILE__, __LINE__, msg); \
+	fmt::print(fmt::fg(S_MESSAGE), "LOG({},{}): {}", \
+		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
 
 #define OK(msg) \
-	fmt::print(fmt::fg(S_SUCCESS), "LOCATION[{}] IN LINE[{}]: {}", \
-		__FILE__, __LINE__, msg); \
+	fmt::print(fmt::fg(S_SUCCESS), "OK({},{}): {}", \
+		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
 
 #define WARN(msg) \
-	fmt::print(fmt::fg(S_WARNING), "LOCATION[{}] IN LINE[{}]: {}", \
-		__FILE__, __LINE__, msg); \
+	fmt::print(fmt::fg(S_WARNING), "WARN({},{}): {}", \
+		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
 
 #define ERROR(msg) \
-	fmt::print(fmt::fg(S_ERROR), "LOCATION[{}] IN LINE[{}]: {}", \
-		__FILE__, __LINE__, msg); \
+	fmt::print(fmt::fg(S_ERROR), "ERROR({},{}): {}", \
+		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
 
 #endif // SIMPLE_LOGGER_HPP
