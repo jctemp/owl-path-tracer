@@ -10,22 +10,22 @@
 #define S_WARNING fmt::terminal_color::yellow
 #define S_ERROR fmt::terminal_color::red
 
-#define LOG(msg) \
+#define SL_LOG(msg) \
 	fmt::print(fmt::fg(S_MESSAGE), "LOG({},{}): {}", \
 		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
 
-#define OK(msg) \
+#define SL_OK(msg) \
 	fmt::print(fmt::fg(S_SUCCESS), "OK({},{}): {}", \
 		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
 
-#define WARN(msg) \
+#define SL_WARN(msg) \
 	fmt::print(fmt::fg(S_WARNING), "WARN({},{}): {}", \
 		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
 
-#define ERROR(msg) \
+#define SL_ERROR(msg) \
 	fmt::print(fmt::fg(S_ERROR), "ERROR({},{}): {}", \
 		__FUNCTION__, __LINE__, msg); \
 	fmt::print(fmt::fg(fmt::color::white), "\n")
