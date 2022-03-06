@@ -8,33 +8,9 @@
 
 using namespace owl;
 
-const int NUM_VERTICES = 8;
-vec3f vertices[NUM_VERTICES]
-{
-  { -1.f,-1.f,-1.f },
-  { +1.f,-1.f,-1.f },
-  { -1.f,+1.f,-1.f },
-  { +1.f,+1.f,-1.f },
-  { -1.f,-1.f,+1.f },
-  { +1.f,-1.f,+1.f },
-  { -1.f,+1.f,+1.f },
-  { +1.f,+1.f,+1.f }
-};
-
-const int NUM_INDICES = 12;
-vec3i indices[NUM_INDICES]
-{
-  { 0,1,3 }, { 2,3,0 },
-  { 5,7,6 }, { 5,6,4 },
-  { 0,4,5 }, { 0,5,1 },
-  { 2,3,7 }, { 2,7,6 },
-  { 1,5,7 }, { 1,7,3 },
-  { 4,0,2 }, { 4,2,6 }
-};
-
 char const* outFileName{ "image.png" };
 vec2i const fbSize{ 800, 600 };
-vec3f const lookFrom(4.f, 0.f, 0.f);
+vec3f const lookFrom(4.f, 4.f, 4.f);
 vec3f const lookAt(0.f, 0.f, 0.f);
 vec3f const lookUp(0.f, 1.f, 0.f);
 float const cosFovy = 0.66f;
@@ -47,10 +23,7 @@ extern "C" int main(int argc, char *argv[])
 {
     SL_LOG("Loading OBJ model");
 
-    std::vector<ba::TrianglesMesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\Sphere.obj") };
-
-    auto vertices = meshes[0]->vertex;
-    auto indices = meshes[0]->index;
+    std::vector<ba::TrianglesMesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\Cubes.obj") };
 
     SL_OK("Loaded successfully model");
 
@@ -78,31 +51,43 @@ extern "C" int main(int argc, char *argv[])
 
     SL_LOG("Building geometries...");
 
-    // set geometry in the buffers of the object
-    OWLBuffer vertexBuffer{ 
-        owlDeviceBufferCreate(context, OWL_FLOAT3, vertices.size(), vertices.data())};
-    OWLBuffer indexBuffer{ 
-        owlDeviceBufferCreate(context, OWL_INT3, indices.size(), indices.data())};
-    OWLBuffer frameBuffer{ 
-        owlHostPinnedBufferCreate(context, OWL_INT, fbSize.x * fbSize.y) };
+    std::vector<OWLGeom> geoms;
+    for (std::size_t i{ 0 }; i < meshes.size(); ++i)
+    {
+        ba::TrianglesMesh& mesh{ *meshes[i] };
 
-    // create Geom for group
-    OWLGeom trianglesGeom{
-        owlGeomCreate(context, trianglesGeomType)};
+        auto& vertices{ mesh.vertex };
+        auto& indices{ mesh.index };
 
-    // associate buffers with the trianglesGeom
-    owlTrianglesSetVertices(trianglesGeom, vertexBuffer, 
-        vertices.size(), sizeof(vec3f), 0);
-    owlTrianglesSetIndices(trianglesGeom, indexBuffer,
-        indices.size(), sizeof(vec3i), 0);
+        // set geometry in the buffers of the object
+        OWLBuffer vertexBuffer{
+            owlDeviceBufferCreate(context, OWL_FLOAT3, vertices.size(), vertices.data()) };
 
-    owlGeomSetBuffer(trianglesGeom, "vertex", vertexBuffer);
-    owlGeomSetBuffer(trianglesGeom, "index", indexBuffer);
-    owlGeomSet3f(trianglesGeom, "color", owl3f{ 0.5f, 1.0f, 0 });
+        OWLBuffer indexBuffer{
+            owlDeviceBufferCreate(context, OWL_INT3, indices.size(), indices.data()) };
+
+        // prepare mesh for device
+        OWLGeom geom{
+            owlGeomCreate(context, trianglesGeomType) };
+
+        // set specific vertex/index buffer => required for build the accel.
+        owlTrianglesSetVertices(geom, vertexBuffer,
+            vertices.size(), sizeof(vec3f), 0);
+
+        owlTrianglesSetIndices(geom, indexBuffer,
+            indices.size(), sizeof(vec3i), 0);
+
+        // set sbt data
+        owlGeomSetBuffer(geom, "vertex", vertexBuffer);
+        owlGeomSetBuffer(geom, "index", indexBuffer);
+        owlGeomSet3f(geom, "color", owl3f{ 0.5f, 1.0f, 0 });
+
+        geoms.push_back(geom);
+    }
 
     // Create Geom group and build world
     OWLGroup trianglesGroup{
-        owlTrianglesGeomGroupCreate(context, 1, &trianglesGeom) };
+        owlTrianglesGeomGroupCreate(context, geoms.size(), geoms.data()) };
     owlGroupBuildAccel(trianglesGroup);
 
     // Create an Instance group to make world
@@ -125,6 +110,10 @@ extern "C" int main(int argc, char *argv[])
     owlMissProgSet3f(missProg, "color1", owl3f{ .8f,.8f,.8f });
 
     SL_LOG("Setup RayGenProg");
+
+    // set Frame buffert
+    OWLBuffer frameBuffer{
+        owlHostPinnedBufferCreate(context, OWL_INT, fbSize.x * fbSize.y) };
 
     OWLVarDecl rayGenVars[]
     {
@@ -177,6 +166,10 @@ extern "C" int main(int argc, char *argv[])
     SL_OK(fmt::format("written rendered frame buffer to file {}", outFileName));
 
     SL_LOG("destroying devicegroup ...");
+
+    owlBufferRelease(frameBuffer);
+    owlRayGenRelease(rayGen);
+    owlModuleRelease(module);
     owlContextDestroy(context);
 
     SL_OK("seems all went OK; app is done, this should be the last output ...");
