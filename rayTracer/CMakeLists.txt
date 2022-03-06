@@ -8,8 +8,16 @@ EMBED_PTX(
 		"deviceCode.cu"
 )
 
+set(BA_SOURCES
+	"hostCode.cpp"
+	"objLoader.cpp"
+)
 
-add_executable(bachelorThesis "hostCode.cpp" "utils.hpp")
+SET(BA_HEADERS
+	"objLoader.hpp"
+)
+
+add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS})
 target_link_libraries(bachelorThesis
 	owl::owl
 	fmt::fmt

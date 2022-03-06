@@ -1,7 +1,8 @@
-#include "deviceCode.hpp"
-#include "utils.hpp"
-
 #define STB_IMAGE_WRITE_IMPLEMENTATION
+
+#include "deviceCode.hpp"
+#include "objLoader.hpp"
+
 #include <stb_image_write.h>
 #include <simpleLogger.hpp>
 
@@ -46,7 +47,7 @@ extern "C" int main(int argc, char *argv[])
 {
     SL_LOG("Loading OBJ model");
 
-    auto meshes{ loadOBJ() };
+    std::vector<ba::TrianglesMesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\Sphere.obj") };
 
     auto vertices = meshes[0]->vertex;
     auto indices = meshes[0]->index;

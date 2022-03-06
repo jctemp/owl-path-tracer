@@ -28,6 +28,6 @@
 #define SL_ERROR(msg) \
 	fmt::print(fmt::fg(S_ERROR), "ERROR({},{}): {}", \
 		__FUNCTION__, __LINE__, msg); \
-	fmt::print(fmt::fg(fmt::color::white), "\n")
+	fmt::print(fmt::fg(fmt::color::white), "\n") \
 
 #endif // SIMPLE_LOGGER_HPP

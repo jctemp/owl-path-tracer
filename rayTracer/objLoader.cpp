@@ -1,31 +1,23 @@
-#ifndef UTILS_HPP
-#define UTILS_HPP
-
-#include "deviceCode.hpp"
-
 #define TINYOBJLOADER_IMPLEMENTATION
-#include <tiny_obj_loader.h>
+#define	OBJ_TRIANGLE 3
 
-#include <string>
-#include <ostream>
-#include <map>
-#include <owl/common/math/vec.h>
+#include "objLoader.hpp"
+
 #include <simpleLogger.hpp>
+#include <tiny_obj_loader.h>
+#include <map>
+
 
 using vec3f = owl::vec3f;
 using vec3i = owl::vec3i;
 
-int32_t constexpr TRI_SIZE{ 3 };
-struct TrianglesMesh
-{
-	std::vector<vec3i> index;
-	std::vector<vec3f> vertex;
-};
-
-std::string objPath{ "C:\\Users\\jamie\\Desktop\\Dragon.obj" };
-std::string mtlPath{ "C:\\Users\\jamie\\Desktop\\" };
-
-void createMesh(TrianglesMesh* mesh, tinyobj::shape_t const &shape, tinyobj::attrib_t const& attrib)
+/// <summary>
+/// Local function to abstract from the creation of an TriangleMesh.
+/// </summary>
+/// <param name="mesh">mutable TriangleMesh</param>
+/// <param name="shape">meta data shape</param>
+/// <param name="attrib">global values of all meshes</param>
+void createMesh(ba::TrianglesMesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib)
 {
 	// global, no offset, shared by all meshes
 	auto& vertices{ attrib.vertices };
@@ -38,10 +30,11 @@ void createMesh(TrianglesMesh* mesh, tinyobj::shape_t const &shape, tinyobj::att
 	std::map<int32_t, int32_t> globalToLocal{};
 
 	std::size_t indexOffset{ 0 };
+	// num_face_vertices gives the amount of faces + how many vertices per face
 	for (std::size_t f{ 0 }; f < shape.mesh.num_face_vertices.size(); ++f)
 	{
 		vec3i localFace{};
-		for (size_t v{ 0 }; v < TRI_SIZE; v++)
+		for (size_t v{ 0 }; v < OBJ_TRIANGLE; v++)
 		{
 			// get vertex, normal and uv ID
 			tinyobj::index_t idx{ shape.mesh.indices[indexOffset + v] };
@@ -52,7 +45,7 @@ void createMesh(TrianglesMesh* mesh, tinyobj::shape_t const &shape, tinyobj::att
 			// check if global ID is mapped
 			if (!globalToLocal.contains(vertexGlobalID))
 			{
-				globalToLocal.insert({ vertexGlobalID, int32_t(mesh->vertex.size())});
+				globalToLocal.insert({ vertexGlobalID, int32_t(mesh->vertex.size()) });
 				mesh->vertex.emplace_back(
 					attrib.vertices[3 * size_t(vertexGlobalID) + 0],
 					attrib.vertices[3 * size_t(vertexGlobalID) + 1],
@@ -62,61 +55,47 @@ void createMesh(TrianglesMesh* mesh, tinyobj::shape_t const &shape, tinyobj::att
 			localFace[v] = globalToLocal[vertexGlobalID];
 		}
 		mesh->index.push_back(localFace);
-		indexOffset += TRI_SIZE;
+		indexOffset += OBJ_TRIANGLE;
 	}
-
-	//// loop over triangles
-	//for (std::size_t i{ 0 }; i < indices.size(); i += 3)
-	//{
-	//	mesh->index.emplace_back(
-	//		indices[i + 0].vertex_index,
-	//		indices[i + 1].vertex_index,
-	//		indices[i + 2].vertex_index
-	//	);
-	//}
-	//for (std::size_t i{ 0 }; i < vertices.size(); i += 3)
-	//{
-	//	mesh->vertex.emplace_back(
-	//		vertices[i + 0],
-	//		vertices[i + 1],
-	//		vertices[i + 2]
-	//	);
-	//}
-
-	SL_LOG("Create Mesh");
 }
 
-std::vector<TrianglesMesh*> loadOBJ()
+std::vector<ba::TrianglesMesh*> ba::loadOBJ(std::string const& pathToObj)
 {
-	// creater OBJ reader
+	// 1.) create OBJ reader
 	tinyobj::ObjReader reader{};
 
 	tinyobj::ObjReaderConfig readerConfig{};
-	readerConfig.mtl_search_path = mtlPath;
 	readerConfig.triangulate = false;
 
-	// check for errors
-	if (!reader.ParseFromFile(objPath, readerConfig))
-	{
-		if (!reader.Error().empty())
+	// 2.) load obj file and checking for errors
+	if (!reader.ParseFromFile(pathToObj, readerConfig))
+		if (!reader.Error().empty()) 
 		{
 			SL_ERROR(reader.Error());
+			exit(1);
 		}
-		exit(1);
-	}
 
+	// 3). check for warings
 	if (!reader.Warning().empty())
-	{
 		SL_WARN(reader.Warning());
-	}
 
-	// get references to attrib and shapes of reader
+	// 4.) get references to attrib and shapes of reader
+	/*
+	// > tinyobj::attrib_t contains for all object vertex, normals and uv data
+	// > hence the indices inside shapes referres to the global index
+	// >
+	// > tinyobj::shape_t has meta data of object. It helps to build faces
+	// > lines and points. Creating custom meshes needs an internal mapping
+	*/
 	tinyobj::attrib_t const& attrib{ reader.GetAttrib() };
 	std::vector<tinyobj::shape_t> const& shapes{ reader.GetShapes() };
 
+	// 5.) create meshes
 	std::vector<TrianglesMesh*> meshes{};
-	for (auto& shape : shapes)
+	for (std::size_t i{ 0 }; i < shapes.size(); ++i)
 	{
+		auto& shape{ shapes[i] };
+		SL_LOG(fmt::format("Loading {} [{}/{}]", shape.name, i + 1, shapes.size()));
 		TrianglesMesh* mesh{ new TrianglesMesh{} };
 		createMesh(mesh, shape, attrib);
 		meshes.push_back(mesh);
@@ -124,4 +103,3 @@ std::vector<TrianglesMesh*> loadOBJ()
 
 	return meshes;
 }
-#endif // !UTILS_HPP
