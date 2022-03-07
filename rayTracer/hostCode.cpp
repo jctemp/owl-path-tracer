@@ -3,30 +3,38 @@
 #include "deviceCode.hpp"
 #include "objLoader.hpp"
 
+#include <map>
+
 #include <stb_image_write.h>
 #include <simpleLogger.hpp>
 
 using namespace owl;
 
 char const* outFileName{ "image.png" };
-vec2i const fbSize{ 800, 600 };
-vec3f const lookFrom(4.f, 4.f, 4.f);
-vec3f const lookAt(0.f, 0.f, 0.f);
-vec3f const lookUp(0.f, 1.f, 0.f);
-float const cosFovy = 0.66f;
+vec2i const fbSize{ 1920, 1080 };
+vec3f const lookFrom(3.f, 3.f, 3.f);
+vec3f const lookAt(0.f, 0.5f, 0.f);
+vec3f const lookUp(0.f, 1.0f, 0.f);
+float const cosFovy = 0.20f;
 
 // ------------------------------------------------------------------
 
+// string located somewhere else
 extern "C" char deviceCode_ptx[];
 
-extern "C" int main(int argc, char *argv[])
+extern "C" int main(int argc, char* argv[])
 {
     SL_LOG("Loading OBJ model");
 
-    std::vector<ba::TrianglesMesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\Cubes.obj") };
+    std::vector<ba::TrianglesMesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\highDensitydragon.obj") };
+
+    for (auto& mesh : meshes)
+    {
+        SL_LOG(fmt::format("Vertices: {}", mesh->vertex.size()));
+        SL_LOG(fmt::format("Faces: {}", mesh->index.size()));
+    }
 
     SL_OK("Loaded successfully model");
-
 
     SL_LOG(fmt::format("Starting program {}", argv[0]));
 
@@ -42,8 +50,8 @@ extern "C" int main(int argc, char *argv[])
       { "color",  OWL_FLOAT3, OWL_OFFSETOF(TrianglesGeomData, color) }
     };
 
-    OWLGeomType trianglesGeomType{owlGeomTypeCreate(
-        context, OWLGeomKind::OWL_GEOM_TRIANGLES, 
+    OWLGeomType trianglesGeomType{ owlGeomTypeCreate(
+        context, OWLGeomKind::OWL_GEOM_TRIANGLES,
         sizeof(TrianglesGeomData),trianglesGeomVars, 3)
     };
 

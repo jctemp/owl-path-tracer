@@ -1,6 +1,8 @@
 #ifndef OBJ_LOADER_HPP
 #define OBJ_LOADER_HPP
 
+#include "hostCode.hpp"
+
 #include <string>
 #include <vector>
 
@@ -12,7 +14,7 @@ namespace ba
 	/// TrianglesMesh is a data transfer user-defined data type.
 	/// Its purpose is to transfer data of meshes to the calling system.
 	/// </summary>
-	struct TrianglesMesh
+	struct TrianglesMesh : public Mesh
 	{
 		std::vector<owl::vec3i> index;
 		std::vector<owl::vec3f> vertex;

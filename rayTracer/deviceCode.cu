@@ -25,7 +25,7 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
         /*the ray to trace*/ray,
         /*prd*/color);
 
-    const int fbOfs = pixelID.x + self.fbSize.x * pixelID.y;
+    const int fbOfs = pixelID.x + self.fbSize.x * (self.fbSize.y - 1 - pixelID.y);
     self.fbPtr[fbOfs]
         = owl::make_rgba(color);
 }
@@ -47,7 +47,8 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     assert(Ng != vec3f(0));
 
     const vec3f rayDir = optixGetWorldRayDirection();
-    prd = (.2f + .8f * fabs(dot(rayDir, Ng))) * self.color;
+    prd = Ng;
+    //prd = (.2f + .8f * fabs(dot(rayDir, Ng))) * self.color;
 }
 
 OPTIX_MISS_PROGRAM(miss)()

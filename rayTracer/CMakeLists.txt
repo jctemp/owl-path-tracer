@@ -15,7 +15,7 @@ set(BA_SOURCES
 
 SET(BA_HEADERS
 	"objLoader.hpp"
-)
+ "hostCode.hpp")
 
 add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS})
 target_link_libraries(bachelorThesis

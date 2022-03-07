@@ -97,6 +97,7 @@ std::vector<ba::TrianglesMesh*> ba::loadOBJ(std::string const& pathToObj)
 		auto& shape{ shapes[i] };
 		SL_LOG(fmt::format("Loading {} [{}/{}]", shape.name, i + 1, shapes.size()));
 		TrianglesMesh* mesh{ new TrianglesMesh{} };
+		mesh->t = Mesh::Type::TRIANGLE;
 		createMesh(mesh, shape, attrib);
 		meshes.push_back(mesh);
 	}
