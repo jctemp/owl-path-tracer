@@ -47,5 +47,5 @@ set(glm_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
 add_subdirectory(${glm_dir})
 
 # Include sub-projects.
-add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/experiments")
-add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/rayTracer")
+# add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/experiments")
+add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/pathTracer")

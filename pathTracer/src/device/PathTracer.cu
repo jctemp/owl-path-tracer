@@ -1,4 +1,5 @@
-#include "deviceCode.hpp"
+#include "PathTracer.hpp"
+
 #include <owl/owl_device.h>
 #include <optix_device.h>
 

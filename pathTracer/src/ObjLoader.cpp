@@ -1,8 +1,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #define	OBJ_TRIANGLE 3
 
-#include "Renderer.hpp"
-#include "ObjLoader.hpp"
+#include <pathTracer/ObjLoader.hpp>
+#include <pathTracer/Renderer.hpp>
 
 #include <map>
 

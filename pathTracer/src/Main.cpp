@@ -1,8 +1,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
-#include "Renderer.hpp"
-#include "deviceCode.hpp"
-#include "ObjLoader.hpp"
+#include <device/PathTracer.hpp>
+#include <pathTracer/ObjLoader.hpp>
+#include <pathTracer/Renderer.hpp>
 
 #include <map>
 
@@ -21,7 +21,7 @@ float const cosFovy = 0.66f;
 // ------------------------------------------------------------------
 
 // string located somewhere else
-extern "C" char deviceCode_ptx[];
+extern "C" char PathTracer_ptx[];
 
 extern "C" int main(int argc, char* argv[])
 {
@@ -40,7 +40,7 @@ extern "C" int main(int argc, char* argv[])
     SL_LOG(fmt::format("Starting program {}", argv[0]));
 
     OWLContext context = owlContextCreate(nullptr, 1);
-    OWLModule module = owlModuleCreate(context, deviceCode_ptx);
+    OWLModule module = owlModuleCreate(context, PathTracer_ptx);
 
     SL_LOG("Creating triangles variable");
 
