@@ -43,6 +43,9 @@ add_subdirectory(${obj_dir} EXCLUDE_FROM_ALL)
 set(stb_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/stb")
 include_directories(${stb_dir} EXCLUDE_FROM_ALL)
 
+set(glm_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
+add_subdirectory(${glm_dir})
+
 # Include sub-projects.
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/experiments")
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/rayTracer")

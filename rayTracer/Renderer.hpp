@@ -1,16 +1,20 @@
-#ifndef BA_HOST_CODE_HPP
-#define BA_HOST_CODE_HPP
+#ifndef BA_RENDERER_HPP
+#define BA_RENDERER_HPP
+
+#include <vector>
+
+#include <glm/vec3.hpp>
 
 namespace ba
 {
-
+    /// <summary>
+    /// TrianglesMesh is a data transfer user-defined data type.
+    /// Its purpose is to transfer data of meshes to the calling system.
+    /// </summary>
     struct Mesh
     {
-        enum class Type
-        {
-            TRIANGLE
-        };
-        Type t;
+        std::vector<glm::i32vec3> index;
+        std::vector<glm::vec3> vertex;
     };
 
     struct Renderer
@@ -29,6 +33,12 @@ namespace ba
         /// <returns>0 in case of success otherwise different</returns>
         virtual int release() = 0;
 
+        /// <summary>
+        /// Set the meta data of the renderer. 
+        /// 
+        /// TODO: struct with information => intermediate state
+        /// </summary>
+        /// <returns></returns>
         virtual int renderSetting() = 0;
 
         /// <summary>
@@ -37,7 +47,7 @@ namespace ba
         /// </summary>
         /// <param name="m">An object of the type Mesh</param>
         /// <returns>0 in case of success otherwise different</returns>
-        virtual int load(Mesh* m) = 0;
+        virtual int add(Mesh* m) = 0;
 
         /// <summary>
         /// Renderes the Meshes with the specifed render settings
@@ -47,4 +57,4 @@ namespace ba
     };
 }
 
-#endif // !BA_HOST_CODE_HPP
+#endif // !BA_RENDERER_HPP

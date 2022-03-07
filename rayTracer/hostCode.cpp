@@ -1,7 +1,8 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 
+#include "Renderer.hpp"
 #include "deviceCode.hpp"
-#include "objLoader.hpp"
+#include "ObjLoader.hpp"
 
 #include <map>
 
@@ -12,10 +13,10 @@ using namespace owl;
 
 char const* outFileName{ "image.png" };
 vec2i const fbSize{ 1920, 1080 };
-vec3f const lookFrom(3.f, 3.f, 3.f);
+vec3f const lookFrom(3.f, 3.f, -3.f);
 vec3f const lookAt(0.f, 0.5f, 0.f);
 vec3f const lookUp(0.f, 1.0f, 0.f);
-float const cosFovy = 0.20f;
+float const cosFovy = 0.66f;
 
 // ------------------------------------------------------------------
 
@@ -26,7 +27,7 @@ extern "C" int main(int argc, char* argv[])
 {
     SL_LOG("Loading OBJ model");
 
-    std::vector<ba::TrianglesMesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\highDensitydragon.obj") };
+    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\mesh.obj") };
 
     for (auto& mesh : meshes)
     {
@@ -62,7 +63,7 @@ extern "C" int main(int argc, char* argv[])
     std::vector<OWLGeom> geoms;
     for (std::size_t i{ 0 }; i < meshes.size(); ++i)
     {
-        ba::TrianglesMesh& mesh{ *meshes[i] };
+        ba::Mesh& mesh{ *meshes[i] };
 
         auto& vertices{ mesh.vertex };
         auto& indices{ mesh.index };

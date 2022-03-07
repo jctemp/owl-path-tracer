@@ -10,21 +10,24 @@ EMBED_PTX(
 
 set(BA_SOURCES
 	"hostCode.cpp"
-	"objLoader.cpp"
+	"ObjLoader.cpp"
 )
 
 SET(BA_HEADERS
-	"objLoader.hpp"
- "hostCode.hpp")
+	"ObjLoader.hpp"
+    "Renderer.hpp"
+)
 
 add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS})
 target_link_libraries(bachelorThesis
 	owl::owl
 	fmt::fmt
+	glm::glm
 	tinyobjloader
 	myDeviceCode-ptx
 )
 
 if(MSVC)
+	# not receiving errors due to msvc safe functions
 	add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
 endif()

@@ -1,15 +1,14 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #define	OBJ_TRIANGLE 3
 
-#include "objLoader.hpp"
+#include "Renderer.hpp"
+#include "ObjLoader.hpp"
+
+#include <map>
 
 #include <simpleLogger.hpp>
 #include <tiny_obj_loader.h>
-#include <map>
 
-
-using vec3f = owl::vec3f;
-using vec3i = owl::vec3i;
 
 /// <summary>
 /// Local function to abstract from the creation of an TriangleMesh.
@@ -17,7 +16,7 @@ using vec3i = owl::vec3i;
 /// <param name="mesh">mutable TriangleMesh</param>
 /// <param name="shape">meta data shape</param>
 /// <param name="attrib">global values of all meshes</param>
-void createMesh(ba::TrianglesMesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib)
+void createMesh(ba::Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib)
 {
 	// global, no offset, shared by all meshes
 	auto& vertices{ attrib.vertices };
@@ -33,7 +32,8 @@ void createMesh(ba::TrianglesMesh* mesh, tinyobj::shape_t const& shape, tinyobj:
 	// num_face_vertices gives the amount of faces + how many vertices per face
 	for (std::size_t f{ 0 }; f < shape.mesh.num_face_vertices.size(); ++f)
 	{
-		vec3i localFace{};
+		mesh->index.emplace_back(0, 0, 0);
+		auto& localFace{mesh->index[mesh->index.size() - 1]};
 		for (size_t v{ 0 }; v < OBJ_TRIANGLE; v++)
 		{
 			// get vertex, normal and uv ID
@@ -54,12 +54,11 @@ void createMesh(ba::TrianglesMesh* mesh, tinyobj::shape_t const& shape, tinyobj:
 			}
 			localFace[v] = globalToLocal[vertexGlobalID];
 		}
-		mesh->index.push_back(localFace);
 		indexOffset += OBJ_TRIANGLE;
 	}
 }
 
-std::vector<ba::TrianglesMesh*> ba::loadOBJ(std::string const& pathToObj)
+std::vector<ba::Mesh*> ba::loadOBJ(std::string const& pathToObj)
 {
 	// 1.) create OBJ reader
 	tinyobj::ObjReader reader{};
@@ -91,13 +90,12 @@ std::vector<ba::TrianglesMesh*> ba::loadOBJ(std::string const& pathToObj)
 	std::vector<tinyobj::shape_t> const& shapes{ reader.GetShapes() };
 
 	// 5.) create meshes
-	std::vector<TrianglesMesh*> meshes{};
+	std::vector<Mesh*> meshes{};
 	for (std::size_t i{ 0 }; i < shapes.size(); ++i)
 	{
 		auto& shape{ shapes[i] };
 		SL_LOG(fmt::format("Loading {} [{}/{}]", shape.name, i + 1, shapes.size()));
-		TrianglesMesh* mesh{ new TrianglesMesh{} };
-		mesh->t = Mesh::Type::TRIANGLE;
+		Mesh* mesh{ new Mesh{} };
 		createMesh(mesh, shape, attrib);
 		meshes.push_back(mesh);
 	}
