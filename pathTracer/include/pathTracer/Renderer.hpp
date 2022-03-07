@@ -54,7 +54,11 @@ namespace ba
         /// </summary>
         /// <returns>0 in case of success otherwise different</returns>
         virtual int render() = 0;
+    
+        virtual uint32_t const* fbPtr() const = 0;
+    
     };
+
 }
 
 #endif // !BA_RENDERER_HPP
