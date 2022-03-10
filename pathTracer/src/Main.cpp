@@ -20,10 +20,10 @@ int main(void)
     std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\Dragon.obj") };
 
     ba::Camera cam{ 
-        {1.5f,1.0f,0.5f}, // look from
+        {2.0f,1.0f,0.0f}, // look from
         {0.0f,0.5f,0.0f}, // look at
         {0.0f,1.0f,0.0f}, // look up
-        0.76f // cosFov
+        0.88f // cosFov
     }; 
 
     renderer.init();
