@@ -116,14 +116,24 @@ namespace ba
 
 		int render(Camera const& cam) override
 		{
-			// Create Geom group and build world
-			auto trianglesGroup =
-				owlTrianglesGeomGroupCreate(context, geoms.size(), geoms.data());
-			owlGroupBuildAccel(trianglesGroup);
+			if (geoms.size() > 0)
+			{
+				// Create Geom group and build world
+				auto trianglesGroup =
+					owlTrianglesGeomGroupCreate(context, geoms.size(), geoms.data());
+				owlGroupBuildAccel(trianglesGroup);
 
-			// Create an Instance group to make world
-			world = owlInstanceGroupCreate(context, 1, &trianglesGroup);
-			owlGroupBuildAccel(world);
+				// Create an Instance group to make world
+				world = owlInstanceGroupCreate(context, 1, &trianglesGroup);
+				owlGroupBuildAccel(world);
+			}
+			else
+			{
+				world = owlInstanceGroupCreate(context, 0, nullptr);
+				owlGroupBuildAccel(world);
+			}
+
+
 			
 			owlMissProgSet3f(missProg, "color0", owl3f{ .8f,0.f,0.f });
 			owlMissProgSet3f(missProg, "color1", owl3f{ .8f,.8f,.8f });
