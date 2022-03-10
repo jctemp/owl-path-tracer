@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <glm/vec3.hpp>
+#include <glm/ext.hpp>
 
 namespace ba
 {
@@ -15,6 +16,14 @@ namespace ba
     {
         std::vector<glm::i32vec3> index;
         std::vector<glm::vec3> vertex;
+    };
+
+    struct Camera
+    {
+        glm::vec3 const lookFrom;
+        glm::vec3 const lookAt;
+        glm::vec3 const lookUp;
+        float const cosFovy;
     };
 
     struct Renderer
@@ -53,7 +62,7 @@ namespace ba
         /// Renderes the Meshes with the specifed render settings
         /// </summary>
         /// <returns>0 in case of success otherwise different</returns>
-        virtual int render() = 0;
+        virtual int render(Camera const& cam) = 0;
     
         virtual uint32_t const* fbPtr() const = 0;
     

@@ -17,18 +17,25 @@ int main(void)
     ba::Renderer* rPtr{ new ba::OWLRenderer{} };
     ba::Renderer &renderer = *rPtr;
 
-    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\highDensitydragon.obj") };
+    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\Dragon.obj") };
+
+    ba::Camera cam{ 
+        {1.5f,1.0f,0.5f}, // look from
+        {0.0f,0.5f,0.0f}, // look at
+        {0.0f,1.0f,0.0f}, // look up
+        0.76f // cosFov
+    }; 
 
     renderer.init();
 
     for (auto& m : meshes)
         renderer.add(m);
 
-    renderer.render();
+    renderer.render(cam);
 
     auto fb = renderer.fbPtr();
     assert(fb);
-    stbi_write_png(outFileName, fbSize.x, fbSize.y, 4, fb, fbSize.x * sizeof(uint32_t));
+    stbi_write_png("image.png", fbSize.x, fbSize.y, 4, fb, fbSize.x * sizeof(uint32_t));
 
     renderer.release();
 }

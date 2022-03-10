@@ -6,12 +6,7 @@
 
 #include <vector>
 
-char const* outFileName{ "image.png" };
 owl::vec2i const fbSize{ 1920, 1080 };
-owl::vec3f const lookFrom(3.f, 3.f, -3.f);
-owl::vec3f const lookAt(0.f, 0.5f, 0.f);
-owl::vec3f const lookUp(0.f, 1.0f, 0.f);
-float const cosFovy = 0.66f;
 
 extern "C" char PathTracer_ptx[];
 
@@ -119,7 +114,7 @@ namespace ba
 			return 0;
 		}
 
-		int render() override
+		int render(Camera const& cam) override
 		{
 			// Create Geom group and build world
 			auto trianglesGroup =
@@ -134,10 +129,10 @@ namespace ba
 			owlMissProgSet3f(missProg, "color1", owl3f{ .8f,.8f,.8f });
 
 			float aspect{ fbSize.x / float(fbSize.y) };
-			owl::vec3f camera_pos{ lookFrom };
-			owl::vec3f camera_d00{ normalize(lookAt - lookFrom) };
-			owl::vec3f camera_ddu{ cosFovy * aspect * normalize(cross(camera_d00, lookUp)) };
-			owl::vec3f camera_ddv{ cosFovy * normalize(cross(camera_ddu, camera_d00)) };
+			glm::vec3 camera_pos{ cam.lookFrom };
+			glm::vec3 camera_d00{ glm::normalize(cam.lookAt - cam.lookFrom) };
+			glm::vec3 camera_ddu{ cam.cosFovy * aspect * glm::normalize(glm::cross(camera_d00, cam.lookUp)) };
+			glm::vec3 camera_ddv{ cam.cosFovy * glm::normalize(glm::cross(camera_ddu, camera_d00)) };
 			camera_d00 -= 0.5f * camera_ddu;
 			camera_d00 -= 0.5f * camera_ddv;
 
