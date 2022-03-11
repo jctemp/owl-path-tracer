@@ -54,12 +54,15 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
     vec3f color{ 0.0f };
     for (int32_t s{ 0 }; s < samplesPerPixel; ++s)
     {
+        // shot ray with slight randomness to make soft edges
         vec2f const rand{ random(), random() };
         vec2f const screen{ (vec2f{pixelID} + rand) / vec2f{self.fbSize} };
 
+        // determine initial ray form the camera
         owl::Ray ray{ self.camera.pos, normalize(self.camera.dir_00
             + screen.u * self.camera.dir_du + screen.v * self.camera.dir_dv), 0.001f, FLT_MAX };
 
+        // start the recursion
         PerRayData prd{ {0.0f}, pathDepth, self.world };
         owl::traceRay(
             /*accel to trace against*/self.world,
@@ -69,10 +72,11 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
         color += 0.5f * prd.color;
     }
 
+    // take the average of all samples per pixel and apply gamma correction
     color *= 1.0f / samplesPerPixel;
-    // gamma correction
     color = owl::sqrt(color);
 
+    // save result into the buffer
     const int fbOfs = pixelID.x + self.fbSize.x * (self.fbSize.y - 1 - pixelID.y);
     self.fbPtr[fbOfs]
         = owl::make_rgba(color);
@@ -123,14 +127,32 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     prd.color += 0.5f * nPrd.color;
 }
 
+__device__
+vec2f uvOnSphere(vec3f n)
+{
+    auto u = 0.5f + atan2(n.x, n.z) / (2 * M_PI);
+    auto v = 0.5f + asin(n.y) / M_PI;
+    return vec2f{ u,v };
+}
+
 OPTIX_MISS_PROGRAM(miss)()
 {
     vec2i const pixelID = owl::getLaunchIndex();
     MissProgData const& self = owl::getProgramData<MissProgData>();
 
-    vec3f const d = toVec3f(optixGetWorldRayDirection());
-    auto t{ 0.5f * (d.y + 1.0f) };
     PerRayData& prd = owl::getPRD<PerRayData>();
-    prd.color = (t) * vec3f{ 1.0f, 1.0f, 1.0f } + (1.0f - t) * vec3f{ 0.1f, 0.2f, 0.4f };
+    vec3f const d = owl::normalize(toVec3f(optixGetWorldRayDirection()));
+
+    if (self.envMap)
+    {
+        vec2f const tc = uvOnSphere(d);
+        vec4f const texColor = tex2D<float4>(self.envMap, tc.x, tc.y);
+        prd.color = vec3f{ texColor };
+    }
+    else
+    {
+        auto t{ 0.5f * (d.y + 1.0f) };
+        prd.color = (t)*vec3f{ 1.0f, 1.0f, 1.0f } + (1.0f - t) * vec3f { 0.1f, 0.2f, 0.4f };
+    }
     prd.depth = 0;
 }

@@ -2,7 +2,9 @@
 #define DEVICE_CODE_HPP
 
 #include <owl/owl.h>
+#include <owl/common/math/LinearSpace.h>
 #include <owl/common/math/vec.h>
+#include <cuda_runtime.h>
 
 struct TrianglesGeomData
 {
@@ -30,6 +32,9 @@ struct MissProgData
 {
     owl::vec3f color0;
     owl::vec3f color1;
+    
+    // for textures
+    cudaTextureObject_t envMap;
 };
 
 #endif // DEVICE_CODE_HPP

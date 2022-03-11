@@ -1,18 +1,20 @@
 set(BA_SOURCES
-	"./src/Main.cpp"
-	"./src/ObjLoader.cpp"
+	"src/Main.cpp"
+	"src/ObjLoader.cpp"
+	"src/StbUtils.cpp"
 )
 
 SET(BA_HEADERS
-	"./include/pathTracer/ObjLoader.hpp"
-	"./include/pathTracer/OWLRenderer.hpp"
-	"./include/pathTracer/Renderer.hpp"
+	"include/pathTracer/ObjLoader.hpp"
+	"include/pathTracer/OWLRenderer.hpp"
+	"include/pathTracer/Renderer.hpp"
+	"include/pathTracer/StbUtils.hpp"
 )
 
 SET(BA_DEVICE_HEADERS
-	"./src/device/PathTracer.hpp"
-	"./src/device/Random.hpp"
-	"./src/device/Types.hpp"
+	"src/device/PathTracer.hpp"
+	"src/device/Random.hpp"
+	"src/device/Types.hpp"
 )
 
 SET(BA_INCLUDE "./include" "./src")
@@ -22,6 +24,7 @@ EMBED_PTX(
 		pathTracer-ptx
 	PTX_LINK_LIBRARIES
 		owl::owl
+		${CUDA_RUNTIME_LIBRARY}
 	SOURCES
 		"./src/device/PathTracer.cu"
 )

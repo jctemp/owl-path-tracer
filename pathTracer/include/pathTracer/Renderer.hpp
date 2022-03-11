@@ -1,6 +1,8 @@
 #ifndef BA_RENDERER_HPP
 #define BA_RENDERER_HPP
 
+#include <pathTracer/StbUtils.hpp>
+
 #include <vector>
 
 #include <glm/vec3.hpp>
@@ -43,12 +45,9 @@ namespace ba
         virtual int release() = 0;
 
         /// <summary>
-        /// Set the meta data of the renderer. 
-        /// 
-        /// TODO: struct with information => intermediate state
         /// </summary>
         /// <returns></returns>
-        virtual int renderSetting() = 0;
+        virtual int setEnvironmentTexture(ImageRgb const& texture) = 0;
 
         /// <summary>
         /// Takes an intermediate form of a mesh and makes it ready for the

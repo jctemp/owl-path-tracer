@@ -1,13 +1,10 @@
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-
 #include <device/PathTracer.hpp>
-#include <pathTracer/ObjLoader.hpp>
 #include <pathTracer/Renderer.hpp>
+#include <pathTracer/ObjLoader.hpp>
+#include <pathTracer/StbUtils.hpp>
 #include <pathTracer/OWLRenderer.hpp>
 
 #include <map>
-
-#include <stb_image_write.h>
 #include <simpleLogger.hpp>
 
 using namespace owl;
@@ -26,16 +23,20 @@ int main(void)
         0.88f // cosFov
     }; 
 
+    ba::ImageRgb environmentTexture{};
+    ba::loadImage(environmentTexture, "rooitou_park_4k.hdr", "C:/Users/jamie/Desktop");
+
     renderer.init();
+
+    renderer.setEnvironmentTexture(environmentTexture);
 
     for (auto& m : meshes)
         renderer.add(m);
 
     renderer.render(cam);
 
-    auto fb = renderer.fbPtr();
-    assert(fb);
-    stbi_write_png("image.png", fbSize.x, fbSize.y, 4, fb, fbSize.x * sizeof(uint32_t));
+    ba::Image result{ fbSize.x, fbSize.y, renderer.fbPtr() };
+    ba::writeImage(result, "image.png");
 
     renderer.release();
 }

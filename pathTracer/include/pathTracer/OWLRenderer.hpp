@@ -25,8 +25,9 @@ namespace ba
 
 			OWLVarDecl missProgVars[]
 			{
-				{ "color0", OWL_FLOAT3, OWL_OFFSETOF(MissProgData,color0)},
-				{ "color1", OWL_FLOAT3, OWL_OFFSETOF(MissProgData,color1)},
+				{ "color0", OWL_FLOAT3,  OWL_OFFSETOF(MissProgData,color0)},
+				{ "color1", OWL_FLOAT3,  OWL_OFFSETOF(MissProgData,color1)},
+				{ "envMap", OWL_TEXTURE, OWL_OFFSETOF(MissProgData,envMap)},
 				{ nullptr }
 			};
 
@@ -108,9 +109,20 @@ namespace ba
 			return 0;
 		}
 
-		int renderSetting() override
+		int setEnvironmentTexture(ImageRgb const&img) override
 		{
-			std::runtime_error{ "int renderSetting() IS NOT IMPLEMENTED!" };
+			if (envMap != nullptr)
+				owlTexture2DDestroy(envMap);
+
+			envMap = owlTexture2DCreate(
+				context,
+				OWL_TEXEL_FORMAT_RGBA8,
+				img.width, img.height,
+				img.texels.data(),
+				OWL_TEXTURE_NEAREST,
+				OWL_TEXTURE_CLAMP
+			);
+
 			return 0;
 		}
 
@@ -133,10 +145,10 @@ namespace ba
 				owlGroupBuildAccel(world);
 			}
 
-
-			
 			owlMissProgSet3f(missProg, "color0", owl3f{ .8f,0.f,0.f });
 			owlMissProgSet3f(missProg, "color1", owl3f{ .8f,.8f,.8f });
+			owlMissProgSetTexture(missProg, "envMap", envMap);
+			
 
 			float aspect{ fbSize.x / float(fbSize.y) };
 			glm::vec3 camera_pos{ cam.lookFrom };
@@ -186,6 +198,8 @@ namespace ba
 
 		// Group to handle geometry
 		OWLGroup world;
+
+		OWLTexture envMap{nullptr};
 	};
 }
 
