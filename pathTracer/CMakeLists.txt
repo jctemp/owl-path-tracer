@@ -15,7 +15,7 @@ SET(BA_DEVICE_HEADERS
 	"src/device/PathTracer.hpp"
 	"src/device/Random.hpp"
 	"src/device/Types.hpp"
-)
+ "src/device/Sampling.hpp")
 
 SET(BA_INCLUDE "./include" "./src")
 
