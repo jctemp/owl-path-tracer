@@ -6,7 +6,7 @@ set(BA_SOURCES
 
 SET(BA_HEADERS
 	"include/pathTracer/ObjLoader.hpp"
-	"include/pathTracer/OWLRenderer.hpp"
+	
 	"include/pathTracer/Renderer.hpp"
 	"include/pathTracer/StbUtils.hpp"
 )
