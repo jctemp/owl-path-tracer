@@ -19,6 +19,7 @@ struct TrianglesGeomData
     owl::vec3f color;
     owl::vec3i* index;
     owl::vec3f* vertex;
+    owl::vec3f* normal;
 };
 
 struct RayGenData

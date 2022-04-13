@@ -27,7 +27,6 @@ void createMesh(ba::Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t
 
 	// mapping of global ids to local ids
 	std::map<int32_t, int32_t> vertexMapping{};
-	std::map<int32_t, int32_t> normalMapping{};
 
 	std::size_t indexOffset{ 0 };
 	// num_face_vertices gives the amount of faces + how many vertices per face
@@ -36,41 +35,40 @@ void createMesh(ba::Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t
 		mesh->index.emplace_back(0, 0, 0);
 		auto& vertexLocal{ mesh->index[mesh->index.size() - 1] };
 
-		mesh->nIndex.emplace_back(0, 0, 0);
-		auto& normalLocal{ mesh->nIndex[mesh->nIndex.size() - 1] };
-
 		for (size_t v{ 0 }; v < OBJ_TRIANGLE; v++)
 		{
 			// get vertex, normal and uv ID
 			tinyobj::index_t idx{ indices[indexOffset + v] };
 
 			// set global vertex ID
-			int32_t vertexGlobalID{ idx.vertex_index };
-			int32_t normalGlobalID{ idx.normal_index };
+			int32_t vertexID{ idx.vertex_index };
+			int32_t normalID{ idx.normal_index };
 
 			// check if global ID is mapped
-			if (!vertexMapping.contains(vertexGlobalID))
+			if (!vertexMapping.contains(vertexID))
 			{
-				vertexMapping.insert({ vertexGlobalID, int32_t(mesh->vertex.size()) });
+				vertexMapping.insert({ vertexID, int32_t(mesh->vertex.size()) });
 				mesh->vertex.emplace_back(
-					vertices[3 * size_t(vertexGlobalID) + 0],
-					vertices[3 * size_t(vertexGlobalID) + 1],
-					vertices[3 * size_t(vertexGlobalID) + 2]
+					vertices[3 * size_t(vertexID) + 0],
+					vertices[3 * size_t(vertexID) + 1],
+					vertices[3 * size_t(vertexID) + 2]
 				);
 			}
-			vertexLocal[v] = vertexMapping[vertexGlobalID];
+			vertexLocal[v] = vertexMapping[vertexID];
 
-			// check if global ID is mapped
-			if (!normalMapping.contains(normalGlobalID))
+			// add normals
+			if (idx.normal_index >= 0)
 			{
-				normalMapping.insert({ normalGlobalID, int32_t(mesh->normal.size()) });
-				mesh->normal.emplace_back(
-					normals[3 * size_t(normalGlobalID) + 0],
-					normals[3 * size_t(normalGlobalID) + 1],
-					normals[3 * size_t(normalGlobalID) + 2]
-				);
+				// wtf no idea why this works lol
+				while (mesh->normal.size() < mesh->vertex.size())
+				{
+					mesh->normal.emplace_back(
+						normals[3 * size_t(normalID) + 0],
+						normals[3 * size_t(normalID) + 1],
+						normals[3 * size_t(normalID) + 2]
+					);
+				}
 			}
-			normalLocal[v] = normalMapping[normalGlobalID];
 		}
 		indexOffset += OBJ_TRIANGLE;
 	}

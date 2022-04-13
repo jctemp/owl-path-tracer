@@ -7,8 +7,6 @@
 #include <owl/owl_device.h>
 #include <optix_device.h>
 
-#define MAX_DEPTH 64
-#define SAMPLES_PER_PIXEL 128
 #define T_MIN 1e-3f
 #define T_MAX 1e10f
 
@@ -83,11 +81,11 @@ inline __device__ owl::vec3f tracePath(owl::Ray &ray, PerRayData& prd)
                 vec2f tc{ uvOnSphere(ray.direction) };
                 owl::vec4f const texColor{ 
                     tex2D<float4>(optixLaunchParams.environmentMap, tc.x, tc.y) };
-                return vec3f{ texColor } *attenuation;
+                return vec3f{ texColor } * attenuation;
             }
             else
             {
-                return vec3f{ 0.6f, 0.8f, 1.0f } *attenuation;
+                return vec3f{ 0.28f, 0.34f, 0.355f } * attenuation;
             }
         }
 
@@ -142,7 +140,7 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
 
         // determine initial ray form the camera
         owl::Ray ray{ self.camera.pos, normalize(self.camera.dir_00
-            + screen.u * self.camera.dir_du + screen.v * self.camera.dir_dv), 0.001f, FLT_MAX };
+            + screen.u * self.camera.dir_du + screen.v * self.camera.dir_dv), T_MIN, T_MAX };
     
         color += tracePath(ray, prd);
     }
@@ -174,12 +172,18 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
     TrianglesGeomData const& self = owl::getProgramData<TrianglesGeomData>();
     uint32_t const primID{ optixGetPrimitiveIndex() };
     vec3i const index{ self.index[primID] };
+
     vec3f const& p0{ self.vertex[index.x] };
     vec3f const& p1{ self.vertex[index.y] };
     vec3f const& p2{ self.vertex[index.z] };
 
+    vec3f const& n0{ self.normal[index.x] };
+    vec3f const& n1{ self.normal[index.y] };
+    vec3f const& n2{ self.normal[index.z] };
+
     // set hit information
-    si.normal = owl::normalize(owl::cross(p1 - p0, p2 - p0));
+    //si.normal = owl::normalize(owl::cross(p1 - p0, p2 - p0));
+    si.normal = n0 * b0 + n1 * b1 + n2 * b2;
     si.point = p0 * b0 + p1 * b1 + p2 * b2;
     si.wo = -direction;
     si.t = optixGetRayTmax();

@@ -15,11 +15,8 @@
 using namespace owl;
 
 static ba::Renderer renderer{};
-
 owl::vec2i const fbSize{ 1920, 1080 };
-
 extern "C" char PathTracer_ptx[];
-
 
 /// <summary>
 /// Initialises the renderer with all necessary values to be ready.
@@ -72,6 +69,7 @@ void init(void)
 	{
 		{ "index",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, index) },
 		{ "vertex", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, vertex) },
+		{ "normal", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, normal) },
 		{ "color",  OWL_FLOAT3, OWL_OFFSETOF(TrianglesGeomData, color) },
 		{ nullptr }
 	};
@@ -124,10 +122,14 @@ void add(ba::Mesh* m)
 
 	auto& vertices{ mesh.vertex };
 	auto& indices{ mesh.index };
+	auto& normals{ mesh.normal };
 
 	// set geometry in the buffers of the object
 	OWLBuffer vertexBuffer{
 		owlDeviceBufferCreate(renderer.context, OWL_FLOAT3, vertices.size(), vertices.data()) };
+
+	OWLBuffer normalBuffer{
+		owlDeviceBufferCreate(renderer.context, OWL_FLOAT3, normals.size(), normals.data()) };
 
 	OWLBuffer indexBuffer{
 		owlDeviceBufferCreate(renderer.context, OWL_INT3, indices.size(), indices.data()) };
@@ -145,6 +147,7 @@ void add(ba::Mesh* m)
 
 	// set sbt data
 	owlGeomSetBuffer(geom, "vertex", vertexBuffer);
+	owlGeomSetBuffer(geom, "normal", normalBuffer);
 	owlGeomSetBuffer(geom, "index", indexBuffer);
 	owlGeomSet3f(geom, "color", owl3f{ 0.5f, 1.0f, 0 });
 
@@ -213,7 +216,7 @@ void render(ba::Camera const& cam)
 
 int main(void)
 {
-    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\sphere.obj") };
+    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\sphere2.obj") };
 
     ba::Camera cam{ 
         {2.0f,1.0f,0.0f}, // look from

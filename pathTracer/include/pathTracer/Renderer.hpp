@@ -16,7 +16,6 @@ namespace ba
     {
         std::vector<owl::vec3i> index;
         std::vector<owl::vec3f> vertex;
-        std::vector<owl::vec3i> nIndex;
         std::vector<owl::vec3f> normal;
     };
 
