@@ -34,11 +34,20 @@ void init(void)
 	renderer.frameBuffer =
 		owlHostPinnedBufferCreate(renderer.context, OWL_INT, fbSize.x * fbSize.y);
 
+	OWLVarDecl launchParamsVars[]
+	{
+		{ "maxDepth",        OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth)},
+		{ "samplesPerPixel", OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, samplesPerPixel)},
+		{ "world",           OWL_GROUP,               OWL_OFFSETOF(LaunchParams, world)},
+		{ "environmentMap",  OWL_TEXTURE,             OWL_OFFSETOF(LaunchParams, environmentMap)},
+		{ nullptr }
+	};
+
+	renderer.launchParams = 
+		owlParamsCreate(renderer.context, sizeof(LaunchParams), launchParamsVars, -1);
+
 	OWLVarDecl missProgVars[]
 	{
-		{ "color0", OWL_FLOAT3,  OWL_OFFSETOF(MissProgData,color0)},
-		{ "color1", OWL_FLOAT3,  OWL_OFFSETOF(MissProgData,color1)},
-		{ "envMap", OWL_TEXTURE, OWL_OFFSETOF(MissProgData,envMap)},
 		{ nullptr }
 	};
 
@@ -49,7 +58,6 @@ void init(void)
 	{
 		{ "fbPtr",         OWL_BUFPTR, OWL_OFFSETOF(RayGenData, fbPtr)},
 		{ "fbSize",        OWL_INT2,   OWL_OFFSETOF(RayGenData, fbSize)},
-		{ "world",         OWL_GROUP,  OWL_OFFSETOF(RayGenData, world)},
 		{ "camera.pos",    OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.pos)},
 		{ "camera.dir_00", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.dir_00)},
 		{ "camera.dir_du", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.dir_du)},
@@ -150,6 +158,7 @@ void add(ba::Mesh* m)
 /// <returns>0 in case of success otherwise different</returns>
 void render(ba::Camera const& cam)
 {
+	// 1) set mesh data into buffers
 	if (renderer.geoms.size() > 0)
 	{
 		// Create Geom group and build world
@@ -167,11 +176,10 @@ void render(ba::Camera const& cam)
 		owlGroupBuildAccel(renderer.world);
 	}
 
-	owlMissProgSet3f(renderer.missProg, "color0", owl3f{ .8f,0.f,0.f });
-	owlMissProgSet3f(renderer.missProg, "color1", owl3f{ .8f,.8f,.8f });
-	owlMissProgSetTexture(renderer.missProg, "envMap", renderer.environmentMap);
+	// 2) set miss program data
+	//owlMissProgSet3f(renderer.missProg, "name", value);
 
-
+	// 3) calculate camera data
 	float aspect{ fbSize.x / float(fbSize.y) };
 	owl::vec3f camera_pos{ cam.lookFrom };
 	owl::vec3f camera_d00{ owl::normalize(cam.lookAt - cam.lookFrom) };
@@ -180,30 +188,38 @@ void render(ba::Camera const& cam)
 	camera_d00 -= 0.5f * camera_ddu;
 	camera_d00 -= 0.5f * camera_ddv;
 
+	// 4) set ray gen data
 	owlRayGenSetBuffer(renderer.rayGen, "fbPtr", renderer.frameBuffer);
 	owlRayGenSet2i(renderer.rayGen, "fbSize", (const owl2i&)fbSize);
-	owlRayGenSetGroup(renderer.rayGen, "world", renderer.world);
 	owlRayGenSet3f(renderer.rayGen, "camera.pos", (const owl3f&)camera_pos);
 	owlRayGenSet3f(renderer.rayGen, "camera.dir_00", (const owl3f&)camera_d00);
 	owlRayGenSet3f(renderer.rayGen, "camera.dir_du", (const owl3f&)camera_ddu);
 	owlRayGenSet3f(renderer.rayGen, "camera.dir_dv", (const owl3f&)camera_ddv);
 
+	// 5) set launch params
+	owlParamsSetRaw(renderer.launchParams, "maxDepth", &renderer.maxDepth);
+	owlParamsSetRaw(renderer.launchParams, "samplesPerPixel", &renderer.samplesPerPixel);
+	owlParamsSetGroup(renderer.launchParams, "world", renderer.world);
+	owlParamsSetTexture(renderer.launchParams, "environmentMap", renderer.environmentMap);
+
+	// 6) build sbt tables and load data
 	owlBuildPrograms(renderer.context);
 	owlBuildPipeline(renderer.context);
 	owlBuildSBT(renderer.context);
 
-	owlRayGenLaunch2D(renderer.rayGen, fbSize.x, fbSize.y);
+	// 7) compute image
+	owlLaunch2D(renderer.rayGen, fbSize.x, fbSize.y, renderer.launchParams);
 }
 
 int main(void)
 {
-    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\Dragon.obj") };
+    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\sphere.obj") };
 
     ba::Camera cam{ 
         {2.0f,1.0f,0.0f}, // look from
         {0.0f,0.5f,0.0f}, // look at
         {0.0f,1.0f,0.0f}, // look up
-        0.88f // cosFov
+        0.88f			  // cosFov
     }; 
 
     ba::ImageRgb environmentTexture{};
@@ -214,6 +230,9 @@ int main(void)
 
     for (auto& m : meshes)
         add(m);
+
+	renderer.samplesPerPixel = 512;
+	renderer.maxDepth = 64;
 
     render(cam);
 

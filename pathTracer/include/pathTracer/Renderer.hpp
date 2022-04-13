@@ -16,6 +16,8 @@ namespace ba
     {
         std::vector<owl::vec3i> index;
         std::vector<owl::vec3f> vertex;
+        std::vector<owl::vec3i> nIndex;
+        std::vector<owl::vec3f> normal;
     };
 
     struct Camera
@@ -32,6 +34,11 @@ namespace ba
         OWLContext context;
         OWLModule module;
 
+        // launchParams static accessible mem.
+        OWLLaunchParams launchParams;
+        uint32_t maxDepth;
+        uint32_t samplesPerPixel;
+
         // Programs
         OWLRayGen rayGen;
         OWLMissProg missProg;
@@ -47,6 +54,7 @@ namespace ba
         // Group to handle geometry
         OWLGroup world;
 
+        // Texture holding env. information
         OWLTexture environmentMap;
     };
 }

@@ -6,6 +6,14 @@
 #include <owl/common/math/vec.h>
 #include <cuda_runtime.h>
 
+struct LaunchParams
+{
+    uint32_t maxDepth;
+    uint32_t samplesPerPixel;
+    OptixTraversableHandle world;
+    cudaTextureObject_t environmentMap;
+};
+
 struct TrianglesGeomData
 {
     owl::vec3f color;
@@ -17,7 +25,6 @@ struct RayGenData
 {
     uint32_t* fbPtr;
     owl::vec2i fbSize;
-    OptixTraversableHandle world;
 
     struct 
     {
@@ -30,11 +37,6 @@ struct RayGenData
 
 struct MissProgData
 {
-    owl::vec3f color0;
-    owl::vec3f color1;
-    
-    // for textures
-    cudaTextureObject_t envMap;
 };
 
 #endif // DEVICE_CODE_HPP

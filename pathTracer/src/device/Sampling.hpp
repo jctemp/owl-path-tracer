@@ -1,11 +1,8 @@
 #ifndef BA_SAMPLING_HPP
 #define BA_SAMPLING_HPP
 
-#include "Random.hpp"
 #include "Types.hpp"
-
 #include <owl/common/math/vec.h>
-
 
 namespace ba
 {

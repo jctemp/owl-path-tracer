@@ -2,6 +2,7 @@
 #include "Random.hpp"
 #include "Types.hpp"
 #include "Sampling.hpp"
+#include "Bxdf.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
@@ -11,9 +12,9 @@
 #define T_MIN 1e-3f
 #define T_MAX 1e10f
 
-
 using namespace owl;
 
+__constant__ LaunchParams optixLaunchParams;
 __device__ ba::LCG<4> random{};
 
 struct Intersection
@@ -27,7 +28,6 @@ struct Intersection
 struct PerRayData
 {
     Intersection si;
-    OptixTraversableHandle world;
 };
 
 
@@ -62,22 +62,34 @@ inline __device__ vec3f randomHemisphere(const vec3f& normal)
         return -in_unit_sphere;
 }
 
-inline __device__ owl::vec3f tracePath(RayGenData const& self, owl::Ray &ray, PerRayData& prd)
+inline __device__ owl::vec3f tracePath(owl::Ray &ray, PerRayData& prd)
 {
     owl::vec3f attenuation{ 1.0f };
     
-    for (int32_t depth{ 0 }; depth < MAX_DEPTH; ++depth)
+    for (int32_t depth{ 0 }; depth < optixLaunchParams.maxDepth; ++depth)
     {
         // 1) find intersection
         owl::traceRay(
-            /* accel to trace against */ self.world,
+            /* accel to trace against */ optixLaunchParams.world,
             /* the ray to trace       */ ray,
             /* prd                    */ prd);
 
 
         // 2) terminate if miss => sample background
         if (prd.si.t < 0)
-            return vec3f{ 0.6f, 0.8f, 1.0f } * attenuation;
+        {
+            if (false && optixLaunchParams.environmentMap)
+            {
+                vec2f tc{ uvOnSphere(ray.direction) };
+                owl::vec4f const texColor{ 
+                    tex2D<float4>(optixLaunchParams.environmentMap, tc.x, tc.y) };
+                return vec3f{ texColor } *attenuation;
+            }
+            else
+            {
+                return vec3f{ 0.6f, 0.8f, 1.0f } *attenuation;
+            }
+        }
 
         owl::vec3f wi{ 0.0f };
         float pdf{ 0.0f };
@@ -119,10 +131,10 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
     RayGenData const& self{ getProgramData<RayGenData>() };
     vec2i const pixelID{ getLaunchIndex() };
 
-    PerRayData prd{ {{0.0f}, {0.0f}, {0.0f}, 0.0f}, self.world };
+    PerRayData prd{ {{0.0f}, {0.0f}, {0.0f}, 0.0f} };
     vec3f color{ 0.0f };
 
-    for (int32_t s{ 0 }; s < SAMPLES_PER_PIXEL; ++s)
+    for (int32_t s{ 0 }; s < optixLaunchParams.samplesPerPixel; ++s)
     {
         // shot ray with slight randomness to make soft edges
         vec2f const rand{ random(), random() };
@@ -132,11 +144,11 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
         owl::Ray ray{ self.camera.pos, normalize(self.camera.dir_00
             + screen.u * self.camera.dir_du + screen.v * self.camera.dir_dv), 0.001f, FLT_MAX };
     
-        color += tracePath(self, ray, prd);
+        color += tracePath(ray, prd);
     }
 
     // take the average of all samples per pixel and apply gamma correction
-    color *= 1.0f / SAMPLES_PER_PIXEL;
+    color *= 1.0f / optixLaunchParams.samplesPerPixel;
     color = owl::sqrt(color);
 
     // save result into the buffer
@@ -160,7 +172,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 
     // get geometric data:
     TrianglesGeomData const& self = owl::getProgramData<TrianglesGeomData>();
-    int const primID{ optixGetPrimitiveIndex() };
+    uint32_t const primID{ optixGetPrimitiveIndex() };
     vec3i const index{ self.index[primID] };
     vec3f const& p0{ self.vertex[index.x] };
     vec3f const& p1{ self.vertex[index.y] };
