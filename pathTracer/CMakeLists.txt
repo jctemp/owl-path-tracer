@@ -6,17 +6,17 @@ set(BA_SOURCES
 
 SET(BA_HEADERS
 	"include/pathTracer/ObjLoader.hpp"
-	
 	"include/pathTracer/Renderer.hpp"
 	"include/pathTracer/StbUtils.hpp"
 )
 
 SET(BA_DEVICE_HEADERS
-	"src/device/PathTracer.hpp"
+	"src/device/Globals.hpp"
 	"src/device/Random.hpp"
-	"src/device/Types.hpp"
 	"src/device/Sampling.hpp" 
-	"src/device/Bxdf.hpp")
+	"src/device/Disney.hpp"
+	"src/device/BsdfUtil.hpp"   
+	)
 
 SET(BA_INCLUDE "./include" "./src")
 

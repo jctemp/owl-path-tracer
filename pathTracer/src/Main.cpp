@@ -1,4 +1,4 @@
-#include <device/PathTracer.hpp>
+#include <device/Globals.hpp>
 
 #include <pathTracer/ObjLoader.hpp>
 #include <pathTracer/StbUtils.hpp>
@@ -14,8 +14,8 @@
 
 using namespace owl;
 
-static ba::Renderer renderer{};
-owl::vec2i const fbSize{ 1920, 1080 };
+static Renderer renderer{};
+Int2 const fbSize{ 1280, 720 };
 extern "C" char PathTracer_ptx[];
 
 /// <summary>
@@ -33,10 +33,11 @@ void init(void)
 
 	OWLVarDecl launchParamsVars[]
 	{
-		{ "maxDepth",        OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth)},
-		{ "samplesPerPixel", OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, samplesPerPixel)},
-		{ "world",           OWL_GROUP,               OWL_OFFSETOF(LaunchParams, world)},
-		{ "environmentMap",  OWL_TEXTURE,             OWL_OFFSETOF(LaunchParams, environmentMap)},
+		{ "maxDepth",        OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth) },
+		{ "samplesPerPixel", OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, samplesPerPixel) },
+		{ "materials",       OWL_BUFFER,              OWL_OFFSETOF(LaunchParams, materials)},
+		{ "world",           OWL_GROUP,               OWL_OFFSETOF(LaunchParams, world) },
+		{ "environmentMap",  OWL_TEXTURE,             OWL_OFFSETOF(LaunchParams, environmentMap) },
 		{ nullptr }
 	};
 
@@ -67,6 +68,7 @@ void init(void)
 
 	OWLVarDecl trianglesGeomVars[]
 	{
+		{ "matId",  OWL_UINT,   OWL_OFFSETOF(TrianglesGeomData, matId) },
 		{ "index",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, index) },
 		{ "vertex", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, vertex) },
 		{ "normal", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, normal) },
@@ -95,7 +97,7 @@ void release(void)
 /// <summary>
 /// </summary>
 /// <returns></returns>
-void setEnvironmentTexture(ba::ImageRgb const& texture)
+void setEnvironmentTexture(ImageRgb const& texture)
 {
 	if (renderer.environmentMap != nullptr)
 		owlTexture2DDestroy(renderer.environmentMap);
@@ -104,11 +106,25 @@ void setEnvironmentTexture(ba::ImageRgb const& texture)
 		renderer.context,
 		OWL_TEXEL_FORMAT_RGBA8,
 		texture.width, texture.height,
-		texture.texels.data(),
+		texture.pixel,
 		OWL_TEXTURE_NEAREST,
 		OWL_TEXTURE_CLAMP
 	);
 }
+
+
+uint32_t materialSel(Mesh* m, std::vector<std::tuple<std::string, MaterialData>> const& mats)
+{
+	SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
+	for (uint32_t i{ 0 }; i < mats.size(); i++)
+	{
+		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
+	}
+	uint32_t num;
+	std::cin >> num;
+	return num;
+}
+
 
 /// <summary>
 /// Takes an intermediate form of a mesh and makes it ready for the
@@ -116,13 +132,16 @@ void setEnvironmentTexture(ba::ImageRgb const& texture)
 /// </summary>
 /// <param name="m">An object of the type Mesh</param>
 /// <returns>0 in case of success otherwise different</returns>
-void add(ba::Mesh* m)
+void add(Mesh* m, std::vector<std::tuple<std::string, MaterialData>> const& mats)
 {
-	ba::Mesh& mesh{ *m };
+	Mesh& mesh{ *m };
 
+	uint32_t matId{ 0u };
 	auto& vertices{ mesh.vertex };
 	auto& indices{ mesh.index };
 	auto& normals{ mesh.normal };
+
+	matId = materialSel(m, mats);
 
 	// set geometry in the buffers of the object
 	OWLBuffer vertexBuffer{
@@ -146,6 +165,7 @@ void add(ba::Mesh* m)
 		indices.size(), sizeof(owl::vec3i), 0);
 
 	// set sbt data
+	owlGeomSet1ui(geom, "matId", matId);
 	owlGeomSetBuffer(geom, "vertex", vertexBuffer);
 	owlGeomSetBuffer(geom, "normal", normalBuffer);
 	owlGeomSetBuffer(geom, "index", indexBuffer);
@@ -159,7 +179,7 @@ void add(ba::Mesh* m)
 /// Renderes the Meshes with the specifed render settings
 /// </summary>
 /// <returns>0 in case of success otherwise different</returns>
-void render(ba::Camera const& cam)
+void render(Camera const& cam, std::vector<MaterialData> const &materials)
 {
 	// 1) set mesh data into buffers
 	if (renderer.geoms.size() > 0)
@@ -184,10 +204,10 @@ void render(ba::Camera const& cam)
 
 	// 3) calculate camera data
 	float aspect{ fbSize.x / float(fbSize.y) };
-	owl::vec3f camera_pos{ cam.lookFrom };
-	owl::vec3f camera_d00{ owl::normalize(cam.lookAt - cam.lookFrom) };
-	owl::vec3f camera_ddu{ cam.cosFovy * aspect * owl::normalize(owl::cross(camera_d00, cam.lookUp)) };
-	owl::vec3f camera_ddv{ cam.cosFovy * owl::normalize(owl::cross(camera_ddu, camera_d00)) };
+	Float3 camera_pos{ cam.lookFrom };
+	Float3 camera_d00{ owl::normalize(cam.lookAt - cam.lookFrom) };
+	Float3 camera_ddu{ cam.cosFovy * aspect * owl::normalize(owl::cross(camera_d00, cam.lookUp)) };
+	Float3 camera_ddv{ cam.cosFovy * owl::normalize(owl::cross(camera_ddu, camera_d00)) };
 	camera_d00 -= 0.5f * camera_ddu;
 	camera_d00 -= 0.5f * camera_ddv;
 
@@ -200,8 +220,13 @@ void render(ba::Camera const& cam)
 	owlRayGenSet3f(renderer.rayGen, "camera.dir_dv", (const owl3f&)camera_ddv);
 
 	// 5) set launch params
+	auto materialBuffer{
+		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(MaterialData), materials.size(), materials.data())
+	};
+
 	owlParamsSetRaw(renderer.launchParams, "maxDepth", &renderer.maxDepth);
 	owlParamsSetRaw(renderer.launchParams, "samplesPerPixel", &renderer.samplesPerPixel);
+	owlParamsSetBuffer(renderer.launchParams, "materials", materialBuffer);
 	owlParamsSetGroup(renderer.launchParams, "world", renderer.world);
 	owlParamsSetTexture(renderer.launchParams, "environmentMap", renderer.environmentMap);
 
@@ -214,33 +239,49 @@ void render(ba::Camera const& cam)
 	owlLaunch2D(renderer.rayGen, fbSize.x, fbSize.y, renderer.launchParams);
 }
 
+
 int main(void)
 {
-    std::vector<ba::Mesh*> meshes{ ba::loadOBJ("C:\\Users\\jamie\\Desktop\\sphere2.obj") };
+    std::vector<Mesh*> meshes{ loadOBJ("C:\\Users\\jamie\\Desktop\\sphere.obj") };
 
-    ba::Camera cam{ 
+    Camera cam{ 
         {2.0f,1.0f,0.0f}, // look from
         {0.0f,0.5f,0.0f}, // look at
         {0.0f,1.0f,0.0f}, // look up
         0.88f			  // cosFov
     }; 
 
-    ba::ImageRgb environmentTexture{};
-    ba::loadImage(environmentTexture, "rooitou_park_4k.hdr", "C:/Users/jamie/Desktop");
-
 	init();
-	setEnvironmentTexture(environmentTexture);
 
-    for (auto& m : meshes)
-        add(m);
+	//ImageRgb environmentTexture{};
+	//loadImage(environmentTexture, "rooitou_park_4k.hdr", "C:/Users/jamie/Desktop");
+	//setEnvironmentTexture(environmentTexture);
 
-	renderer.samplesPerPixel = 512;
-	renderer.maxDepth = 64;
+	renderer.samplesPerPixel = 118;
+	renderer.maxDepth = 128;
 
-    render(cam);
+	MaterialData ground{ MaterialType::LAMBERT ,{0.8f, 0.8f, 0.0f} };
+	MaterialData center{ MaterialType::LAMBERT ,{0.7f, 0.3f, 0.3f} };
+	MaterialData left  { MaterialType::LAMBERT ,{0.8f, 0.8f, 0.8f} };
+	MaterialData right { MaterialType::LAMBERT ,{0.8f, 0.6f, 0.2f} };
 
-    ba::Image result{ fbSize.x, fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0)};
-    ba::writeImage(result, "image.png");
+	std::vector<std::tuple<std::string, MaterialData>> mats{};
+	mats.emplace_back("ground", ground);
+	mats.emplace_back("center", center);
+	mats.emplace_back("left",   left);
+	mats.emplace_back("righ",   right);
+
+	for (auto& m : meshes)
+		add(m, mats);
+
+	std::vector<MaterialData> materials{};
+	for (auto& e : mats)
+		materials.push_back(std::get<MaterialData>(e));
+
+    render(cam, materials);
+
+    Image result{ fbSize.x, fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0)};
+    writeImage(result, "image.png");
 
     release();
 }

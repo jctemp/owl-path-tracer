@@ -16,7 +16,7 @@
 /// <param name="mesh">mutable TriangleMesh</param>
 /// <param name="shape">meta data shape</param>
 /// <param name="attrib">global values of all meshes</param>
-void createMesh(ba::Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib)
+void createMesh(Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib)
 {
 	// global, no offset, shared by all meshes
 	auto& vertices{ attrib.vertices };
@@ -74,7 +74,7 @@ void createMesh(ba::Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t
 	}
 }
 
-std::vector<ba::Mesh*> ba::loadOBJ(std::string const& pathToObj)
+std::vector<Mesh*> loadOBJ(std::string const& pathToObj)
 {
 	// 1.) create OBJ reader
 	tinyobj::ObjReader reader{};

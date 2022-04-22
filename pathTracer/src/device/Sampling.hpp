@@ -1,79 +1,99 @@
-#ifndef BA_SAMPLING_HPP
-#define BA_SAMPLING_HPP
+#ifndef SAMPLING_HPP
+#define SAMPLING_HPP
 
-#include "Types.hpp"
-#include <owl/common/math/vec.h>
+#include "Globals.hpp"
+#include "BsdfUtil.hpp"
 
-namespace ba
+
+DEVICE void sampleUniformDisk(Float2& rand)
 {
-	inline __both__ void makeOrthogonalNormals(owl::vec3f const& N, owl::vec3f& T, owl::vec3f& B)
-	{
-		if (N.x != N.y || N.x != N.z)
-			T = owl::vec3f(N.z - N.y, N.x - N.z, N.y - N.x);	// ( 1, 1, 1) x N
-		else
-			T = owl::vec3f(N.z - N.y, N.x + N.z, -N.y - N.x);	// (-1, 1, 1) x N
+	float phi{ TWO_PI * rand.y };
+	float r{ owl::sqrt(rand.x) };
 
-		T = normalize(T);
-		B = cross(N, T);
+	rand.x = r * owl::cos(phi);
+	rand.y = r * owl::sin(phi);
+}
+
+
+DEVICE void sampleConcentricDisk(Float2& rand)
+{
+	// re-scale rand to be between [-1,1]
+	float dx{ 2.0f * rand.x - 1 };
+	float dy{ 2.0f * rand.y - 1 };
+
+	// handle degenerated origin
+	if (dx == 0 && dy == 0)
+	{
+		rand.x = 0;
+		rand.y = 0;
+		return;
 	}
 
-	inline __both__ void uniformSampleDisk(float& x, float& y)
+	// handle mapping unit squre to unit disk
+	float phi, r;
+	if (std::abs(dx) > std::abs(dy))
 	{
-		float phi{ M_2PI_F * y };
-		float r{ owl::sqrt(x) };
-
-		x = r * owl::cos(phi);
-		y = r * owl::sin(phi);
+		r = dx;
+		phi = PI_OVER_FOUR * (dy / dx);
+	}
+	else
+	{
+		r = dy;
+		phi = PI_OVER_TWO - PI_OVER_FOUR * (dx / dy);
 	}
 
-	inline __both__ void concentricSampleDisk(float& x, float& y)
-	{
-		// re-scale rand to be between [-1,1]
-		float dx { 2.0f * x - 1};
-		float dy { 2.0f * y - 1};
+	rand.x = r * owl::cos(phi);
+	rand.y = r * owl::sin(phi);
+}
 
-		// handle degenerated origin
-		if (dx == 0 && dy == 0)
-		{
-			x = 0;
-			y = 0;
-			return;
-		}
 
-		// handle mapping unit squre to unit disk
-		float phi, r;
-		if (std::abs(dx) > std::abs(dy))
-		{
-			r = dx;
-			phi = M_PI_OVER_4_F * (dy / dx);
-		}
-		else
-		{
-			r = dy;
-			phi = M_PI_OVER_2_F - M_PI_OVER_4_F * (dx / dy);
-		}
+DEVICE void sampleCosineHemisphere(Float3 const& N,
+	Float2& rand, Float3& L, Float& pdf)
+{
+	// 1. sample unit circle and save position into randu, randv
+	sampleConcentricDisk(rand);
 
-		x = r * std::cos(phi);
-		y = r * std::sin(phi);
-	}
+	// 2. calculate cosTheta => 1 = randu^2 + randv^2 => cos = 1 - (randu^2 + randv^2)
+	Float cosTheta{ owl::sqrt(owl::max(0.0f, 1.0f - rand.x * rand.x - rand.y * rand.y)) };
 
-	inline __both__	void cosineSampleHemisphere(owl::vec3f const &N, float randu, float randv, owl::vec3f &wi, float &pdf)
-	{
-		// 1. sample unit circle and save position into randu, randv
-		concentricSampleDisk(randu, randv);
+	// 3. move to world space with 
+	// V.x * T + V.y * B + V.z * N;
+	Float3 T{}, B{};
+	makeOrthogonals(N, T, B);
+	
+	L = rand.x * T + rand.y * B + cosTheta * N;
+	pdf = cosTheta * INV_PI;
+}
 
-		// 2. calculate cosTheta => 1 = randu^2 + randv^2 => cos = 1 - (randu^2 + randv^2)
-		float cosTheta{ owl::sqrt(owl::max(0.0f, 1.0f - randu * randu - randv * randv)) };
 
-		// 3. create orth. basis to find wi
-		owl::vec3f T{};
-		owl::vec3f B{};
-		makeOrthogonalNormals(N, T, B);
+DEVICE void sampleUniformHemisphere(Float3 const& N,
+	Float2& rand, Float3& L, Float& pdf)
+{
+	Float z{ rand.x };
+	Float r{ sqrtf(max(0.0f, 1.0f - z * z)) };
+	Float phi = TWO_PI * rand.y;
 
-		// 4. set omega_in and pdf of cos_hemisphere
-		wi = randu * T + randv * B + cosTheta * N;
-		pdf = cosTheta * M_INV_PI_F;
-	}
-} // namespace ba
+	Float x = r * owl::cos(phi);
+	Float y = r * owl::sin(phi);
 
-#endif // BA_SAMPLING_HPP
+	Float3 T{}, B{};
+	makeOrthogonals(N, T, B);
+
+	L = x * T + y * B + z * N;
+	pdf = 0.5f * INV_PI;
+}
+
+
+DEVICE Float3 sampleUniformSphere(Float2 rand)
+{
+	Float z { 1.0f - 2.0f * rand.x };
+	Float r { sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
+	Float phi { TWO_PI * rand.y };
+	Float x = r * owl::cos(phi);
+	Float y = r * owl::sin(phi);
+
+	return Float3{ x, y, z };
+}
+
+
+#endif // SAMPLING_HPP

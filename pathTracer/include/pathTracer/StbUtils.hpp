@@ -5,25 +5,26 @@
 #include <string>
 #include <vector>
 
-namespace ba
+struct Image
 {
-	struct Image
-	{
-		int32_t width;
-		int32_t height;
-		uint32_t const* buffer;
-	};
+	int32_t width;
+	int32_t height;
+	uint32_t const* buffer;
+};
 
-	struct ImageRgb
+struct ImageRgb
+{
+	~ImageRgb()
 	{
-		int32_t width;
-		int32_t height;
-		std::vector<uint8_t> texels;
-	};
+		if (pixel) delete[] pixel;
+	}
+	int32_t width;
+	int32_t height;
+	uint32_t* pixel{ nullptr };
+};
 
-	void writeImage(Image const& i, std::string const& name, std::string const& destinationPath = ".");
+void writeImage(Image const& i, std::string const& name, std::string const& destinationPath = ".");
 	
-	void loadImage(ImageRgb& i, std::string const& name, std::string const& path = ".");
-}
+void loadImage(ImageRgb& i, std::string const& name, std::string const& path = ".");
 
 #endif // !BA_STB_UTILS_HPP

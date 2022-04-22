@@ -1,121 +1,100 @@
-﻿#include "PathTracer.hpp"
-#include "Random.hpp"
-#include "Types.hpp"
+﻿#include "Random.hpp"
+#include "Globals.hpp"
 #include "Sampling.hpp"
-#include "Bxdf.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
 
-#define T_MIN 1e-3f
-#define T_MAX 1e10f
-
 using namespace owl;
 
 __constant__ LaunchParams optixLaunchParams;
-__device__ ba::LCG<4> random{};
+__device__ LCG<4> random{};
 
-struct Intersection
-{
-    owl::vec3f normal;
-    owl::vec3f point;
-    owl::vec3f wo;
-    float t;
-};
+//#define NORMAL
 
-struct PerRayData
-{
-    Intersection si;
-};
-
-
-inline __device__ vec2f uvOnSphere(vec3f n)
+DEVICE Float2 uvOnSphere(Float3 n)
 {
     auto u = 0.5f + atan2(n.x, n.z) / (2 * M_PI);
     auto v = 0.5f + asin(n.y) / M_PI;
-    return vec2f{ u,v };
+    return Float2{ u,v };
 }
 
-inline __device__ vec3f makeVec3f(float3 f)
-{
-    return vec3f{ f.x, f.y, f.z };
-}
 
-inline __device__ vec3f randomUnitSphere()
+DEVICE Float3 sampleEnv(Float3 dir) 
 {
-    while (true)
+    if (optixLaunchParams.environmentMap)
     {
-        auto p = vec3f{ random(), random(), random() };
-        if (dot(p, p) > 1) continue;
-        return p;
+        vec2f tc{ uvOnSphere(dir) };
+        owl::vec4f const texColor{
+            tex2D<float4>(optixLaunchParams.environmentMap, tc.x, tc.y) };
+        return vec3f{ texColor };
     }
 }
 
-inline __device__ vec3f randomHemisphere(const vec3f& normal)
+
+DEVICE Float3 makeFloat3(float3 f)
 {
-    vec3f in_unit_sphere = randomUnitSphere();
-    if (owl::dot(in_unit_sphere, normal) > 0.0) // In the same hemisphere as the normal
-        return in_unit_sphere;
-    else
-        return -in_unit_sphere;
+    return Float3{ f.x, f.y, f.z };
 }
 
-inline __device__ owl::vec3f tracePath(owl::Ray &ray, PerRayData& prd)
+
+DEVICE Float3 tracePath(owl::Ray &ray)
 {
-    owl::vec3f attenuation{ 1.0f };
+    auto& LP = optixLaunchParams;
+    ObjectData sd{};
+    PerRayData prd{ &sd, ScatterEvent::NONE };
+    Float3 attenuation{ 1.0f };
     
-    for (int32_t depth{ 0 }; depth < optixLaunchParams.maxDepth; ++depth)
+    for (Int depth{ 0 }; depth < LP.maxDepth; ++depth)
     {
-        // 1) find intersection
-        owl::traceRay(
-            /* accel to trace against */ optixLaunchParams.world,
-            /* the ray to trace       */ ray,
-            /* prd                    */ prd);
+        /*
+         * 1) Shoot a ray through the scene.
+         *    => params: accel to trace against, the ray to trace, prd
+         */
+        owl::traceRay(LP.world, ray, prd);
 
 
-        // 2) terminate if miss => sample background
-        if (prd.si.t < 0)
+        /*
+         * 2) Check if we hit anything. 
+         *    => If not we return the skybox color and break.
+         */
+        if (prd.scatterEvent == ScatterEvent::MISS)
         {
-            if (false && optixLaunchParams.environmentMap)
-            {
-                vec2f tc{ uvOnSphere(ray.direction) };
-                owl::vec4f const texColor{ 
-                    tex2D<float4>(optixLaunchParams.environmentMap, tc.x, tc.y) };
-                return vec3f{ texColor } * attenuation;
-            }
-            else
-            {
-                return vec3f{ 0.28f, 0.34f, 0.355f } * attenuation;
-            }
+            auto t{ 0.5f * (ray.direction.y + 1.0f) };
+            return mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, t) * attenuation;
         }
 
-        owl::vec3f wi{ 0.0f };
-        float pdf{ 0.0f };
-        ba::cosineSampleHemisphere(prd.si.normal, random(), random(), wi, pdf);
 
-        if (pdf < 0) return { 0.0f };
+#ifdef NORMAL
+        return Float3{ sd.N.x, sd.N.y, sd.N.z };
+#endif
 
-        // new ray
-        attenuation *= 0.8f;
+        /*
+         * 3) Load material data of prim  
+         *    => save to md
+         */
+        GET(MaterialData md, MaterialData, LP.materials, sd.matId);
+
+        Float3 T{}, B{};
+        makeOrthogonals(sd.N, T, B);
+
+
+        Float2 rand{ random(), random() };
+        Float3 eval{};
+        Float3 L{};
+        Float pdf = 0.0f;
+
+        sampleCosineHemisphere(sd.N, rand, L, pdf);
+
+        attenuation *= md.baseColor;
+
+        //L = sd.V - 2.0f * dot(sd.V, sd.N) * sd.N;
+
         ray = owl::Ray{
-            prd.si.point,
-            wi,
+            sd.P,
+            L,
             T_MIN, T_MAX
         };
-
-        // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-        // 3) load material
-
-        // 4) terminate if hit light => sample light
-
-        // 5) sample bsdf
-
-        // 6) sample light source
-
-        // 7) accum radiance
-
-        // 8) russian roulette
 
 
 
@@ -128,26 +107,27 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
 {
     RayGenData const& self{ getProgramData<RayGenData>() };
     vec2i const pixelID{ getLaunchIndex() };
+    Float3 color{ 0.0f };
 
-    PerRayData prd{ {{0.0f}, {0.0f}, {0.0f}, 0.0f} };
-    vec3f color{ 0.0f };
 
     for (int32_t s{ 0 }; s < optixLaunchParams.samplesPerPixel; ++s)
     {
         // shot ray with slight randomness to make soft edges
-        vec2f const rand{ random(), random() };
-        vec2f const screen{ (vec2f{pixelID} + rand) / vec2f{self.fbSize} };
+        Float2 const rand{ random(), random() };
+        Float2 const screen{ (Float2{pixelID} + rand) / Float2{self.fbSize} };
 
         // determine initial ray form the camera
         owl::Ray ray{ self.camera.pos, normalize(self.camera.dir_00
             + screen.u * self.camera.dir_du + screen.v * self.camera.dir_dv), T_MIN, T_MAX };
     
-        color += tracePath(ray, prd);
+        color += tracePath(ray);
     }
 
     // take the average of all samples per pixel and apply gamma correction
     color *= 1.0f / optixLaunchParams.samplesPerPixel;
     color = owl::sqrt(color);
+    color = saturate<Float3>(color);
+
 
     // save result into the buffer
     const int fbOfs = pixelID.x + self.fbSize.x * (self.fbSize.y - 1 - pixelID.y);
@@ -155,44 +135,52 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
         = owl::make_rgba(color);
 }
 
+
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
-    PerRayData& prd{ owl::getPRD<PerRayData>() };
-    Intersection& si{ prd.si };
+    PerRayData& prd{ getPRD<PerRayData>() };
 
     // barycentrics
     float b1{ optixGetTriangleBarycentrics().x };
     float b2{ optixGetTriangleBarycentrics().y };
     float b0{ 1 - b1 - b2 };
 
+    prd.od->uv = { b1, b2 };
+
     // get direction
-    vec3f const direction{ makeVec3f(optixGetWorldRayDirection()) };
+    Float3 const direction{ makeFloat3(optixGetWorldRayDirection()) };
+
+    prd.od->V = -direction;
 
     // get geometric data:
-    TrianglesGeomData const& self = owl::getProgramData<TrianglesGeomData>();
+    TrianglesGeomData const& self = getProgramData<TrianglesGeomData>();
     uint32_t const primID{ optixGetPrimitiveIndex() };
     vec3i const index{ self.index[primID] };
 
-    vec3f const& p0{ self.vertex[index.x] };
-    vec3f const& p1{ self.vertex[index.y] };
-    vec3f const& p2{ self.vertex[index.z] };
+    prd.od->matId = self.matId;
+    prd.od->prim = primID;
 
-    vec3f const& n0{ self.normal[index.x] };
-    vec3f const& n1{ self.normal[index.y] };
-    vec3f const& n2{ self.normal[index.z] };
+    // vertices for P and Ng
+    Float3 const& p0{ self.vertex[index.x] };
+    Float3 const& p1{ self.vertex[index.y] };
+    Float3 const& p2{ self.vertex[index.z] };
 
-    // set hit information
-    //si.normal = owl::normalize(owl::cross(p1 - p0, p2 - p0));
-    si.normal = n0 * b0 + n1 * b1 + n2 * b2;
-    si.point = p0 * b0 + p1 * b1 + p2 * b2;
-    si.wo = -direction;
-    si.t = optixGetRayTmax();
-    assert(si.normal != vec3f{ 0 });
+    prd.od->Ng = normalize(cross(p1 - p0, p2 - p0));
+    prd.od->P = p0 * b0 + p1 * b1 + p2 * b2;
+
+    // vertex normals for N
+    Float3 const& n0{ self.normal[index.x] };
+    Float3 const& n1{ self.normal[index.y] };
+    Float3 const& n2{ self.normal[index.z] };
+
+    prd.od->N = normalize(n0 * b0 + n1 * b1 + n2 * b2);
+
+    // scatter event type
+    prd.scatterEvent = ScatterEvent::BOUNCED;
 }
 
 OPTIX_MISS_PROGRAM(miss)()
 {
-    PerRayData& prd = owl::getPRD<PerRayData>();
-    Intersection& si{ prd.si };
-    si.t = -1;
+    PerRayData& prd{ getPRD<PerRayData>() };
+    prd.scatterEvent = ScatterEvent::MISS;
 }
