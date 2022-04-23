@@ -6,15 +6,17 @@
         "fov": 50
     },
     "materials": [
-        {
-            "name": "grey",
-            "color": "DDDBD7",
-            "emission": 0.0
-        },
-        {
-            "name": "light",
-            "color": "E5E5E5",
-            "emission": 1.0
-        }
+      {
+        "name": "grey",
+        "color": "DDDBD7",
+        "ior": 0.0,
+        "emission": 0.0
+      },
+      {
+        "name": "light",
+        "color": "E5E5E5",
+        "ior": 0.0,
+        "emission": 1.0
+      }
     ]
 }

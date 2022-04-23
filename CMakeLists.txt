@@ -23,6 +23,11 @@ if(NOT DEFINED CMAKE_C_STANDARD)
 	set(CMAKE_C_EXTENSIONS OFF)
 endif()
 
+if(MSVC)
+	# not receiving errors due to msvc safe functions
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
+endif()
+
 # CONFIGURE EXTERNAL LIBRARIES
 
 set(log_dir "${CMAKE_CURRENT_SOURCE_DIR}/simpleLogger")
@@ -32,21 +37,22 @@ add_subdirectory(${log_dir} EXCLUDE_FROM_ALL)
 set(OptiX_ROOT_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0")
 
 set(OWL_BUILD_SAMPLES OFF CACHE BOOL "Build the Samples?")
-set(owl_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/owl")
+set(owl_dir "external/owl")
 add_subdirectory(${owl_dir} EXCLUDE_FROM_ALL)
 
-set(fmt_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/fmt")
+set(fmt_dir "external/fmt")
 add_subdirectory(${fmt_dir} EXCLUDE_FROM_ALL)
 
-set(obj_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/tinyobjloader")
+set(obj_dir "external/tinyobjloader")
 add_subdirectory(${obj_dir} EXCLUDE_FROM_ALL)
 
-set(stb_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/stb")
+set(stb_dir "external/stb")
 include_directories(${stb_dir} EXCLUDE_FROM_ALL)
 
-set(glm_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
+set(glm_dir "external/glm")
 add_subdirectory(${glm_dir})
 
-# Include sub-projects.
-# add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/experiments")
+set(json_dir "external/json")
+add_subdirectory(${json_dir} EXCLUDE_FROM_ALL)
+
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/pathTracer")

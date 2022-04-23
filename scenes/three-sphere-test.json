@@ -9,11 +9,19 @@
         {
             "name": "grey",
             "color": "DDDBD7",
+            "ior": 0.0,
             "emission": 0.0
         },
         {
             "name": "orange",
             "color": "E5E5E5",
+            "ior": 0.0,
+            "emission": 0.0
+        },
+        {
+            "name": "glass",
+            "color": "DDDBD7",
+            "ior": 1.5,
             "emission": 0.0
         }
     ]
