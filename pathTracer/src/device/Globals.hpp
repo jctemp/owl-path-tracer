@@ -122,7 +122,6 @@ struct LaunchParams
 struct TrianglesGeomData
 {
     Uint matId;
-    Float3 color;
     Int3* index;
     Float3* vertex;
     Float3* normal;

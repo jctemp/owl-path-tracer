@@ -7,6 +7,7 @@
 
 struct Mesh
 {
+    Int materialId;
     std::vector<Int3> index;
     std::vector<Float3> vertex;
     std::vector<Float3> normal;
@@ -15,6 +16,7 @@ struct Mesh
 
 struct Camera
 {
+    Int2 const fbSize;
     Float3 const lookFrom;
     Float3 const lookAt;
     Float3 const lookUp;

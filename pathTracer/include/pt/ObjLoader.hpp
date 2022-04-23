@@ -4,6 +4,7 @@
 #include <pt/Types.hpp>
 #include <string>
 #include <vector>
+#include <tuple>
 
 /// <summary>
 /// This function loads a given obj-file and creates a vector
@@ -13,7 +14,7 @@
 /// </summary>
 /// <param name="pathToObj">a relative or absolute path to an obj-file</param>
 /// <returns>a vector with points of TriangleMesh</returns>
-extern std::vector<Mesh*> loadOBJ(std::string const& pathToObj);
+extern std::tuple<std::vector<std::string>, std::vector<Mesh*>> loadOBJ(std::string const& pathToObj);
 
 
 #endif // !OBJ_LOADER_HPP

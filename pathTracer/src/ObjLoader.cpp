@@ -2,8 +2,6 @@
 #include <pt/Types.hpp>
 #include <SimpleLogger.hpp>
 
-#include <map>
-
 #define TINYOBJLOADER_IMPLEMENTATION
 #define	OBJ_TRIANGLE 3
 #include <tiny_obj_loader.h>
@@ -14,6 +12,7 @@ void createMesh(Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t con
 	// global, no offset, shared by all meshes
 	auto& vertices{ attrib.vertices };
 	auto& normals{ attrib.normals };
+	auto& uv{ attrib.texcoords };
 
 	// per mesh data with global indices
 	auto& indices{ shape.mesh.indices };
@@ -68,7 +67,8 @@ void createMesh(Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t con
 }
 
 
-std::vector<Mesh*> loadOBJ(std::string const& pathToObj)
+std::tuple<std::vector<std::string>, std::vector<Mesh*>> loadOBJ(
+	std::string const& pathToObj)
 {
 	// 1.) create OBJ reader
 	tinyobj::ObjReader reader{};
@@ -101,14 +101,15 @@ std::vector<Mesh*> loadOBJ(std::string const& pathToObj)
 
 	// 5.) create meshes
 	std::vector<Mesh*> meshes{};
+	std::vector<std::string> names{};
 	for (std::size_t i{ 0 }; i < shapes.size(); ++i)
 	{
 		auto& shape{ shapes[i] };
-		SL_LOG(fmt::format("Loading {} [{}/{}]", shape.name, i + 1, shapes.size()));
 		Mesh* mesh{ new Mesh{} };
 		createMesh(mesh, shape, attrib);
 		meshes.push_back(mesh);
+		names.push_back(shape.name);
 	}
 
-	return meshes;
+	return std::make_tuple(names, meshes);
 }
