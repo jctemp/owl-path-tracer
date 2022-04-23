@@ -1,7 +1,7 @@
 ﻿# BASIC PROJECT SETTINGS
 cmake_minimum_required (VERSION 3.8)
 
-project ("bachelorThesis" VERSION 0.2.0 LANGUAGES CXX C CUDA)
+project ("bachelorThesis" VERSION 0.3.0 LANGUAGES CXX C CUDA)
 
 # SET STANDARDS
 
@@ -31,6 +31,7 @@ add_subdirectory(${log_dir} EXCLUDE_FROM_ALL)
 
 set(OptiX_ROOT_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0")
 
+set(OWL_BUILD_SAMPLES OFF CACHE BOOL "Build the Samples?")
 set(owl_dir "${CMAKE_CURRENT_SOURCE_DIR}/external/owl")
 add_subdirectory(${owl_dir} EXCLUDE_FROM_ALL)
 
