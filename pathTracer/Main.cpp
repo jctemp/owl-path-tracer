@@ -1,16 +1,11 @@
-#include <device/Globals.hpp>
-
 #include <pt/ObjLoader.hpp>
 #include <pt/StbUtils.hpp>
+#include <pt/Types.hpp>
 
-#include <owl/common/math/LinearSpace.h>
-#include <owl/common/math/vec.h>
-#include <owl/owl.h>
+#include <SimpleLogger.hpp>
 
 #include <map>
 #include <vector>
-#include <cuda_runtime.h>
-#include <SimpleLogger.hpp>
 
 using namespace owl;
 

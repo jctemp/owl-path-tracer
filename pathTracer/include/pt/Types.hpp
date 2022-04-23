@@ -1,30 +1,26 @@
-#ifndef RENDERER_HPP
-#define RENDERER_HPP
+#ifndef TYPES_HPP
+#define TYPES_HPP
 
-#include <owl/owl.h>
+#include <device/Globals.hpp>
 #include <vector>
-#include <owl/common/math/vec.h>
-#include <pt/StbUtils.hpp>
 
 
-/// <summary>
-/// TrianglesMesh is a data transfer user-defined data type.
-/// Its purpose is to transfer data of meshes to the calling system.
-/// </summary>
 struct Mesh
 {
-    std::vector<owl::vec3i> index;
-    std::vector<owl::vec3f> vertex;
-    std::vector<owl::vec3f> normal;
+    std::vector<Int3> index;
+    std::vector<Float3> vertex;
+    std::vector<Float3> normal;
 };
+
 
 struct Camera
 {
-    owl::vec3f const lookFrom;
-    owl::vec3f const lookAt;
-    owl::vec3f const lookUp;
+    Float3 const lookFrom;
+    Float3 const lookAt;
+    Float3 const lookUp;
     float const vfov;
 };
+
 
 struct Renderer
 {
@@ -58,4 +54,4 @@ struct Renderer
 };
 
 
-#endif // !RENDERER_HPP
+#endif // !TYPES_HPP

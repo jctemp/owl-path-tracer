@@ -1,21 +1,14 @@
-#define TINYOBJLOADER_IMPLEMENTATION
-#define	OBJ_TRIANGLE 3
-
 #include <pt/ObjLoader.hpp>
-#include <pt/Renderer.hpp>
+#include <pt/Types.hpp>
+#include <SimpleLogger.hpp>
 
 #include <map>
 
-#include <SimpleLogger.hpp>
+#define TINYOBJLOADER_IMPLEMENTATION
+#define	OBJ_TRIANGLE 3
 #include <tiny_obj_loader.h>
 
 
-/// <summary>
-/// Local function to abstract from the creation of an TriangleMesh.
-/// </summary>
-/// <param name="mesh">mutable TriangleMesh</param>
-/// <param name="shape">meta data shape</param>
-/// <param name="attrib">global values of all meshes</param>
 void createMesh(Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib)
 {
 	// global, no offset, shared by all meshes
@@ -73,6 +66,7 @@ void createMesh(Mesh* mesh, tinyobj::shape_t const& shape, tinyobj::attrib_t con
 		indexOffset += OBJ_TRIANGLE;
 	}
 }
+
 
 std::vector<Mesh*> loadOBJ(std::string const& pathToObj)
 {

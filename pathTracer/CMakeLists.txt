@@ -2,11 +2,11 @@ set(BA_SOURCES
 	"Main.cpp"
 	"src/ObjLoader.cpp"
 	"src/StbUtils.cpp"
-)
+	)
 
 SET(BA_HEADERS
+	"include/pt/Types.hpp"
 	"include/pt/ObjLoader.hpp"
-	"include/pt/Renderer.hpp"
 	"include/pt/StbUtils.hpp"
 )
 
@@ -32,7 +32,7 @@ EMBED_PTX(
 
 
 
-add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS} ${BA_DEVICE_HEADERS})
+add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS} ${BA_DEVICE_HEADERS} "src/Renderer.cpp")
 target_include_directories(bachelorThesis PUBLIC ${BA_INCLUDE})
 target_link_libraries(bachelorThesis
 	owl::owl
