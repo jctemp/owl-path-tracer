@@ -90,6 +90,4 @@ struct LCG {
     uint32_t state;
 };
 
-extern LCG<4> random;
-
 #endif // !BA_RANDOM_HPP

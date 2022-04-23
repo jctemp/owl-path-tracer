@@ -15,8 +15,73 @@
 using namespace owl;
 
 static Renderer renderer{};
-Int2 const fbSize{ 1280, 720 };
+Int2 const fbSize{ 600 };
 extern "C" char PathTracer_ptx[];
+
+void init(void);
+void release(void);
+void setEnvironmentTexture(ImageRgb const& texture);
+void add(Mesh* m, std::vector<std::tuple<std::string, Material>> const& mats);
+void render(Camera const& cam, std::vector<Material> const& materials);
+
+void scenes(void)
+{
+
+}
+
+int main(void)
+{
+	std::vector<Mesh*> meshes{ loadOBJ("C:/Users/jamie/Desktop/CornellBox_w_boxes.obj") };
+
+	Camera cam{
+		{2.1f,1.0f,0.0f}, // look from
+		{0.0f,1.0f,0.0f}, // look at
+		{0.0f,1.0f,0.0f}, // look up
+		80.0f			  // vfov
+	};
+
+	init();
+
+	ImageRgb environmentTexture{};
+	loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
+	//setEnvironmentTexture(environmentTexture);
+
+	renderer.useEnvironmentMap = false;
+	renderer.samplesPerPixel = 1024;
+	renderer.maxDepth = 128;
+
+	Material lambert_n{ Material::Type::LAMBERT, {0.8f, 0.8f, 0.8f}, 0.0f, { 0.0f } };
+	Material lambert_c{ Material::Type::LAMBERT, {0.7f, 0.3f, 0.3f}, 0.0f, { 0.0f } };
+	Material metal{ Material::Type::METAL,   {0.8f, 0.6f, 0.2f}, 0.0f, { 0.0f } };
+	Material light{ Material::Type::LIGHT,   {},                 0.0f, { 10.0f } };
+
+	std::vector<std::tuple<std::string, Material>> mats{};
+	mats.emplace_back("lambert_n", lambert_n);
+	mats.emplace_back("lambert_c", lambert_c);
+	mats.emplace_back("metal", metal);
+	mats.emplace_back("light", light);
+
+	SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
+	for (uint32_t i{ 0 }; i < mats.size(); i++)
+	{
+		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
+	}
+
+	for (auto& m : meshes)
+		add(m, mats);
+
+	std::vector<Material> materials{};
+	for (auto& e : mats)
+		materials.push_back(std::get<Material>(e));
+
+	render(cam, materials);
+
+	Image result{ fbSize.x, fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0) };
+	writeImage(result, "image.png");
+
+	release();
+}
+
 
 /// <summary>
 /// Initialises the renderer with all necessary values to be ready.
@@ -33,11 +98,12 @@ void init(void)
 
 	OWLVarDecl launchParamsVars[]
 	{
-		{ "maxDepth",        OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth) },
-		{ "samplesPerPixel", OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, samplesPerPixel) },
-		{ "materials",       OWL_BUFFER,              OWL_OFFSETOF(LaunchParams, materials)},
-		{ "world",           OWL_GROUP,               OWL_OFFSETOF(LaunchParams, world) },
-		{ "environmentMap",  OWL_TEXTURE,             OWL_OFFSETOF(LaunchParams, environmentMap) },
+		{ "maxDepth",          OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth) },
+		{ "samplesPerPixel",   OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, samplesPerPixel) },
+		{ "materials",         OWL_BUFFER,              OWL_OFFSETOF(LaunchParams, materials)},
+		{ "world",             OWL_GROUP,               OWL_OFFSETOF(LaunchParams, world) },
+		{ "environmentMap",    OWL_TEXTURE,             OWL_OFFSETOF(LaunchParams, environmentMap) },
+		{ "useEnvironmentMap", OWL_BOOL,                OWL_OFFSETOF(LaunchParams, useEnvironmentMap)},
 		{ nullptr }
 	};
 
@@ -54,12 +120,12 @@ void init(void)
 
 	OWLVarDecl rayGenVars[]
 	{
-		{ "fbPtr",         OWL_BUFPTR, OWL_OFFSETOF(RayGenData, fbPtr)},
-		{ "fbSize",        OWL_INT2,   OWL_OFFSETOF(RayGenData, fbSize)},
-		{ "camera.pos",    OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.pos)},
-		{ "camera.dir_00", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.dir_00)},
-		{ "camera.dir_du", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.dir_du)},
-		{ "camera.dir_dv", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.dir_dv)},
+		{ "fbPtr",             OWL_BUFPTR, OWL_OFFSETOF(RayGenData, fbPtr)},
+		{ "fbSize",            OWL_INT2,   OWL_OFFSETOF(RayGenData, fbSize)},
+		{ "camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.origin)},
+		{ "camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.llc)},
+		{ "camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.horizontal)},
+		{ "camera.vertical",   OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.vertical)},
 		{ nullptr }
 	};
 
@@ -84,6 +150,7 @@ void init(void)
 	owlBuildPrograms(renderer.context);
 }
 
+
 /// <summary>
 /// Releases all resources of the renderer which are currently in
 /// use.
@@ -93,6 +160,7 @@ void release(void)
 {
 	owlContextDestroy(renderer.context);
 }
+
 
 /// <summary>
 /// </summary>
@@ -113,26 +181,13 @@ void setEnvironmentTexture(ImageRgb const& texture)
 }
 
 
-uint32_t materialSel(Mesh* m, std::vector<std::tuple<std::string, MaterialData>> const& mats)
-{
-	SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
-	for (uint32_t i{ 0 }; i < mats.size(); i++)
-	{
-		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
-	}
-	uint32_t num;
-	std::cin >> num;
-	return num;
-}
-
-
 /// <summary>
 /// Takes an intermediate form of a mesh and makes it ready for the
 /// renderer. After loading successful the mesh can be rendered.
 /// </summary>
 /// <param name="m">An object of the type Mesh</param>
 /// <returns>0 in case of success otherwise different</returns>
-void add(Mesh* m, std::vector<std::tuple<std::string, MaterialData>> const& mats)
+void add(Mesh* m, std::vector<std::tuple<std::string, Material>> const& mats)
 {
 	Mesh& mesh{ *m };
 
@@ -141,7 +196,8 @@ void add(Mesh* m, std::vector<std::tuple<std::string, MaterialData>> const& mats
 	auto& indices{ mesh.index };
 	auto& normals{ mesh.normal };
 
-	matId = materialSel(m, mats);
+	fmt::print("Mat. number: ");
+	std::cin >> matId;
 
 	// set geometry in the buffers of the object
 	OWLBuffer vertexBuffer{
@@ -175,11 +231,12 @@ void add(Mesh* m, std::vector<std::tuple<std::string, MaterialData>> const& mats
 	renderer.requireBuild = true;
 }
 
+
 /// <summary>
 /// Renderes the Meshes with the specifed render settings
 /// </summary>
 /// <returns>0 in case of success otherwise different</returns>
-void render(Camera const& cam, std::vector<MaterialData> const &materials)
+void render(Camera const& cam, std::vector<Material> const &materials)
 {
 	// 1) set mesh data into buffers
 	if (renderer.geoms.size() > 0)
@@ -203,25 +260,34 @@ void render(Camera const& cam, std::vector<MaterialData> const &materials)
 	//owlMissProgSet3f(renderer.missProg, "name", value);
 
 	// 3) calculate camera data
-	float aspect{ fbSize.x / float(fbSize.y) };
-	Float3 camera_pos{ cam.lookFrom };
-	Float3 camera_d00{ owl::normalize(cam.lookAt - cam.lookFrom) };
-	Float3 camera_ddu{ cam.cosFovy * aspect * owl::normalize(owl::cross(camera_d00, cam.lookUp)) };
-	Float3 camera_ddv{ cam.cosFovy * owl::normalize(owl::cross(camera_ddu, camera_d00)) };
-	camera_d00 -= 0.5f * camera_ddu;
-	camera_d00 -= 0.5f * camera_ddv;
+	// degrees * PI / 180.0f;
+	Float aspect{ fbSize.x / Float(fbSize.y) };
+
+	Float const theta{ cam.vfov * PI / 180.0f };
+	Float const h{ tanf(theta / 2) };
+	Float const viewportHeight{ 2.0f * h };
+	Float const viewportWidth{ aspect * viewportHeight };
+
+	Float3 const origin{ cam.lookFrom };
+	Float3 const w{ normalize(cam.lookFrom - cam.lookAt) };
+	Float3 const u{ normalize(cross(cam.lookUp, w)) };
+	Float3 const v{ normalize(cross(w, u)) };
+
+	Float3 const horizontal{ viewportWidth * u };
+	Float3 const vertical{ viewportHeight * v };
+	Float3 const llc{ origin - horizontal / 2.0f - vertical / 2.0f - w };
 
 	// 4) set ray gen data
-	owlRayGenSetBuffer(renderer.rayGen, "fbPtr", renderer.frameBuffer);
-	owlRayGenSet2i(renderer.rayGen, "fbSize", (const owl2i&)fbSize);
-	owlRayGenSet3f(renderer.rayGen, "camera.pos", (const owl3f&)camera_pos);
-	owlRayGenSet3f(renderer.rayGen, "camera.dir_00", (const owl3f&)camera_d00);
-	owlRayGenSet3f(renderer.rayGen, "camera.dir_du", (const owl3f&)camera_ddu);
-	owlRayGenSet3f(renderer.rayGen, "camera.dir_dv", (const owl3f&)camera_ddv);
+	owlRayGenSetBuffer(renderer.rayGen, "fbPtr",             renderer.frameBuffer);
+	owlRayGenSet2i(renderer.rayGen,     "fbSize",		     (const owl2i&)fbSize);
+	owlRayGenSet3f(renderer.rayGen,     "camera.origin",     (const owl3f&)origin);
+	owlRayGenSet3f(renderer.rayGen,     "camera.llc",        (const owl3f&)llc);
+	owlRayGenSet3f(renderer.rayGen,     "camera.horizontal", (const owl3f&)horizontal);
+	owlRayGenSet3f(renderer.rayGen,     "camera.vertical",   (const owl3f&)vertical);
 
 	// 5) set launch params
 	auto materialBuffer{
-		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(MaterialData), materials.size(), materials.data())
+		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(Material), materials.size(), materials.data())
 	};
 
 	owlParamsSetRaw(renderer.launchParams, "maxDepth", &renderer.maxDepth);
@@ -229,6 +295,7 @@ void render(Camera const& cam, std::vector<MaterialData> const &materials)
 	owlParamsSetBuffer(renderer.launchParams, "materials", materialBuffer);
 	owlParamsSetGroup(renderer.launchParams, "world", renderer.world);
 	owlParamsSetTexture(renderer.launchParams, "environmentMap", renderer.environmentMap);
+	owlParamsSet1b(renderer.launchParams, "useEnvironmentMap", renderer.useEnvironmentMap);
 
 	// 6) build sbt tables and load data
 	owlBuildPrograms(renderer.context);
@@ -236,52 +303,6 @@ void render(Camera const& cam, std::vector<MaterialData> const &materials)
 	owlBuildSBT(renderer.context);
 
 	// 7) compute image
+	SL_WARN("LAUNCHING TRACER");
 	owlLaunch2D(renderer.rayGen, fbSize.x, fbSize.y, renderer.launchParams);
-}
-
-
-int main(void)
-{
-    std::vector<Mesh*> meshes{ loadOBJ("C:\\Users\\jamie\\Desktop\\sphere.obj") };
-
-    Camera cam{ 
-        {2.0f,1.0f,0.0f}, // look from
-        {0.0f,0.5f,0.0f}, // look at
-        {0.0f,1.0f,0.0f}, // look up
-        0.88f			  // cosFov
-    }; 
-
-	init();
-
-	//ImageRgb environmentTexture{};
-	//loadImage(environmentTexture, "rooitou_park_4k.hdr", "C:/Users/jamie/Desktop");
-	//setEnvironmentTexture(environmentTexture);
-
-	renderer.samplesPerPixel = 118;
-	renderer.maxDepth = 128;
-
-	MaterialData ground{ MaterialType::LAMBERT ,{0.8f, 0.8f, 0.0f} };
-	MaterialData center{ MaterialType::LAMBERT ,{0.7f, 0.3f, 0.3f} };
-	MaterialData left  { MaterialType::LAMBERT ,{0.8f, 0.8f, 0.8f} };
-	MaterialData right { MaterialType::LAMBERT ,{0.8f, 0.6f, 0.2f} };
-
-	std::vector<std::tuple<std::string, MaterialData>> mats{};
-	mats.emplace_back("ground", ground);
-	mats.emplace_back("center", center);
-	mats.emplace_back("left",   left);
-	mats.emplace_back("righ",   right);
-
-	for (auto& m : meshes)
-		add(m, mats);
-
-	std::vector<MaterialData> materials{};
-	for (auto& e : mats)
-		materials.push_back(std::get<MaterialData>(e));
-
-    render(cam, materials);
-
-    Image result{ fbSize.x, fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0)};
-    writeImage(result, "image.png");
-
-    release();
 }

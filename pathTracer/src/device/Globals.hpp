@@ -8,6 +8,8 @@
 #include <cuda_runtime.h>
 #include <array>
 
+#include "Random.hpp"
+
 using Float = float;
 using Float2 = owl::vec2f;
 using Float3 = owl::vec3f;
@@ -19,6 +21,7 @@ using Uint = uint32_t;
 using Uint2 = owl::vec2ui;
 using Uint3 = owl::vec3ui;
 using Buffer = owl::device::Buffer;
+using Random = LCG<4>;
 
 
 #define GET(RETURN, TYPE, BUFFER, ADDRESS) \
@@ -34,9 +37,9 @@ RETURN = ((TYPE*)BUFFER.data)[ADDRESS];
 #define INV_PI       0.31830988618379067f 
 #define INV_TWO_PI   0.15915494309189533f 
 #define INV_FOUR_PI  0.07957747154594766f 
-#define EPSILON      0.0001f
-#define T_MIN 1e-3f
-#define T_MAX 1e10f
+#define EPSILON      1E-5f
+#define T_MIN        1E-3f
+#define T_MAX        1E10f
 #define DEVICE inline __owl_device
 
 
@@ -48,20 +51,20 @@ enum class ScatterEvent
     NONE = 1 << 3
 };
 
-
-enum class MaterialType
+struct Material
 {
-    LAMBERT = 1 << 1,
-    METAL = 1 << 2
-};
+    enum class Type
+    {
+        LAMBERT = 1 << 1,
+        METAL = 1 << 2,
+        DIELECTRICS = 1 << 3,
+        LIGHT = 1 << 4,
+    };
 
-
-struct MaterialData
-{
-    MaterialType type;
+    Type type;
     Float3 baseColor;
-    Float roughness;
-    Float subsurface;
+    Float ior;
+    Float3 emit;
 };
 
 
@@ -93,12 +96,13 @@ struct ObjectData
 struct ShaderData
 {
     ObjectData* od;
-    MaterialData* md;
+    Material* md;
 };
 
 
 struct PerRayData
 {
+    Random random;
     ObjectData* od;
     ScatterEvent scatterEvent;
 };
@@ -111,6 +115,7 @@ struct LaunchParams
     Buffer materials;
     OptixTraversableHandle world;
     cudaTextureObject_t environmentMap;
+    bool useEnvironmentMap;
 };
 
 
@@ -131,10 +136,10 @@ struct RayGenData
 
     struct 
     {
-        Float3 pos;
-        Float3 dir_00;
-        Float3 dir_du;
-        Float3 dir_dv;
+        Float3 origin;
+        Float3 llc;
+        Float3 horizontal;
+        Float3 vertical;
     } camera;
 };
 

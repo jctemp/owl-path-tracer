@@ -1,7 +1,7 @@
-#include <pathTracer/StbUtils.hpp>
 #include <simpleLogger.hpp>
+#include <pathTracer/StbUtils.hpp>
 
-
+#include <filesystem>
 #include <vector>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -29,6 +29,12 @@ void loadImage(ImageRgb& tex, std::string const& name, std::string const& path)
 	SL_LOG(fmt::format("Try to load image {}/{} ", path, name));
 
 	std::string fullIdentifier{ fmt::format("{}/{}", path, name) };
+
+	if (!std::filesystem::exists(fullIdentifier))
+	{
+		SL_ERROR(fmt::format("{} does not exists at the location", fullIdentifier));
+		exit(1);
+	}
 
 	int32_t comp;
 	auto buffer{ stbi_load(fullIdentifier.c_str(), &tex.width,

@@ -23,7 +23,7 @@ struct Camera
     owl::vec3f const lookFrom;
     owl::vec3f const lookAt;
     owl::vec3f const lookUp;
-    float const cosFovy;
+    float const vfov;
 };
 
 struct Renderer
@@ -54,6 +54,7 @@ struct Renderer
 
     // Texture holding env. information
     OWLTexture environmentMap;
+    bool useEnvironmentMap;
 };
 
 
