@@ -1,5 +1,5 @@
-#ifndef BA_STB_UTILS_HPP
-#define BA_STB_UTILS_HPP
+#ifndef STB_UTILS_HPP
+#define STB_UTILS_HPP
 
 #include <cinttypes>
 #include <string>

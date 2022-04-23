@@ -1,7 +1,7 @@
 #ifndef OBJ_LOADER_HPP
 #define OBJ_LOADER_HPP
 
-#include <pathTracer/Renderer.hpp>
+#include <pt/Renderer.hpp>
 
 #include <string>
 #include <vector>

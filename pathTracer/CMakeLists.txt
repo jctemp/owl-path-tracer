@@ -1,13 +1,13 @@
 set(BA_SOURCES
-	"src/Main.cpp"
+	"Main.cpp"
 	"src/ObjLoader.cpp"
 	"src/StbUtils.cpp"
 )
 
 SET(BA_HEADERS
-	"include/pathTracer/ObjLoader.hpp"
-	"include/pathTracer/Renderer.hpp"
-	"include/pathTracer/StbUtils.hpp"
+	"include/pt/ObjLoader.hpp"
+	"include/pt/Renderer.hpp"
+	"include/pt/StbUtils.hpp"
 )
 
 SET(BA_DEVICE_HEADERS

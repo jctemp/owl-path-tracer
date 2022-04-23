@@ -1,10 +1,10 @@
-#ifndef BA_RENDERER_HPP
-#define BA_RENDERER_HPP
+#ifndef RENDERER_HPP
+#define RENDERER_HPP
 
 #include <owl/owl.h>
 #include <vector>
 #include <owl/common/math/vec.h>
-#include <pathTracer/StbUtils.hpp>
+#include <pt/StbUtils.hpp>
 
 
 /// <summary>
@@ -58,4 +58,4 @@ struct Renderer
 };
 
 
-#endif // !BA_RENDERER_HPP
+#endif // !RENDERER_HPP

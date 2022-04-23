@@ -1,12 +1,12 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #define	OBJ_TRIANGLE 3
 
-#include <pathTracer/ObjLoader.hpp>
-#include <pathTracer/Renderer.hpp>
+#include <pt/ObjLoader.hpp>
+#include <pt/Renderer.hpp>
 
 #include <map>
 
-#include <simpleLogger.hpp>
+#include <SimpleLogger.hpp>
 #include <tiny_obj_loader.h>
 
 

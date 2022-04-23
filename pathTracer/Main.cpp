@@ -1,7 +1,7 @@
 #include <device/Globals.hpp>
 
-#include <pathTracer/ObjLoader.hpp>
-#include <pathTracer/StbUtils.hpp>
+#include <pt/ObjLoader.hpp>
+#include <pt/StbUtils.hpp>
 
 #include <owl/common/math/LinearSpace.h>
 #include <owl/common/math/vec.h>
@@ -10,7 +10,7 @@
 #include <map>
 #include <vector>
 #include <cuda_runtime.h>
-#include <simpleLogger.hpp>
+#include <SimpleLogger.hpp>
 
 using namespace owl;
 
@@ -24,14 +24,10 @@ void setEnvironmentTexture(ImageRgb const& texture);
 void add(Mesh* m, std::vector<std::tuple<std::string, Material>> const& mats);
 void render(Camera const& cam, std::vector<Material> const& materials);
 
-void scenes(void)
-{
-
-}
 
 int main(void)
 {
-	std::vector<Mesh*> meshes{ loadOBJ("C:/Users/jamie/Desktop/CornellBox_w_boxes.obj") };
+	std::vector<Mesh*> meshes{ loadOBJ("D:/GIT_REPOSITORIES/owl-path-tracer/scenes/cornell-box-w-boxes.obj")};
 
 	Camera cam{
 		{2.1f,1.0f,0.0f}, // look from

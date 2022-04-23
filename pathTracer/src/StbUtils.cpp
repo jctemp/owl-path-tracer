@@ -1,5 +1,5 @@
-#include <simpleLogger.hpp>
-#include <pathTracer/StbUtils.hpp>
+#include <SimpleLogger.hpp>
+#include <pt/StbUtils.hpp>
 
 #include <filesystem>
 #include <vector>
