@@ -1,0 +1,20 @@
+{
+    "camera": {
+        "position": [ 2.0, 1.2, 0.0 ],
+        "target": [ 0.0, 0.5, 0.0 ],
+        "up": [ 0.0, 1.0 , 0.0],
+        "fov": 50
+    },
+    "materials": [
+        {
+            "name": "grey",
+            "color": "DDDBD7",
+            "emission": 0.0
+        },
+        {
+            "name": "light",
+            "color": "E5E5E5",
+            "emission": 1.0
+        }
+    ]
+}
