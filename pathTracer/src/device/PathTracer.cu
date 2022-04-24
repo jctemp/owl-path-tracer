@@ -1,6 +1,5 @@
-﻿#include "Random.hpp"
-#include "Globals.hpp"
-#include "Sampling.hpp"
+﻿#include "Globals.hpp"
+#include "materials/Lambert.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
@@ -33,46 +32,21 @@ DEVICE Float3 makeFloat3(float3 f)
 }
 
 
-DEVICE Float3 reflect(Float3 const& N, Float3 const& V)
-{
-	return -V - 2.0f * dot(-V, N) * N;
-}
-
-
-DEVICE Float3 refract(Float3 N, Float3 V, Float eta)
-{
-	N = normalize(N);
-	V = -normalize(V);
-
-	Float NdotV{ dot(N, V) };
-
-	if (NdotV < 0)
-		NdotV = -NdotV;
-	else
-		N = -N;
-
-	Float k{ 1.0f - eta * eta * (1.0f - NdotV * NdotV) };
-	if (k < 0.0f)
-		// total internal reflection. There is no refraction in this case
-		return Float3{ 0.0f };
-	return eta * V + (eta * NdotV - sqrtf(k)) * N;
-}
-
-
-DEVICE Float reflectance(Float cosine, Float eta) 
-{
-	// Use Schlick's approximation for reflectance.
-	auto r0{ (1.0f - eta) / (1.0f + eta) };
-	r0 = r0 * r0;
-	return r0 + (1.0f - r0) * powf((1.0f - cosine), 5.0f);
-}
 
 DEVICE Float3 tracePath(owl::Ray& ray, PerRayData &prd)
 {
 	auto& LP = optixLaunchParams;
+
+	Float3 radiance{ 0.0f };
+	Float3 pathThroughput{ 1.0f };
+
+	ShadingData sd{ prd.random };
 	ObjectData od{};
+	Material md{};
+
 	prd.od = &od;
-	Float3 attenuation{ 1.0f };
+	sd.md = &md;
+	sd.od = &od;
 
 	for (Int depth{ 0 }; depth < LP.maxDepth; ++depth)
 	{
@@ -89,80 +63,45 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData &prd)
 		 */
 		if (prd.scatterEvent == ScatterEvent::MISS)
 		{
+			Float3 color{ 0.0f };
 			if (!LP.useEnvironmentMap)
-				return { 0.0f };
+				color = 0.0f;
+			else if (optixLaunchParams.environmentMap)
+				color = sampleEnvironment(ray.direction);
+			else
+				color = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, 0.5f * 
+					(ray.direction.y + 1.0f));
 
-			if (optixLaunchParams.environmentMap)
-				return sampleEnvironment(ray.direction);
-
-			auto t{ 0.5f * (ray.direction.y + 1.0f) };
-			return mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, t) * attenuation;
+			return color * pathThroughput;
 		}
 
-
-#ifdef NORMAL
-		return Float3{ sd.N.x, sd.N.y, sd.N.z };
-#endif
 
 		/*
-		 * 3) Load material data of prim
+		 * 3) Load material data of prim and set required variables
 		 *    => save to md
 		 */
-		GET(Material md, Material, LP.materials, od.matId);
+		GET(md, Material, LP.materials, od.matId);
+		Float3& P{ od.P }, N{ od.N }, V{ od.V }, T{ sd.ts.T }, B{ sd.ts.B };
+		onb(N, T, B);
 
-		Float3 const& P{ od.P };
-		Float3 const& N{ od.N };
-		Float3 const& V{ od.V };
-		Float3 L{};
+		Float pdf{ 0.0f };
+		Float3 L{ 0.0f };
 
-		Float3 T{}, B{};
-		makeOrthogonals(N, T, B);
+		// move V to shading space
+		toLocal(T, B, N, V);
 
-		Float2 rand{ prd.random(), prd.random() };
-		Float pdf = 0.0f;
+		// sample direction
+		auto f{ Lambert::sampleF(sd, V, L, pdf) };
 
-		switch (md.type)
-		{
-		case Material::Type::LAMBERT:
-			sampleCosineHemisphere(N, rand, L, pdf);
-			attenuation *= md.baseColor;
+		// end path if impossible
+		if (pdf < EPSILON)
 			break;
 
-		case Material::Type::METAL:
-		{
-			Float fuzz{ prd.random() };
-			Float3 randomDirection{ sampleUniformSphere({ prd.random() ,prd.random() }) };
-			L = reflect(N, V);
-			L += randomDirection * fuzz * 0.2f;
-			attenuation *= md.baseColor;
-		}
-		break;
+		toWorld(T, B, N, L);
 
-		case Material::Type::DIELECTRICS:
-			Float eta{ dot(N, V) > 0 ? (1.0 / md.ior) : md.ior };
-			Float costheta{ dot(N, V) };
-			Float sintheta{ sqrt(1.0 - costheta * costheta) };
-			bool noRefract{ eta * sintheta > 1.0f };
-
-			if (noRefract)
-			{
-				L = reflect(N, V);
-			}
-			else
-				L = refract(N, V, eta);
-
-		break;
-
-		case Material::Type::LIGHT:
-			return md.emit * attenuation;
-
-		default:
-			break;
-		}
+		pathThroughput *= f / pdf;
 
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };
-
-
 	}
 
 	return { 0.0f };
@@ -176,6 +115,7 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
 	Float3 color{ 0.0f };
 
 	PerRayData prd{ Random{}, nullptr , ScatterEvent::NONE };
+
 	prd.random.init(pixelID.x, pixelID.y);
 
 	for (int32_t s{ 0 }; s < optixLaunchParams.samplesPerPixel; ++s)

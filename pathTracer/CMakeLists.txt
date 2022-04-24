@@ -1,9 +1,9 @@
-set(BA_SOURCES
+SET(BA_SOURCES
 	"Main.cpp"
 	"src/ObjLoader.cpp"
 	"src/StbUtils.cpp"
 	"src/Renderer.cpp"
-	)
+)
 
 SET(BA_HEADERS
 	"include/pt/Types.hpp"
@@ -15,12 +15,22 @@ SET(BA_HEADERS
 SET(BA_DEVICE_HEADERS
 	"src/device/Globals.hpp"
 	"src/device/Random.hpp"
-	"src/device/Sampling.hpp"
-	"src/device/Disney.hpp"
-	"src/device/BsdfUtil.hpp"
-	)
+	"src/device/Math.hpp" 
 
-SET(BA_INCLUDE "./include" "./src")
+	"src/device/SampleMethods.hpp"
+	"src/device/Disney.hpp"
+	
+	 
+
+	"src/device/materials/Lambert.hpp"
+	"src/device/materials/Dielectric.hpp"
+	"src/device/materials/Microfacet.hpp"
+)
+
+
+
+
+SET(BA_INCLUDE "include" "src")
 
 EMBED_PTX(
 	OUTPUT_TARGET
@@ -29,7 +39,7 @@ EMBED_PTX(
 		owl::owl
 		${CUDA_RUNTIME_LIBRARY}
 	SOURCES
-		"./src/device/PathTracer.cu"
+		"src/device/PathTracer.cu"
 )
 
 

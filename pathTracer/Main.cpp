@@ -8,56 +8,78 @@
 #include <map>
 #include <vector>
 
+#include <device/Globals.hpp>
+
 using namespace owl;
 
 Renderer renderer{};
 
 //std::tuple<std::vector<std::string>, std::vector<Material*>> loadMaterial();
+	//auto const [materialNames, materialData] {loadMaterial()};
 
 int main(void)
 {
 	init();
 
-	auto const [meshNames, meshData] {loadOBJ("../../../../scenes/cornell-box-w-boxes.obj")};
-	//auto const [materialNames, materialData] {loadMaterial()};
+	std::string prefixPath{ "../../../../" };
 
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/three-sphere-test.obj")};
+	//Camera cam{
+	//	{ 600 },		  // image size
+	//	{3.0f,0.5f,0.0f}, // look from
+	//	{0.0f,0.5f,0.0f}, // look at
+	//	{0.0f,0.1f,0.0f}, // look up
+	//	60.0f			  // vfov
+	//};
+
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
+	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")}; 
 	Camera cam{
 		{ 600 },		  // image size
-		{2.1f,1.0f,0.0f}, // look from
+		{3.3f,1.0f,0.0f}, // look from
 		{0.0f,1.0f,0.0f}, // look at
 		{0.0f,1.0f,0.0f}, // look up
-		80.0f			  // vfov
+		45.0f			  // vfov
 	};
+
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/dragon.obj")};
+	//Camera cam{
+	//	{ 600 },		  // image size
+	//	{2.0f,1.2f,0.0f}, // look from
+	//	{0.0f,1.0f,0.0f}, // look at
+	//	{0.0f,1.0f,0.0f}, // look up
+	//	50.0f			  // vfov
+	//};
+
 
 	renderer.frameBuffer = owlHostPinnedBufferCreate(
 		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
 	renderer.useEnvironmentMap = true;
-	renderer.samplesPerPixel = 124;
+	renderer.samplesPerPixel = 512;
 	renderer.maxDepth = 128;
 
 	//ImageRgb environmentTexture{};
 	//loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
 	//setEnvironmentTexture(environmentTexture);
 
-	Material lambert_n{ Material::Type::LAMBERT, {0.8f, 0.8f, 0.8f}, 0.0f, { 0.0f } };
-	Material lambert_c{ Material::Type::LAMBERT, {0.7f, 0.3f, 0.3f}, 0.0f, { 0.0f } };
-	Material metal{ Material::Type::METAL,   {0.8f, 0.6f, 0.2f}, 0.0f, { 0.0f } };
-	Material light{ Material::Type::LIGHT,   {},                 0.0f, { 10.0f } };
+	std::vector<std::tuple<std::string, Material>> mats{
+		{"default", { } }
+	};
 
-	std::vector<std::tuple<std::string, Material>> mats{};
-	mats.emplace_back("lambert_n", lambert_n);
-	mats.emplace_back("lambert_c", lambert_c);
-	mats.emplace_back("metal", metal);
-	mats.emplace_back("light", light);
+	//SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
+	//for (uint32_t i{ 0 }; i < mats.size(); i++)
+	//	fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
 
-	SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
-	for (uint32_t i{ 0 }; i < mats.size(); i++)
-		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
+	//for (uint32_t i{ 0 }; i < meshData.size(); i++)
+	//{
+	//	fmt::print("{}: ", meshNames[i]);
+	//	std::cin >> meshData[i]->materialId;
+	//	add(meshData[i]);
+	//}
 
 	for (uint32_t i{ 0 }; i < meshData.size(); i++)
 	{
-		fmt::print("{}: ", meshNames[i]);
-		std::cin >> meshData[i]->materialId;
+		meshData[i]->materialId = 0;
 		add(meshData[i]);
 	}
 
@@ -68,7 +90,7 @@ int main(void)
 	render(cam, materials);
 
 	Image result{ cam.fbSize.x, cam.fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0) };
-	writeImage(result, "../../../../image.png");
+	writeImage(result, prefixPath + "image.png");
 
 	release();
 }

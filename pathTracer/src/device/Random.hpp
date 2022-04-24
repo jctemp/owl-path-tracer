@@ -32,7 +32,6 @@
 #include <cinttypes>
 #include <owl/common/math/vec.h>
 
-
 /*! simple 24-bit linear congruence generator */
 template<unsigned int N = 4>
 struct LCG {
