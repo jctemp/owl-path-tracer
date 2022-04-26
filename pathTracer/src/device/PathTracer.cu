@@ -1,5 +1,6 @@
 ﻿#include "Globals.hpp"
 #include "materials/Lambert.hpp"
+#include "materials/Microfacet.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
@@ -84,22 +85,24 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData &prd)
 		Float3& P{ od.P }, N{ od.N }, V{ od.V }, T{ sd.ts.T }, B{ sd.ts.B };
 		onb(N, T, B);
 
-		Float pdf{ 0.0f };
+		Float pdf{0.0f};
 		Float3 L{ 0.0f };
 
 		// move V to shading space
 		toLocal(T, B, N, V);
 
 		// sample direction
-		auto f{ Lambert::sampleF(sd, V, L, pdf) };
+		auto f{Microfacet::sampleF(sd, V, L, pdf) };
+		//auto f{ Microfacet::sampleF<Microfacet::Distributions::Blinn>(sd, V, L, pdf) };
+		//auto f{ Microfacet::sampleF<Microfacet::Distributions::Beckmann>(sd, V, L, pdf) };
 
-		// end path if impossible
-		if (pdf < EPSILON)
-			break;
+		 //end path if impossible
+		//if (pdf < EPSILON)
+		//	break;
 
 		toWorld(T, B, N, L);
 
-		pathThroughput *= f / pdf;
+		pathThroughput *= f / (pdf);
 
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };
 	}

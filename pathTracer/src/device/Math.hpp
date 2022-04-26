@@ -81,6 +81,24 @@ DEVICE_INL Float cosDPhi(Float3 const& wa, Float3 const& wb) {
 }
 
 
+DEVICE_INL Float3 toSphereCoordinates(Float theta, Float phi)
+{
+	Float x = sinf(theta) * cosf(phi);
+	Float y = sinf(theta) * sinf(phi);;
+	Float z = cosf(theta);
+	return Float3{ x, y, z };
+}
+
+
+DEVICE_INL Float3 toSphereCoordinates(Float sinTheta, Float cosTheta, Float phi)
+{
+	Float x = sinTheta * cosf(phi);
+	Float y = sinTheta * sinf(phi);;
+	Float z = cosTheta;
+	return Float3{ x, y, z };
+}
+
+
 DEVICE_INL Float3 reflect(Float3 const& V, Float3 const& N) 
 {
 	return (2.0f * dot(V, N)) * N - V;

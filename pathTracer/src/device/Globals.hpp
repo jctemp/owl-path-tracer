@@ -2,8 +2,8 @@
 #define GLOBALS_HPP
 
 #include <owl/owl.h>
-#include <owl/common/math/LinearSpace.h>
 #include <owl/owl_device_buffer.h>
+#include <owl/common/math/LinearSpace.h>
 #include <owl/common/math/vec.h>
 #include <cuda_runtime.h>
 
@@ -47,6 +47,7 @@ if (check) {::printf("Device Error (%d): %s\n", __LINE__, msg); asm("trap;"); }
 #define T_MAX        1E10f
 #define MIN_ROUGHNESS 0.04f
 #define MIN_ALPHA  MIN_ROUGHNESS * MIN_ROUGHNESS
+#define DEVICE_STATIC static __owl_device
 #define DEVICE_INL inline __owl_device
 #define DEVICE __owl_device
 

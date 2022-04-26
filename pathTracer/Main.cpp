@@ -28,19 +28,28 @@ int main(void)
 	//	{ 600 },		  // image size
 	//	{3.0f,0.5f,0.0f}, // look from
 	//	{0.0f,0.5f,0.0f}, // look at
-	//	{0.0f,0.1f,0.0f}, // look up
+	//	{0.0f,1.0f,0.0f}, // look up
 	//	60.0f			  // vfov
 	//};
 
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
-	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")}; 
+	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
 	Camera cam{
 		{ 600 },		  // image size
-		{3.3f,1.0f,0.0f}, // look from
-		{0.0f,1.0f,0.0f}, // look at
+		{5.0f,5.0f,0.0f}, // look from
+		{0.0f,0.75f,0.0f}, // look at
 		{0.0f,1.0f,0.0f}, // look up
-		45.0f			  // vfov
+		30.0f			  // vfov
 	};
+
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")}; 
+	//Camera cam{
+	//	{ 600 },		  // image size
+	//	{3.3f,1.0f,0.0f}, // look from
+	//	{0.0f,1.0f,0.0f}, // look at
+	//	{0.0f,1.0f,0.0f}, // look up
+	//	45.0f			  // vfov
+	//};
 
 	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/dragon.obj")};
 	//Camera cam{
@@ -62,8 +71,11 @@ int main(void)
 	//loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
 	//setEnvironmentTexture(environmentTexture);
 
+	Material mdefault{};
+	mdefault.roughness = 0.0f;
+
 	std::vector<std::tuple<std::string, Material>> mats{
-		{"default", { } }
+		{"default", mdefault }
 	};
 
 	//SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
@@ -90,7 +102,8 @@ int main(void)
 	render(cam, materials);
 
 	Image result{ cam.fbSize.x, cam.fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0) };
-	writeImage(result, prefixPath + "image.png");
+	writeImage(result, fmt::format("{}{}-{}.png", prefixPath, "ggx", mdefault.roughness));
+
 
 	release();
 }
