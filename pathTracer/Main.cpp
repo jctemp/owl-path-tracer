@@ -71,10 +71,11 @@ int main(void)
 	//loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
 	//setEnvironmentTexture(environmentTexture);
 
-	Material mdefault{};
-	mdefault.roughness = 0.0f;
+	MaterialStruct mdefault{};
+	mdefault.baseColor = { 0.8f };
+	mdefault.roughness = 1.0f;
 
-	std::vector<std::tuple<std::string, Material>> mats{
+	std::vector<std::tuple<std::string, MaterialStruct>> mats{
 		{"default", mdefault }
 	};
 
@@ -95,14 +96,15 @@ int main(void)
 		add(meshData[i]);
 	}
 
-	std::vector<Material> materials{};
+	std::vector<MaterialStruct> materials{};
 	for (auto& e : mats)
-		materials.push_back(std::get<Material>(e));
+		materials.push_back(std::get<MaterialStruct>(e));
 
 	render(cam, materials);
 
 	Image result{ cam.fbSize.x, cam.fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0) };
-	writeImage(result, fmt::format("{}{}-{}.png", prefixPath, "ggx", mdefault.roughness));
+	writeImage(result, fmt::format("{}{}.png", prefixPath, "imgae"));
+	//writeImage(result, fmt::format("{}{}.png", prefixPath, "rough"));
 
 
 	release();

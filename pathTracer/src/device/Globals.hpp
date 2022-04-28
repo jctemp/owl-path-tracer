@@ -31,6 +31,7 @@ if (BUFFER.data == nullptr) {::printf("Device Error (%d): buffer was nullptr.\n"
 if (ADDRESS >= BUFFER.count) {::printf("Device Error (%d): out of bounds access (address: %d, size %d).\n", __LINE__, ADDRESS, uint32_t(BUFFER.count)); asm("trap;");} \
 RETURN = ((TYPE*)BUFFER.data)[ADDRESS];
 
+
 #define ASSERT(check, msg) \
 if (check) {::printf("Device Error (%d): %s\n", __LINE__, msg); asm("trap;"); }
 
@@ -61,19 +62,8 @@ enum class ScatterEvent
 };
 
 
-struct Material
+struct MaterialStruct
 {
-	enum Flags
-	{
-		Unset = 0,
-		Reflection = 1 << 0,
-		Transmission = 1 << 1,
-		Diffuse = 1 << 2,
-		Glossy = 1 << 3,
-		Specular = 1 << 4,
-		All = Diffuse | Glossy | Specular | Reflection | Transmission
-	};
-
 	Float3 baseColor = Float3{ 0.8f, 0.8f, 0.8f };
 	Float subsurface = 0.0f;
 	Float3 subsurfaceRadius = Float3{ 1.0f, 0.2f, 0.1f };
@@ -94,17 +84,7 @@ struct Material
 };
 
 
-struct TangentSpace
-{
-	/* tangent of a normal */
-	Float3 T;
-
-	/* bi-tangent of a normal */
-	Float3 B;
-};
-
-
-struct ObjectData
+struct InterfaceStruct
 {
 	/* hit position */
 	Float3 P;
@@ -129,20 +109,12 @@ struct ObjectData
 };
 
 
-struct ShadingData
-{
-	Random& random;
-	ObjectData* od;
-	Material* md;
-	TangentSpace ts;
-};
-
-
 struct PerRayData
 {
-	Random random;
-	ObjectData* od;
+	Random& random;
 	ScatterEvent scatterEvent;
+	InterfaceStruct* is;
+	MaterialStruct* ms;
 };
 
 

@@ -18,17 +18,11 @@ SET(BA_DEVICE_HEADERS
 	"src/device/Math.hpp" 
 
 	"src/device/SampleMethods.hpp"
-	"src/device/Disney.hpp"
-	
-	 
+	"src/device/materials/DisneyBrdf.hpp"
 
 	"src/device/materials/Lambert.hpp"
-	"src/device/materials/Dielectric.hpp"
-	"src/device/materials/Microfacet.hpp"
+	"src/device/materials/DisneyBrdf.hpp"
 )
-
-
-
 
 SET(BA_INCLUDE "include" "src")
 
@@ -41,8 +35,6 @@ EMBED_PTX(
 	SOURCES
 		"src/device/PathTracer.cu"
 )
-
-
 
 add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS} ${BA_DEVICE_HEADERS})
 target_include_directories(bachelorThesis PUBLIC ${BA_INCLUDE})

@@ -152,7 +152,7 @@ void add(Mesh* m)
 /// Renderes the Meshes with the specifed render settings
 /// </summary>
 /// <returns>0 in case of success otherwise different</returns>
-void render(Camera const& cam, std::vector<Material> const& materials)
+void render(Camera const& cam, std::vector<MaterialStruct> const& materials)
 {
 	// 1) set mesh data into buffers
 	if (renderer.geoms.size() > 0)
@@ -203,7 +203,7 @@ void render(Camera const& cam, std::vector<Material> const& materials)
 
 	// 5) set launch params
 	auto materialBuffer{
-		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(Material), materials.size(), materials.data())
+		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(MaterialStruct), materials.size(), materials.data())
 	};
 
 	owlParamsSetRaw(renderer.launchParams, "maxDepth", &renderer.maxDepth);

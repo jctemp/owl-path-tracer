@@ -116,6 +116,7 @@ DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L, Float3 const& N
 	return dot(V, N) * dot(L, N) > 0.0f;
 }
 
+
 DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L)
 {
 	return V.z * L.z > 0.0f;
@@ -153,6 +154,13 @@ DEVICE_INL void toWorld(Float3 const& T, Float3 const& B, Float3 const& N, Float
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //           GENERIC UTILITS
+
+
+DEVICE_INL Float clamp(Float d, Float max, Float min)
+{
+	return owl::clamp(d, min, max);
+}
+
 
 template<class T>
 DEVICE_INL T mix(T a, T b, Float t) { return a + t * (b - a); }

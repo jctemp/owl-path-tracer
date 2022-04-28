@@ -1,6 +1,6 @@
 ﻿#include "Globals.hpp"
 #include "materials/Lambert.hpp"
-#include "materials/Microfacet.hpp"
+#include "materials/DisneyBrdf.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
@@ -8,7 +8,7 @@
 using namespace owl;
 
 __constant__ LaunchParams optixLaunchParams;
-//#define NORMAL
+//#define DEBUG
 
 DEVICE Float2 uvOnSphere(Float3 n)
 {
@@ -34,20 +34,17 @@ DEVICE Float3 makeFloat3(float3 f)
 
 
 
-DEVICE Float3 tracePath(owl::Ray& ray, PerRayData &prd)
+DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 {
 	auto& LP = optixLaunchParams;
 
 	Float3 radiance{ 0.0f };
 	Float3 pathThroughput{ 1.0f };
 
-	ShadingData sd{ prd.random };
-	ObjectData od{};
-	Material md{};
+	InterfaceStruct is;
+	MaterialStruct ms;
 
-	prd.od = &od;
-	sd.md = &md;
-	sd.od = &od;
+	prd.is = &is;
 
 	for (Int depth{ 0 }; depth < LP.maxDepth; ++depth)
 	{
@@ -70,42 +67,65 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData &prd)
 			else if (optixLaunchParams.environmentMap)
 				color = sampleEnvironment(ray.direction);
 			else
-				color = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, 0.5f * 
+				color = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, 0.5f *
 					(ray.direction.y + 1.0f));
+
+#ifdef DEBUG
+			if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
+				printf("\n");
+#endif // DEBUG
 
 			return color * pathThroughput;
 		}
 
 
 		/*
-		 * 3) Load material data of prim and set required variables
-		 *    => save to md
+		 * 3) Load data of prim and set required variables
+		 *		=> material, interface info.
 		 */
-		GET(md, Material, LP.materials, od.matId);
-		Float3& P{ od.P }, N{ od.N }, V{ od.V }, T{ sd.ts.T }, B{ sd.ts.B };
+
+		GET(ms, MaterialStruct, LP.materials, is.matId);
+		Float3& P{ is.P }, N{ is.N }, V{ is.V };
+		Float3 T{}, B{};
 		onb(N, T, B);
 
-		Float pdf{0.0f};
+		Float pdf{ 0.0f };
+		Float3 bsdf{ 0.0f };
 		Float3 L{ 0.0f };
 
 		// move V to shading space
 		toLocal(T, B, N, V);
 
 		// sample direction
-		auto f{Microfacet::sampleF(sd, V, L, pdf) };
-		//auto f{ Microfacet::sampleF<Microfacet::Distributions::Blinn>(sd, V, L, pdf) };
-		//auto f{ Microfacet::sampleF<Microfacet::Distributions::Beckmann>(sd, V, L, pdf) };
+		Lambert::sampleF(ms, V, { prd.random(), prd.random() }, L, bsdf, pdf);
+		//Diffuse::sampleF(ms, V, { prd.random(), prd.random() }, L, bsdf, pdf);
 
-		 //end path if impossible
-		//if (pdf < EPSILON)
-		//	break;
+#ifdef DEBUG
+		if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
+			printf("bsdf: %f, %f, %f\tpdf %f\n", bsdf.x, bsdf.y, bsdf.z, pdf);
+#endif // DEBUG
+		
+
+		// end path if impossible
+		if (pdf <= 0.0f)
+			break;
 
 		toWorld(T, B, N, L);
 
-		pathThroughput *= f / (pdf);
+		pathThroughput *= bsdf / pdf;
+
+//#ifdef DEBUG
+//		if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
+//			printf("pathTroughput: %f, %f, %f\n", pathThroughput);
+//#endif // DEBUG
+
 
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };
 	}
+#ifdef DEBUG
+	if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
+		printf("\n");
+#endif // DEBUG
 
 	return { 0.0f };
 }
@@ -117,9 +137,10 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
 	vec2i const pixelID{ getLaunchIndex() };
 	Float3 color{ 0.0f };
 
-	PerRayData prd{ Random{}, nullptr , ScatterEvent::NONE };
+	Random pxRand{ (Uint)pixelID.x, (Uint)pixelID.y };
 
-	prd.random.init(pixelID.x, pixelID.y);
+	PerRayData prd{ pxRand };
+	prd.scatterEvent = ScatterEvent::NONE;
 
 	for (int32_t s{ 0 }; s < optixLaunchParams.samplesPerPixel; ++s)
 	{
@@ -158,35 +179,35 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 	float b2{ optixGetTriangleBarycentrics().y };
 	float b0{ 1 - b1 - b2 };
 
-	prd.od->uv = { b1, b2 };
+	prd.is->uv = { b1, b2 };
 
 	// get direction
 	Float3 const direction{ makeFloat3(optixGetWorldRayDirection()) };
 
-	prd.od->V = -direction;
+	prd.is->V = -direction;
 
 	// get geometric data:
 	TrianglesGeomData const& self = getProgramData<TrianglesGeomData>();
 	uint32_t const primID{ optixGetPrimitiveIndex() };
 	vec3i const index{ self.index[primID] };
 
-	prd.od->matId = self.matId;
-	prd.od->prim = primID;
+	prd.is->matId = self.matId;
+	prd.is->prim = primID;
 
 	// vertices for P and Ng
 	Float3 const& p0{ self.vertex[index.x] };
 	Float3 const& p1{ self.vertex[index.y] };
 	Float3 const& p2{ self.vertex[index.z] };
 
-	prd.od->Ng = normalize(cross(p1 - p0, p2 - p0));
-	prd.od->P = p0 * b0 + p1 * b1 + p2 * b2;
+	prd.is->Ng = normalize(cross(p1 - p0, p2 - p0));
+	prd.is->P = p0 * b0 + p1 * b1 + p2 * b2;
 
 	// vertex normals for N
 	Float3 const& n0{ self.normal[index.x] };
 	Float3 const& n1{ self.normal[index.y] };
 	Float3 const& n2{ self.normal[index.z] };
 
-	prd.od->N = normalize(n0 * b0 + n1 * b1 + n2 * b2);
+	prd.is->N = normalize(n0 * b0 + n1 * b1 + n2 * b2);
 
 	// scatter event type
 	prd.scatterEvent = ScatterEvent::BOUNCED;
