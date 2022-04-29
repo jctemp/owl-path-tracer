@@ -32,24 +32,24 @@ int main(void)
 	//	60.0f			  // vfov
 	//};
 
-	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
-	Camera cam{
-		{ 600 },		  // image size
-		{5.0f,5.0f,0.0f}, // look from
-		{0.0f,0.75f,0.0f}, // look at
-		{0.0f,1.0f,0.0f}, // look up
-		30.0f			  // vfov
-	};
-
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")}; 
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
 	//Camera cam{
 	//	{ 600 },		  // image size
-	//	{3.3f,1.0f,0.0f}, // look from
-	//	{0.0f,1.0f,0.0f}, // look at
+	//	{5.0f,5.0f,0.0f}, // look from
+	//	{0.0f,0.75f,0.0f}, // look at
 	//	{0.0f,1.0f,0.0f}, // look up
-	//	45.0f			  // vfov
+	//	30.0f			  // vfov
 	//};
+
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
+	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")}; 
+	Camera cam{
+		{ 600 },		  // image size
+		{3.3f,1.0f,0.0f}, // look from
+		{0.0f,1.0f,0.0f}, // look at
+		{0.0f,1.0f,0.0f}, // look up
+		45.0f			  // vfov
+	};
 
 	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/dragon.obj")};
 	//Camera cam{
@@ -79,12 +79,14 @@ int main(void)
 	MaterialStruct diffuse{};
 	diffuse.type = Material::BRDF_DIFFUSE;
 	diffuse.baseColor = { 0.8f };
-	diffuse.roughness = 1.0f;
+	diffuse.roughness = 0.8f;
 
-	MaterialStruct smooth{};
-	smooth.type = Material::BRDF_DIFFUSE;
-	smooth.baseColor = { 0.8f };
-	smooth.roughness = 0.0f;
+	MaterialStruct micro{};
+	micro.type = Material::BRDF_MICROFACET;
+	micro.baseColor = { 0.8f };
+	//micro.roughness = 0.5f;
+	//micro.roughness = 1.0f;
+	micro.roughness = 0.0f;
 
 	MaterialStruct lambert{};
 	lambert.type = Material::BRDF_LAMBERT;
@@ -94,7 +96,7 @@ int main(void)
 	std::vector<std::tuple<std::string, MaterialStruct>> mats{
 		{"ground", ground},
 		{"diffuse", diffuse },
-		{"smooth", smooth },
+		{"microfacet", micro },
 		{"lambert", lambert }
 	};
 

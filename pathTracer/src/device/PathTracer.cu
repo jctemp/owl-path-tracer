@@ -111,20 +111,12 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 			break;
 		}
 
-		//sampleF<ms.type>(ms, V, u, L, brdf, pdf);
-
 		// end path if impossible
 		if (pdf <= 0.0f)
 			break;
 
 		// because of the LTE equation => f_d * L(p,\omega_i) * | cos\theta |
 		pathThroughput *= brdf * absCosTheta(L) / pdf;
-
-//#ifdef DEBUG
-//		if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
-//			printf("pathTroughput: %f, %f, %f\n", pathThroughput);
-//#endif // DEBUG
-
 
 		toWorld(T, B, N, L);
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };

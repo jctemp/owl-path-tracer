@@ -26,7 +26,7 @@ SET(BA_DEVICE_HEADERS
 	"src/device/materials/DisneyBrdf.hpp"
 	"src/device/materials/Materials.hpp" 
 	 
-)
+ "src/device/materials/DisneyBrdfUtils.hpp")
 
 SET(BA_INCLUDE "include" "src")
 

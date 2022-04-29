@@ -1,5 +1,6 @@
 #ifndef MATERIALS_INTERFACE_HPP
 #define MATERIALS_INTERFACE_HPP
+#pragma once
 
 #include "../DeviceGlobals.hpp"
 

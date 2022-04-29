@@ -1,5 +1,6 @@
 #ifndef LAMBERT_HPP
 #define LAMBERT_HPP
+#pragma once
 
 #include "Materials.hpp"
 #include "../Sampling.hpp"

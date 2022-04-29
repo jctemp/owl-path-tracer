@@ -1,5 +1,6 @@
 ﻿#ifndef MATH_HPP
 #define MATH_HPP
+#pragma once
 
 #include "DeviceGlobals.hpp"
 
@@ -21,7 +22,7 @@
 #pragma region UTILITY
 
 template<class T>
-DEVICE_INL T mix(T a, T b, Float t) { return a + t * (b - a); }
+DEVICE_INL T mix(T a, T b, Float t) { return a + (b - a) * t; }
 
 template<class T>
 DEVICE_INL T saturate(T a);

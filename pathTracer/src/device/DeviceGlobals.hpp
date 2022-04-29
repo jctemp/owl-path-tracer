@@ -1,5 +1,6 @@
 ﻿#ifndef DEVICE_GLOBALS_HPP
 #define DEVICE_GLOBALS_HPP
+#pragma once
 
 #include "Globals.hpp"
 #include "Random.hpp"

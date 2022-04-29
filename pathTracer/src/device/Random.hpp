@@ -28,6 +28,7 @@
 
 #ifndef BA_RANDOM_HPP
 #define BA_RANDOM_HPP
+#pragma once
 
 #include <cinttypes>
 #include <owl/common/math/vec.h>

@@ -1,5 +1,6 @@
 #ifndef GLOBALS_HPP
 #define GLOBALS_HPP
+#pragma once
 
 #include <owl/owl.h>
 #include <owl/owl_device_buffer.h>

@@ -1,5 +1,6 @@
 ﻿#ifndef SAMPLE_METHODS_HPP
 #define SAMPLE_METHODS_HPP
+#pragma once
 
 #include "Globals.hpp"
 #include "Math.hpp"
