@@ -2,7 +2,7 @@
 #define MATERIALS_INTERFACE_HPP
 #pragma once
 
-#include "../DeviceGlobals.hpp"
+#include "../Globals.hpp"
 
 template<Material M>
 DEVICE void sampleF(MaterialStruct& ms, Float3 const& V, Float2 u, Float3& L,

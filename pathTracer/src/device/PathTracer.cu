@@ -1,4 +1,4 @@
-﻿#include "DeviceGlobals.hpp"
+﻿#include "Globals.hpp"
 #include "materials/Lambert.hpp"
 #include "materials/DisneyBrdf.hpp"
 
@@ -84,15 +84,21 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		Float3 T{}, B{};
 
 		onb(N, T, B);
-
 		toLocal(T, B, N, V);
+
+		/*
+		 * 4) Light
+		 */
+
+
+		/*
+		 * 4) Sample Material
+		 */
 
 		Float pdf{ 0.0f };
 		Float3 brdf{ 0.0f };
 		Float3 L{ 0.0f };
 
-		// sample direction
-		//Lambert::sampleF(ms, V, { prd.random(), prd.random() }, L, bsdf, pdf);
 		switch (ms.type)
 		{
 		case Material::BRDF_LAMBERT:
@@ -101,10 +107,6 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 
 		case Material::BRDF_DIFFUSE:
 			sampleF<Material::BRDF_DIFFUSE>(ms, V, u, L, brdf, pdf);
-			break;
-
-		case Material::BRDF_MICROFACET:
-			sampleF<Material::BRDF_MICROFACET>(ms, V, u, L, brdf, pdf);
 			break;
 
 		default: 
@@ -116,15 +118,13 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 			break;
 
 		// because of the LTE equation => f_d * L(p,\omega_i) * | cos\theta |
+		// => the pathTroughput defines how much radiance is reaching the view 
+		// after the material interaction
 		pathThroughput *= brdf * absCosTheta(L) / pdf;
 
 		toWorld(T, B, N, L);
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };
 	}
-#ifdef DEBUG
-	if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
-		printf("\n");
-#endif // DEBUG
 
 	return { 0.0f };
 }

@@ -2,7 +2,7 @@
 #define DISNEY_HPP
 #pragma once
 
-#include "DeviceGlobals.hpp"
+#include "Globals.hpp"
 #include "Sampling.hpp"
 #include "BsdfUtil.hpp"
 

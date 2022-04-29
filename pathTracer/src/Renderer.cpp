@@ -56,7 +56,7 @@ void init(void)
 
 	OWLVarDecl trianglesGeomVars[]
 	{
-		{ "matId",  OWL_UINT,   OWL_OFFSETOF(TrianglesGeomData, matId) },
+		{ "matId",  OWL_INT,   OWL_OFFSETOF(TrianglesGeomData, matId) },
 		{ "index",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, index) },
 		{ "vertex", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, vertex) },
 		{ "normal", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, normal) },
