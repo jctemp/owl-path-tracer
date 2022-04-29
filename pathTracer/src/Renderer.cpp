@@ -179,7 +179,7 @@ void render(Camera const& cam, std::vector<MaterialStruct> const& materials)
 	// degrees * PI / 180.0f;
 	Float aspect{ cam.fbSize.x / Float(cam.fbSize.y) };
 
-	Float const theta{ cam.vfov * PI / 180.0f };
+	Float const theta{ cam.vfov * Float(M_PI) / 180.0f};
 	Float const h{ tanf(theta / 2) };
 	Float const viewportHeight{ 2.0f * h };
 	Float const viewportWidth{ aspect * viewportHeight };

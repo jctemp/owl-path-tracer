@@ -1,7 +1,7 @@
 ﻿#ifndef DISNEY_HPP
 #define DISNEY_HPP
 
-#include "Globals.hpp"
+#include "DeviceGlobals.hpp"
 #include "Sampling.hpp"
 #include "BsdfUtil.hpp"
 

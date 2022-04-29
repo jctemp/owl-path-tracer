@@ -25,7 +25,7 @@ int main(void)
 
 	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/three-sphere-test.obj")};
 	//Camera cam{
-	//	{ 600 },		  // image size
+	//	{ 1024 },		  // image size
 	//	{3.0f,0.5f,0.0f}, // look from
 	//	{0.0f,0.5f,0.0f}, // look at
 	//	{0.0f,1.0f,0.0f}, // look up
@@ -64,37 +64,56 @@ int main(void)
 	renderer.frameBuffer = owlHostPinnedBufferCreate(
 		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
 	renderer.useEnvironmentMap = true;
-	renderer.samplesPerPixel = 512;
+	renderer.samplesPerPixel = 1024;
 	renderer.maxDepth = 128;
 
 	//ImageRgb environmentTexture{};
 	//loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
 	//setEnvironmentTexture(environmentTexture);
 
-	MaterialStruct mdefault{};
-	mdefault.baseColor = { 0.8f };
-	mdefault.roughness = 1.0f;
+	MaterialStruct ground{};
+	ground.type = Material::BRDF_DIFFUSE;
+	ground.baseColor = { 0.05f };
+	ground.roughness = 1.0f;
+
+	MaterialStruct diffuse{};
+	diffuse.type = Material::BRDF_DIFFUSE;
+	diffuse.baseColor = { 0.8f };
+	diffuse.roughness = 1.0f;
+
+	MaterialStruct smooth{};
+	smooth.type = Material::BRDF_DIFFUSE;
+	smooth.baseColor = { 0.8f };
+	smooth.roughness = 0.0f;
+
+	MaterialStruct lambert{};
+	lambert.type = Material::BRDF_LAMBERT;
+	lambert.baseColor = { 0.8f };
+	lambert.roughness = 0.0f;
 
 	std::vector<std::tuple<std::string, MaterialStruct>> mats{
-		{"default", mdefault }
+		{"ground", ground},
+		{"diffuse", diffuse },
+		{"smooth", smooth },
+		{"lambert", lambert }
 	};
 
-	//SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
-	//for (uint32_t i{ 0 }; i < mats.size(); i++)
-	//	fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
-
-	//for (uint32_t i{ 0 }; i < meshData.size(); i++)
-	//{
-	//	fmt::print("{}: ", meshNames[i]);
-	//	std::cin >> meshData[i]->materialId;
-	//	add(meshData[i]);
-	//}
+	SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
+	for (uint32_t i{ 0 }; i < mats.size(); i++)
+		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
 
 	for (uint32_t i{ 0 }; i < meshData.size(); i++)
 	{
-		meshData[i]->materialId = 0;
+		fmt::print("{}: ", meshNames[i]);
+		std::cin >> meshData[i]->materialId;
 		add(meshData[i]);
 	}
+
+	//for (uint32_t i{ 0 }; i < meshData.size(); i++)
+	//{
+	//	meshData[i]->materialId = 0;
+	//	add(meshData[i]);
+	//}
 
 	std::vector<MaterialStruct> materials{};
 	for (auto& e : mats)

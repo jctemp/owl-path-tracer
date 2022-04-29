@@ -10,18 +10,22 @@ SET(BA_HEADERS
 	"include/pt/ObjLoader.hpp"
 	"include/pt/StbUtils.hpp"
 	"include/pt/Renderer.hpp"
+	
 )
 
 SET(BA_DEVICE_HEADERS
 	"src/device/Globals.hpp"
+
 	"src/device/Random.hpp"
 	"src/device/Math.hpp" 
 
-	"src/device/SampleMethods.hpp"
-	"src/device/materials/DisneyBrdf.hpp"
+	"src/device/DeviceGlobals.hpp"
+	"src/device/Sampling.hpp"
 
 	"src/device/materials/Lambert.hpp"
 	"src/device/materials/DisneyBrdf.hpp"
+	"src/device/materials/Materials.hpp" 
+	 
 )
 
 SET(BA_INCLUDE "include" "src")

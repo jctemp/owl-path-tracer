@@ -1,10 +1,51 @@
 ﻿#ifndef MATH_HPP
 #define MATH_HPP
 
-#include "Globals.hpp"
+#include "DeviceGlobals.hpp"
+
+#define PI           3.14159265358979323f // pi
+#define TWO_PI       6.28318530717958648f // 2pi
+#define PI_OVER_TWO  1.57079632679489661f // pi / 2
+#define PI_OVER_FOUR 0.78539816339744830f // pi / 4
+#define INV_PI       0.31830988618379067f // 1 / pi
+#define INV_TWO_PI   0.15915494309189533f // 1 / (2pi)
+#define INV_FOUR_PI  0.07957747154594766f // 1 / (4pi)
+#define EPSILON      1E-5f
+#define T_MIN        1E-3f
+#define T_MAX        1E10f
+#define MIN_ROUGHNESS 0.04f
+#define MIN_ALPHA  MIN_ROUGHNESS * MIN_ROUGHNESS
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           SHADING SPACE FUNCTIONS
+
+#pragma region UTILITY
+
+template<class T>
+DEVICE_INL T mix(T a, T b, Float t) { return a + t * (b - a); }
+
+template<class T>
+DEVICE_INL T saturate(T a);
+
+template<>
+DEVICE_INL Float saturate(Float a) { return owl::clamp(a, 0.0f, 1.0f); }
+
+template<>
+DEVICE_INL Float3 saturate(Float3 a) {
+	return {
+		owl::clamp(a.x, 0.0f, 1.0f),
+		owl::clamp(a.y, 0.0f, 1.0f),
+		owl::clamp(a.z, 0.0f, 1.0f)
+	};
+}
+
+template<class T>
+DEVICE_INL T pow2(T value) { return value * value; }
+
+#pragma endregion
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#pragma region "SHADING SPACE FUNCTIONS"
 
 DEVICE_INL Float cosTheta(Float3 const& w)
 {
@@ -99,13 +140,13 @@ DEVICE_INL Float3 toSphereCoordinates(Float sinTheta, Float cosTheta, Float phi)
 }
 
 
-DEVICE_INL Float3 reflect(Float3 const& V, Float3 const& N) 
+DEVICE_INL Float3 reflect(Float3 const& V, Float3 const& N)
 {
 	return (2.0f * dot(V, N)) * N - V;
 }
 
 
-DEVICE_INL Float3 reflect(Float3 const& v) 
+DEVICE_INL Float3 reflect(Float3 const& v)
 {
 	return Float3(-v.x, v.y, -v.z);
 }
@@ -122,9 +163,11 @@ DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L)
 	return V.z * L.z > 0.0f;
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           SHADING SPACE UTILS
+#pragma endregion
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+#pragma region "ORTH. NORMAL BASIS"
 
 DEVICE_INL void onb(Float3 const& N, Float3& T, Float3& B)
 {
@@ -151,41 +194,9 @@ DEVICE_INL void toWorld(Float3 const& T, Float3 const& B, Float3 const& N, Float
 	V = normalize(Float3{ V.x * T + V.y * B + V.z * N });
 }
 
+#pragma endregion
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           GENERIC UTILITS
-
-
-DEVICE_INL Float clamp(Float d, Float max, Float min)
-{
-	return owl::clamp(d, min, max);
-}
-
-
-template<class T>
-DEVICE_INL T mix(T a, T b, Float t) { return a + t * (b - a); }
-
-
-template<class T>
-DEVICE_INL T saturate(T a);
-
-
-template<>
-DEVICE_INL Float saturate(Float a) { return owl::clamp(a, 0.0f, 1.0f); }
-
-
-template<>
-DEVICE_INL Float3 saturate(Float3 a) {
-	return {
-		owl::clamp(a.x, 0.0f, 1.0f),
-		owl::clamp(a.y, 0.0f, 1.0f),
-		owl::clamp(a.z, 0.0f, 1.0f)
-	};
-}
-
-
-template<class T>
-DEVICE_INL T pow2(T value) { return value * value; }
 
 
 #endif // !MATH_HPP

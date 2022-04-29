@@ -1,4 +1,4 @@
-﻿#include "Globals.hpp"
+﻿#include "DeviceGlobals.hpp"
 #include "materials/Lambert.hpp"
 #include "materials/DisneyBrdf.hpp"
 
@@ -8,7 +8,6 @@
 using namespace owl;
 
 __constant__ LaunchParams optixLaunchParams;
-//#define DEBUG
 
 DEVICE Float2 uvOnSphere(Float3 n)
 {
@@ -70,11 +69,6 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 				color = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, 0.5f *
 					(ray.direction.y + 1.0f));
 
-#ifdef DEBUG
-			if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
-				printf("\n");
-#endif // DEBUG
-
 			return color * pathThroughput;
 		}
 
@@ -86,33 +80,45 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 
 		GET(ms, MaterialStruct, LP.materials, is.matId);
 		Float3& P{ is.P }, N{ is.N }, V{ is.V };
+		Float2 u{ prd.random(), prd.random() };
 		Float3 T{}, B{};
+
 		onb(N, T, B);
 
-		Float pdf{ 0.0f };
-		Float3 bsdf{ 0.0f };
-		Float3 L{ 0.0f };
-
-		// move V to shading space
 		toLocal(T, B, N, V);
 
-		// sample direction
-		Lambert::sampleF(ms, V, { prd.random(), prd.random() }, L, bsdf, pdf);
-		//Diffuse::sampleF(ms, V, { prd.random(), prd.random() }, L, bsdf, pdf);
+		Float pdf{ 0.0f };
+		Float3 brdf{ 0.0f };
+		Float3 L{ 0.0f };
 
-#ifdef DEBUG
-		if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
-			printf("bsdf: %f, %f, %f\tpdf %f\n", bsdf.x, bsdf.y, bsdf.z, pdf);
-#endif // DEBUG
-		
+		// sample direction
+		//Lambert::sampleF(ms, V, { prd.random(), prd.random() }, L, bsdf, pdf);
+		switch (ms.type)
+		{
+		case Material::BRDF_LAMBERT:
+			sampleF<Material::BRDF_LAMBERT>(ms, V, u, L, brdf, pdf);
+			break;
+
+		case Material::BRDF_DIFFUSE:
+			sampleF<Material::BRDF_DIFFUSE>(ms, V, u, L, brdf, pdf);
+			break;
+
+		case Material::BRDF_MICROFACET:
+			sampleF<Material::BRDF_MICROFACET>(ms, V, u, L, brdf, pdf);
+			break;
+
+		default: 
+			break;
+		}
+
+		//sampleF<ms.type>(ms, V, u, L, brdf, pdf);
 
 		// end path if impossible
 		if (pdf <= 0.0f)
 			break;
 
-		toWorld(T, B, N, L);
-
-		pathThroughput *= bsdf / pdf;
+		// because of the LTE equation => f_d * L(p,\omega_i) * | cos\theta |
+		pathThroughput *= brdf * absCosTheta(L) / pdf;
 
 //#ifdef DEBUG
 //		if (getLaunchIndex().x == 10, getLaunchIndex().y == 10)
@@ -120,6 +126,7 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 //#endif // DEBUG
 
 
+		toWorld(T, B, N, L);
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };
 	}
 #ifdef DEBUG
