@@ -5,12 +5,13 @@
 #include "../Globals.hpp"
 
 template<Material M>
-DEVICE void sampleF(MaterialStruct& ms, Float3 const& V, Float2 u, Float3& L,
-	Float3& brdf, Float& pdf);
+DEVICE void sampleF(MaterialStruct const& mat, Random& random, Float3 const& Ng, Float3 const& N,
+	Float3 const& T, Float3 const& B, Float3 const& V, Float3& L, Float& pdf, Float3& bsdf);
 
 template<Material M>
-DEVICE void f(MaterialStruct& ms, Float3 const& V, Float3 const& L,
-	Float3& brdf);
+DEVICE void f(MaterialStruct const& mat, Float3 const& Ng, Float3 const& N,
+	Float3 const& T, Float3 const& B, Float3 const& V, Float3 const& L, Float3 const& H,
+	Float3& bsdf);
 
 template<Material M>
 DEVICE void pdf(Float3 const& V, Float3 const& L,

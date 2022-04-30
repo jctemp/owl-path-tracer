@@ -73,20 +73,13 @@ int main(void)
 
 	MaterialStruct ground{};
 	ground.type = Material::BRDF_DIFFUSE;
-	ground.baseColor = { 0.05f };
+	ground.baseColor = { 0.8f };
 	ground.roughness = 1.0f;
 
 	MaterialStruct diffuse{};
 	diffuse.type = Material::BRDF_DIFFUSE;
 	diffuse.baseColor = { 0.8f };
-	diffuse.roughness = 0.8f;
-
-	MaterialStruct micro{};
-	micro.type = Material::BRDF_MICROFACET;
-	micro.baseColor = { 0.8f };
-	//micro.roughness = 0.5f;
-	//micro.roughness = 1.0f;
-	micro.roughness = 0.0f;
+	diffuse.roughness = 0.0f;
 
 	MaterialStruct lambert{};
 	lambert.type = Material::BRDF_LAMBERT;
@@ -96,7 +89,6 @@ int main(void)
 	std::vector<std::tuple<std::string, MaterialStruct>> mats{
 		{"ground", ground},
 		{"diffuse", diffuse },
-		{"microfacet", micro },
 		{"lambert", lambert }
 	};
 

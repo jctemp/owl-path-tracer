@@ -27,29 +27,39 @@ enum class Material
 {
 	BRDF_LAMBERT = 1 << 0,
 	BRDF_DIFFUSE = 1 << 1,
-	BRDF_MICROFACET = 1 << 2
+	BRDF_METAL = 1 << 2
 };
 
 struct MaterialStruct
 {
-	Material type = Material::BRDF_LAMBERT;
-	Float3 baseColor = Float3{ 0.8f, 0.8f, 0.8f };
-	Float subsurface = 0.0f;
-	Float3 subsurfaceRadius = Float3{ 1.0f, 0.2f, 0.1f };
-	Float3 subsurfaceColor = Float3{ 0.8f, 0.8f, 0.8f };
-	Float metallic = 0.0f;
-	Float specular = 0.5f;
-	Float specularTint = 0.0f;
-	Float roughness = 0.5f;
-	Float anisotropic = 0.0f;
-	Float anisotropicRotation = 0.0f;
-	Float sheen = 0.0f;
-	Float sheenTint = 0.5f;
-	Float clearcoat = 0.0f;
-	Float clearcoatRoughness = 0.03f;
-	Float ior = 1.45f;
-	Float transmission = 0.0f;
-	Float transmissionRoughness = 0.0f;
+	Material type{ Material::BRDF_LAMBERT };
+	Float3 baseColor{ 0.8f, 0.8f, 0.8f };
+	Float subsurface{ 0.0f };
+	Float3 subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
+	Float3 subsurfaceColor{ 0.8f, 0.8f, 0.8f };
+	Float metallic{ 0.0f };
+	Float specular{ 0.5f };
+	Float specularTint{ 0.0f };
+	Float roughness{ 0.5f };
+	Float sheen{ 0.0f };
+	Float sheenTint{ 0.5f };
+	Float clearcoat{ 0.0f };
+	Float clearcoatRoughness{ 0.03f };
+	Float anisotropic{ 0.0f };
+	Float ior{ 1.45f };
+	Float transmission{ 0.0f };
+	Float transmissionRoughness{ 0.0f };
+};
+
+// TODO: IMPLEMENT LIGHT SAMPLING :)
+
+struct LightStruct
+{
+	Float3 color = Float3{ 0.0f };
+	Float intensity{ 1.0f };
+	Float exposure{ 0.0f };
+	Float falloff{ 2.0f };
+	bool useSurfaceArea{ false };
 };
 
 struct LaunchParams

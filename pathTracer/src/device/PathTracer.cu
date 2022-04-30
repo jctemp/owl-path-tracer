@@ -38,75 +38,61 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 	auto& LP = optixLaunchParams;
 
 	Float3 radiance{ 0.0f };
+	Float3 accumulatedRadiance{ 0.0f };
 	Float3 pathThroughput{ 1.0f };
 
 	InterfaceStruct is;
-	MaterialStruct ms;
+	MaterialStruct mat;
 
 	prd.is = &is;
 
 	for (Int depth{ 0 }; depth < LP.maxDepth; ++depth)
 	{
-		/*
-		 * 1) Shoot a ray through the scene.
-		 *    => params: accel to trace against, the ray to trace, prd
-		 */
+		/* FIND INTERSECTION */
 		owl::traceRay(LP.world, ray, prd);
 
 
-		/*
-		 * 2) Check if we hit anything.
-		 *    => If not we return the skybox color and break.
-		 */
+		/* SAMPLE ENVIRONMENT FOR NO HIT*/
 		if (prd.scatterEvent == ScatterEvent::MISS)
 		{
-			Float3 color{ 0.0f };
+			Float3 li{ 0.0f };
 			if (!LP.useEnvironmentMap)
-				color = 0.0f;
+				li = 0.0f;
 			else if (optixLaunchParams.environmentMap)
-				color = sampleEnvironment(ray.direction);
+				li = sampleEnvironment(ray.direction);
 			else
-				color = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, 0.5f *
+				li = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, 0.5f *
 					(ray.direction.y + 1.0f));
 
-			return color * pathThroughput;
+			return li * pathThroughput;
 		}
 
-
-		/*
-		 * 3) Load data of prim and set required variables
-		 *		=> material, interface info.
-		 */
-
-		GET(ms, MaterialStruct, LP.materials, is.matId);
-		Float3& P{ is.P }, N{ is.N }, V{ is.V };
-		Float2 u{ prd.random(), prd.random() };
+		/* LOAD OBJECT DATA */
+		GET(mat, MaterialStruct, LP.materials, is.matId);
+		Float3& P{ is.P }, N{ is.N }, V{ is.V }, Ng{ is.Ng };
 		Float3 T{}, B{};
 
 		onb(N, T, B);
 		toLocal(T, B, N, V);
 
-		/*
-		 * 4) Light
-		 */
+		/* LIGHTS AND STUFF */
 
 
-		/*
-		 * 4) Sample Material
-		 */
+		/* SAMPLE MATERIAL */
+		/* DO VOLUME SCATTERING */
 
 		Float pdf{ 0.0f };
-		Float3 brdf{ 0.0f };
+		Float3 bsdf{ 0.0f };
 		Float3 L{ 0.0f };
 
-		switch (ms.type)
+		switch (mat.type)
 		{
 		case Material::BRDF_LAMBERT:
-			sampleF<Material::BRDF_LAMBERT>(ms, V, u, L, brdf, pdf);
+			sampleF<Material::BRDF_LAMBERT>(mat, prd.random, Ng, N, T, B, V, L, pdf, bsdf);
 			break;
 
 		case Material::BRDF_DIFFUSE:
-			sampleF<Material::BRDF_DIFFUSE>(ms, V, u, L, brdf, pdf);
+			sampleF<Material::BRDF_DIFFUSE>(mat, prd.random, Ng, N, T, B, V, L, pdf, bsdf);
 			break;
 
 		default: 
@@ -120,7 +106,14 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		// because of the LTE equation => f_d * L(p,\omega_i) * | cos\theta |
 		// => the pathTroughput defines how much radiance is reaching the view 
 		// after the material interaction
-		pathThroughput *= brdf * absCosTheta(L) / pdf;
+		pathThroughput *= bsdf * absCosTheta(L) / pdf;
+
+
+		/* RUSSIAN ROULETTE */
+		float pmax = max(pathThroughput.x, max(pathThroughput.y, pathThroughput.z));
+		if (depth > 3 && prd.random() > pmax) {
+			break;
+		}
 
 		toWorld(T, B, N, L);
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };

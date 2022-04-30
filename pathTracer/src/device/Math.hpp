@@ -4,18 +4,18 @@
 
 #include "Globals.hpp"
 
-#define PI           3.14159265358979323f // pi
-#define TWO_PI       6.28318530717958648f // 2pi
-#define PI_OVER_TWO  1.57079632679489661f // pi / 2
-#define PI_OVER_FOUR 0.78539816339744830f // pi / 4
-#define INV_PI       0.31830988618379067f // 1 / pi
-#define INV_TWO_PI   0.15915494309189533f // 1 / (2pi)
-#define INV_FOUR_PI  0.07957747154594766f // 1 / (4pi)
-#define EPSILON      1E-5f
-#define T_MIN        1E-3f
-#define T_MAX        1E10f
-#define MIN_ROUGHNESS 0.04f
-#define MIN_ALPHA  MIN_ROUGHNESS * MIN_ROUGHNESS
+#define PI            3.14159265358979323f // pi
+#define TWO_PI        6.28318530717958648f // 2pi
+#define PI_OVER_TWO   1.57079632679489661f // pi / 2
+#define PI_OVER_FOUR  0.78539816339744830f // pi / 4
+#define INV_PI        0.31830988618379067f // 1 / pi
+#define INV_TWO_PI    0.15915494309189533f // 1 / (2pi)
+#define INV_FOUR_PI   0.07957747154594766f // 1 / (4pi)
+#define EPSILON       1E-5f
+#define T_MIN         1E-3f
+#define T_MAX         1E10f
+#define MIN_ROUGHNESS 0.01f
+#define MIN_ALPHA     0.0001f
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

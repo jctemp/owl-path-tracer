@@ -6,20 +6,21 @@
 #include "../Sampling.hpp"
 
 template<>
-DEVICE void f<Material::BRDF_LAMBERT>(MaterialStruct& ms, Float3 const& V, Float3 const& L,
+DEVICE void f<Material::BRDF_LAMBERT>(MaterialStruct const& mat, Float3 const& Ng, Float3 const& N,
+	Float3 const& T, Float3 const& B, Float3 const& V, Float3 const& L, Float3 const& H,
 	Float3& bsdf)
 {
 	if (!sameHemisphere(V, L)) bsdf = 0.0f;
-	bsdf = ms.baseColor * INV_PI;
+	bsdf = mat.baseColor * INV_PI;
 }
 
 template<>
-DEVICE void sampleF<Material::BRDF_LAMBERT>(MaterialStruct& ms, Float3 const& V, Float2 u, Float3& L,
-	Float3& bsdf, Float& pdf)
+DEVICE void sampleF<Material::BRDF_LAMBERT>(MaterialStruct const& mat, Random& random, Float3 const& Ng, Float3 const& N,
+	Float3 const& T, Float3 const& B, Float3 const& V, Float3& L, Float& pdf, Float3& bsdf)
 {
-	sampleCosineHemisphere({ u.x ,u.v }, L);
+	sampleCosineHemisphere({ random() , random()}, L);
 	pdfCosineHemisphere(V, L, pdf);
-	f<Material::BRDF_LAMBERT>(ms, V, L, bsdf);
+	f<Material::BRDF_LAMBERT>(mat, Ng, N, T, B, V ,L, {}, bsdf);
 }
 
 template<>

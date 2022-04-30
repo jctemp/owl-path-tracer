@@ -4,112 +4,75 @@
 
 #include "../Sampling.hpp"
 
+// SOURCES
+// https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf
+// https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.50.2297&rep=rep1&type=pdf
+// https://github.com/wdas/brdf/blob/main/src/brdfs/disney.brdf
+
+
+
 DEVICE_INL Float luminance(Float3 color)
 {
 	return 0.212671f * color.x + 0.715160f * color.y + 0.072169f * color.z;
 }
 
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  FRESNEL TERM
+//  < An Inexpensive BRDF Model for Physically-based Rendering - Christophe Schlick
+//  > depending on needs the function can be tailored to more accurate calculations
+//  > using here a very computational inexpensive solution
+
 DEVICE_INL Float schlickFresnel(Float cosTheta)
 {
-	return pow(saturate<Float>(1.f - cosTheta), 5.f);
-}
-
-DEVICE_INL Float smith_shadowing_ggx(Float n_dot_o, Float alpha_g) {
-	Float a = alpha_g * alpha_g;
-	Float b = n_dot_o * n_dot_o;
-	return 1.f / (n_dot_o + sqrt(a + b - a * b));
-}
-
-DEVICE_INL bool relativeIOR(Float3 const& V, Float3 const& N, Float const& ior,
-	Float& etaO, Float& etaI)
-{
-	bool entering{ dot(V, N) > 0.f };
-	etaI = entering ? 1.f : ior;
-	etaO = entering ? ior : 1.f;
-	return entering;
+	Float m{ owl::clamp(1.0f - cosTheta, 0.0f, 1.0f) };
+	Float m2{ m * m };
+	return m2 * m2 * m; // pow(m,5)
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           GENERALIZED TROWBRIDGE-REITZ (gamma=1)
-//           > Burley notes eq. 4
+//  SMITH SHADOWING GGX
+//  < Microfacet Models for Refraction through Rough Surfaces - Bruce Walter
+//  > term is for single-scattering accurate and correct
+//  > NOTE: this term is not energy conserving for multi-scattering events
 
-
-DEVICE Float GTR1(Float const& cosThetaH, Float const& alpha) {
-	if (alpha >= 1.f) {
-		return INV_PI;
-	}
-
-	Float alpha2{ alpha * alpha };
-	return INV_PI * (alpha2 - 1.f) / (log(alpha2) * (1.f + (alpha2 - 1.f)
-		* cosThetaH * cosThetaH));
-}
-
-
-DEVICE void pdfGTR1(Float3 const& V, Float3 const& L, Float3 const& H, Float3 const& N,
-	Float const& alpha, Float& clearcoat)
+DEVICE_INL Float smithGAnisotropic(Float NdotV, Float VdotX, Float VdotY, Float2 alpha)
 {
-	if (!sameHemisphere(V, L, N))
-	{
-		clearcoat = 0.0f;
-		return;
-	}
-
-	Float cosThetaH{ dot(N, H) };
-	Float d{ GTR1(cosThetaH, alpha) };
-	clearcoat = d * cosThetaH / (4.f * dot(V, H));
+	return 1.f / (NdotV + sqrtf(pow2(VdotX * alpha.x) + pow2(VdotY * alpha.y) + pow2(NdotV)));
 }
-
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           GENERALIZED TROWBRIDGE-REITZ (gamma=2)
-//           > Burley notes eq. 8
+//  GENERALIZED TROWBRIDGE-REITZ DISTRIBUTION
+//  < Disney BRDF notes 2012 - Burley
+//  > has long tails and short peaks in the distribution curve
+//  > allows for normalisation and importance sampling
+//  > Disney uses two fix specular lobes with gamma = [1, 2]
+//  > alpha = roughness^2 result in better linearity
 
-
-DEVICE Float GTR2(Float const& cosThetaH, Float const& alpha)
+//  GTR1 - notes eq. 4
+DEVICE_INL Float gtr1(Float cosThetaH, Float alpha)
 {
 	Float alpha2{ alpha * alpha };
-	return INV_PI * alpha2 / fmaxf(pow2(1.f + (alpha2 - 1.f) * cosThetaH *
-		cosThetaH), EPSILON);
+	return INV_PI * (alpha2 - 1.0f) / (logf(alpha2) * (1.0f + (alpha2 - 1.0f) * pow2(cosThetaH)));
 }
 
-
-DEVICE void pdfGTR2(Float3 const& V, Float3 const& L, Float3 const& H, Float3 const& N,
-	Float const& alpha, Float& microfacet)
+//  GTR2 - notes eq. 8
+DEVICE_INL Float gtr2(Float cosThetaH, Float alpha)
 {
-	if (!sameHemisphere(V, L, N))
-	{
-		microfacet = 0.0f;
-		return;
-	}
-
-	Float cosThetaH{ dot(N, H) };
-	Float d{ GTR2(cosThetaH, alpha) };
-	microfacet = d * cosThetaH / (4.f * fabs(dot(V, H)));
+	Float alpha2{ alpha * alpha };
+	return INV_PI * alpha2 / max(pow2(1 + (alpha2 * alpha2 - 1) * pow2(cosThetaH)), MIN_ALPHA);
 }
 
-
-DEVICE void pdfGTR2Transmission(Float3 const& V, Float3 const& L, Float3 const& N,
-	Float const& transmissionRoughness, Float const& ior, Float& microfacetTransmission)
+//  GTR3
+DEVICE_INL Float gtr2Anisotropic(Float NdotH, Float HdotX, Float HdotY, Float2 alpha)
 {
-	if (sameHemisphere(V, L, N))
-	{
-		microfacetTransmission = 0.0f;
-		return;
-	}
-
-	Float alpha{ fmaxf(0.001f, transmissionRoughness * transmissionRoughness) };
-	Float etaO, etaI;
-	bool entering = relativeIOR(V, N, ior, etaO, etaI);
-
-	Float3 Ht{ normalize(-(V * etaI + L * etaO)) };
-	Float cosThetaH{ fabs(dot(N, Ht)) };
-	Float d{ GTR2(cosThetaH, alpha) };
-	microfacetTransmission = d;
+	return INV_PI / max(alpha.x * alpha.y * pow2(pow2(HdotX / alpha.x) +
+		pow2(HdotY / alpha.y) + pow2(NdotH)), MIN_ALPHA);
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           GENERALIZED TROWBRIDGE-REITZ (gamma=2)
-//           > Burley notes eq. 8
+//	SAMPLING MICROFACET NORMAL H
+
+
+
 
 
 #endif // !DISNEY_BRDF_UITLS_HPP

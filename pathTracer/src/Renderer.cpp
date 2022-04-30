@@ -138,7 +138,7 @@ void add(Mesh* m)
 		indices.size(), sizeof(owl::vec3i), 0);
 
 	// set sbt data
-	owlGeomSet1ui(geom, "matId", mesh.materialId);
+	owlGeomSet1i(geom, "matId", mesh.materialId);
 	owlGeomSetBuffer(geom, "vertex", vertexBuffer);
 	owlGeomSetBuffer(geom, "normal", normalBuffer);
 	owlGeomSetBuffer(geom, "index", indexBuffer);
