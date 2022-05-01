@@ -77,7 +77,6 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 
 		/* LIGHTS AND STUFF */
 
-
 		/* SAMPLE MATERIAL */
 		/* DO VOLUME SCATTERING */
 
@@ -85,19 +84,12 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		Float3 bsdf{ 0.0f };
 		Float3 L{ 0.0f };
 
-		switch (mat.type)
-		{
-		case Material::BRDF_LAMBERT:
-			sampleF<Material::BRDF_LAMBERT>(mat, prd.random, Ng, N, T, B, V, L, pdf, bsdf);
-			break;
+		sampleDisneyDiffuse(mat, N, V, L, { prd.random() ,prd.random() }, bsdf, pdf);
 
-		case Material::BRDF_DIFFUSE:
-			sampleF<Material::BRDF_DIFFUSE>(mat, prd.random, Ng, N, T, B, V, L, pdf, bsdf);
-			break;
-
-		default: 
-			break;
-		}
+		if (isnan(bsdf.x) || isnan(bsdf.y) || isnan(bsdf.z))
+			printf("bsdf %f, %f, %f is nan\n", bsdf.x, bsdf.y, bsdf.z);
+		if (isinf(bsdf.x) || isinf(bsdf.y) || isinf(bsdf.z))
+			printf("bsdf %f, %f, %f is inf\n", bsdf.x, bsdf.y, bsdf.z);
 
 		// end path if impossible
 		if (pdf <= 0.0f)
@@ -106,7 +98,7 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		// because of the LTE equation => f_d * L(p,\omega_i) * | cos\theta |
 		// => the pathTroughput defines how much radiance is reaching the view 
 		// after the material interaction
-		pathThroughput *= bsdf * absCosTheta(L) / pdf;
+		pathThroughput *= bsdf / pdf;
 
 
 		/* RUSSIAN ROULETTE */

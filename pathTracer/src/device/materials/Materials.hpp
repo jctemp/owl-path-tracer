@@ -14,7 +14,7 @@ DEVICE void f(MaterialStruct const& mat, Float3 const& Ng, Float3 const& N,
 	Float3& bsdf);
 
 template<Material M>
-DEVICE void pdf(Float3 const& V, Float3 const& L,
+DEVICE void pdf(MaterialStruct const& mat, Float3 const& V, Float3 const& L,
 	Float& pdf);
 
 

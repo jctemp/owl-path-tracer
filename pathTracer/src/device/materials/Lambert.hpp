@@ -24,7 +24,7 @@ DEVICE void sampleF<Material::BRDF_LAMBERT>(MaterialStruct const& mat, Random& r
 }
 
 template<>
-DEVICE void pdf<Material::BRDF_LAMBERT>(Float3 const& V, Float3 const& L,
+DEVICE void pdf<Material::BRDF_LAMBERT>(MaterialStruct const& mat, Float3 const& V, Float3 const& L,
 	Float& pdf)
 {
 	if (!sameHemisphere(V, L)) pdf = 0.0f;

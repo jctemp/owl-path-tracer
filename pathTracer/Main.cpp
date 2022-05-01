@@ -1,4 +1,4 @@
-#include <pt/ObjLoader.hpp>
+﻿#include <pt/ObjLoader.hpp>
 #include <pt/StbUtils.hpp>
 #include <pt/Types.hpp>
 #include <pt/Renderer.hpp>
@@ -53,9 +53,9 @@ int main(void)
 
 	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/dragon.obj")};
 	//Camera cam{
-	//	{ 600 },		  // image size
+	//	{ 1024 },		  // image size
 	//	{2.0f,1.2f,0.0f}, // look from
-	//	{0.0f,1.0f,0.0f}, // look at
+	//	{0.0f,0.5f,0.0f}, // look at
 	//	{0.0f,1.0f,0.0f}, // look up
 	//	50.0f			  // vfov
 	//};
@@ -72,17 +72,16 @@ int main(void)
 	//setEnvironmentTexture(environmentTexture);
 
 	MaterialStruct ground{};
-	ground.type = Material::BRDF_DIFFUSE;
 	ground.baseColor = { 0.8f };
 	ground.roughness = 1.0f;
 
 	MaterialStruct diffuse{};
-	diffuse.type = Material::BRDF_DIFFUSE;
 	diffuse.baseColor = { 0.8f };
-	diffuse.roughness = 0.0f;
+	diffuse.roughness = 1.0f;
+	//diffuse.subsurface = 1.0f;
+	//diffuse.subsurfaceColor = { 0.8f, 0.2f, 0.1f };
 
 	MaterialStruct lambert{};
-	lambert.type = Material::BRDF_LAMBERT;
 	lambert.baseColor = { 0.8f };
 	lambert.roughness = 0.0f;
 
@@ -92,7 +91,7 @@ int main(void)
 		{"lambert", lambert }
 	};
 
-	SL_LOG("PLEASE SELECT A MATERIAL FOR MESH");
+	SL_LOG("===================================");
 	for (uint32_t i{ 0 }; i < mats.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
 

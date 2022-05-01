@@ -27,7 +27,7 @@ enum class Material
 {
 	BRDF_LAMBERT = 1 << 0,
 	BRDF_DIFFUSE = 1 << 1,
-	BRDF_METAL = 1 << 2
+	BRDF_GLOSSY = 1 << 2
 };
 
 struct MaterialStruct

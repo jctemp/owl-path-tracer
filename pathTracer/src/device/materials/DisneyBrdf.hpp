@@ -8,88 +8,160 @@
 
 // REFECRENCES:
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
-// 
+// https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           DISNEY PRINCIPLED BRDF
+//           DISNEY'S PRINCIPLED LOBES
 
 
-/* DIFFUSE REFLECTANCE LOBE */
-// https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf
-DEVICE void disneyDiffuse(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
-	Float3 const& L, Float3 const& H, Float3& bsdf, Float3& color)
+/* SHEEN */
+DEVICE Float3 evalDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3 const& L,
+	Float3 const& H)
+	// - adds back energy for rough surfaces or cloth due to geometric term approx.
+	// - smithG is not energy conserving for multi-scattering due to over-estimation
+	// - additive
 {
+	if (mat.sheen <= 0.0f) return Float3{ 0.0f };
+
+	Float HdotL{ dot(H, L) };
+	Float3 tint{ calculateTint(mat.baseColor) };
+	return mat.sheen * mix(Float3{ 1.0f }, tint, mat.sheenTint) * schlickFresnel(HdotL);
+}
+
+
+/* CLEARCOAT */
+DEVICE Float evalDisneyClearcoat(Float clearcoat, Float alpha, Float3 const& V, Float3 const& L,
+	Float3 const& H, Float& pdf)
+	// - Burley found that Trowbridge-Reitz distrubtuion is not perfect fitting for most materials
+	// - propose another specular component with modified NDF to add to BSDF model
+	// - ad-hoc fit with no clear geometric meaning 
+	// - additive
+{
+	if (clearcoat <= 0.0f) {
+		return 0.0f;
+	}
+
+	Float NdotV{ absCosTheta(V) };
+	Float NdotL{ absCosTheta(L) };
+	Float NdotH{ absCosTheta(H) };
+	Float LdotH{ dot(L, H) };
+
+	Float d{ gtr1(NdotH, mix(0.1f, 0.001f, alpha)) };
+	Float f{ schlickFresnel(0.04f, LdotH) };
+	Float gl{ smithG(NdotL, 0.25f) };
+	Float gv{ smithG(NdotV, 0.25f) };
+
+	pdf = d / (4.0f * NdotL);
+
+	return 0.25f * clearcoat * d * f * gl * gv;
+}
+
+
+/* SPECULAR */
+DEVICE Float3 evalDisneyMicrofacet(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3 const& L, Float3 const& H, Float pdf)
+{
+	pdf = 0.0f;
+
+	if (!sameHemisphere(V, L)) return Float3{ 0.0f };
+
+	Float NdotV{ absCosTheta(V) };
+	Float NdotL{ absCosTheta(L) };
+
+	Float2 alphaUV{ roughnessToAlpha(mat.roughness, mat.anisotropic) };
+	Float D{ gtr2Anisotropic(H, alphaUV) };
+	Float G{ smithGAnisotropic(L, alphaUV) * smithGAnisotropic(V, alphaUV) };
+	Float3 F{ disneyFresnel(mat, V, L, H) };
+
+	pdf = pdfGtr2Anisotropic(V, L, H, alphaUV);
+
+	return D * G * F / (4.0f * NdotL * NdotV);
+}
+
+
+/* TRANSMISSIVE */
+DEVICE Float3 evalDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& N,
+	Float3 const& V, Float3 const& L, Float3 const& H, Float& pdf)
+{
+	printf("NOT IMPLEMENTED");
+}
+
+
+/* DIFFUSE/SSS */
+DEVICE Float3 evalDisneyDiffuse(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3 const& L, Float3 const& H)
+	// - Burley did a fit to MERL database
+	// - Materials include Fresnel factor and retro-reflections
+{
+	// absCosTheta is required for sss
 	Float NdotV{ absCosTheta(V) };
 	Float NdotL{ absCosTheta(L) };
 	Float LdotH{ dot(L, H) };
+	Float ClampedNdotL{ saturate<Float>(NdotL) };
 
-	Float fl{ schlickFresnel(NdotL) };
-	Float fv{ schlickFresnel(NdotV) };
+	Float FL{ schlickFresnel(NdotL) };
+	Float FV{ schlickFresnel(NdotV) };
 
-	Float fd90{ 0.5f + 1.0f * mat.roughness * LdotH * LdotH };
-	Float fdV{ mix(1.f, fd90, fv) };
-	Float fdL{ mix(1.f, fd90, fl) };
-	Float3 fd{ INV_PI * fdV * fdL };
+	// Fake Subsurface | MAY handle SSS later somewhere else
+	Float Fss90{ pow2(NdotV) * mat.roughness };
+	Float Fss{ mix(1.0f, Fss90, FL) * mix(1.0f, Fss90, FV) };
+	Float Fs{ 1.25f * (Fss * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f)};
 
-	bsdf = fd;
-	color = mat.baseColor;
+	// Diffuse
+	Float Fd90{ 0.5f + 2.0f * mat.roughness * pow2(LdotH)};
+	Float Fd{ (1.0f * (1.0f - FL) + Fd90 * FL) * (1.0f * (1.0f - FV) + Fd90 * FV) };
+
+	return mix(INV_PI * Fd * mat.baseColor, INV_PI * Fs * mat.subsurfaceColor, mat.subsurface) * NdotL;
 }
 
 
-/* SUBSURFACE SCATTERING LOBE */
-DEVICE void disneySubsurface(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
-	Float3 const& L, Float3 const& H, Float3& bsdf, Float3& color)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//           DISNEY'S PRINCIPLED BSDF
+//
+//  Specular BSDF ───────┐ Metallic BRDF ┐
+//                       │               │
+//  Dielectric BRDF ─── MIX ─────────── MIX ─── DISNEY BSDF  
+//  + Subsurface
+//
+
+DEVICE void getLobeWeights(MaterialStruct const& mat, Float& pSpecular, Float& pDiffuse,
+	Float& pClearcoat, Float& pSpecTrans)
 {
-	Float NdotV{ absCosTheta(V) };
-	Float NdotL{ absCosTheta(L) };
-	Float LdotH{ dot(L, H) };
 
-	Float fl{ schlickFresnel(NdotL) };
-	Float fv{ schlickFresnel(NdotV) };
-
-	Float fss90{ mat.roughness * LdotH * LdotH };
-	Float fssL{ mix(1.0f, fss90, fl) };
-	Float fssV{ mix(1.0f, fss90, fv) };
-	Float3 fs{ 1.25f * INV_PI * fssL * fssV * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f };
-	// 1.0f / (NdotV + NdotL) => volumetric absorption scattering media below surface
-
-	bsdf = fs;
-	color = mat.subsurfaceColor;
 }
 
 
-template<>
-DEVICE void f<Material::BRDF_DIFFUSE>(MaterialStruct const& mat, Float3 const& Ng, Float3 const& N,
-	Float3 const& T, Float3 const& B, Float3 const& V, Float3 const& L, Float3 const& H,
-	Float3& bsdf)
+DEVICE void sampleDisneyDiffuse(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3& L, Float2 rand, Float3& bsdf, Float& pdf)
 {
-	Float3 diffuseBsdf{}, diffuseColor{};
-	disneyDiffuse(mat, N, V, L, H, diffuseBsdf, diffuseColor);
-	
-	Float3 subsurfaceBsdf{}, subsurfaceColor{};
-	disneySubsurface(mat, N, V, L, H, subsurfaceBsdf, subsurfaceColor);
-
-	bsdf = mix(diffuseBsdf * diffuseColor, subsurfaceBsdf * subsurfaceColor, mat.subsurface);
-}
-
-template<>
-DEVICE void sampleF<Material::BRDF_DIFFUSE>(MaterialStruct const& mat, Random& random, 
-	Float3 const& Ng, Float3 const& N, Float3 const& T, Float3 const& B, Float3 const& V, 
-	Float3& L, Float& pdf, Float3& bsdf)
-{
-	sampleCosineHemisphere({ random() ,random() }, L);
+	Float3 H{ normalize(V + L) };
+	sampleCosineHemisphere(rand, L);
 	pdfCosineHemisphere(V, L, pdf);
-	Float3 H{ normalize(L + V) };
-	f<Material::BRDF_DIFFUSE>(mat, Ng, N, T, B, V, L, H, bsdf);
+	bsdf = evalDisneyDiffuse(mat, N, V, L, H);
 }
 
-template<>
-DEVICE void pdf<Material::BRDF_DIFFUSE>(Float3 const& V, Float3 const& L,
-	Float& pdf)
+
+DEVICE void sampleDisneyMicrofacet(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3& L, Float2 rand, Float3& bsdf, Float& pdf)
 {
-	if (!sameHemisphere(V, L)) pdf = 0.0f;
-	else pdfCosineHemisphere(V, L, pdf);
+
+}
+
+
+DEVICE void evalDisneyBSDF(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3 const& L, Float3& bsdf, Float& pdf)
+
+{
+	Float3 H{ normalize(V + L) };
+	Float NdotV{ cosTheta(V) };
+	Float NdotL{ cosTheta(L) };
+
+	pdf = 0.0f;
+	bsdf = { 0.0f };
+	//Float diffuseWeight, specReflectWeight, specRefractWeight, clearcloatWeight;
+	Float2 alpha{ roughnessToAlpha(mat.roughness, mat.anisotropic) };
+	bool upperHemisphere{ NdotV > 0.0f && NdotL > 0.0f };
 }
 
 
@@ -121,10 +193,6 @@ DEVICE void pdf<Material::BRDF_DIFFUSE>(Float3 const& V, Float3 const& L,
 *	- Beckmann
 *	- Blinn
 */
-
-
-
-
 
 
 #endif // !DISNEY_BRDF_HPP
