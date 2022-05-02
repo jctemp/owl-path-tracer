@@ -67,6 +67,7 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 			return li * pathThroughput;
 		}
 
+
 		/* LOAD OBJECT DATA */
 		GET(mat, MaterialStruct, LP.materials, is.matId);
 		Float3& P{ is.P }, N{ is.N }, V{ is.V }, Ng{ is.Ng };
@@ -75,16 +76,15 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		onb(N, T, B);
 		toLocal(T, B, N, V);
 
-		/* LIGHTS AND STUFF */
 
 		/* SAMPLE MATERIAL */
-		/* DO VOLUME SCATTERING */
-
 		Float pdf{ 0.0f };
 		Float3 bsdf{ 0.0f };
 		Float3 L{ 0.0f };
 
-		sampleDisneyDiffuse(mat, N, V, L, { prd.random() ,prd.random() }, bsdf, pdf);
+		//sampleDisneyDiffuse(mat, N, V, L, prd.random, bsdf, pdf);
+		//sampleDisneyFakeSubsurface(mat, N, V, L, prd.random, bsdf, pdf);
+		sampleDisneyRetro(mat, N, V, L, prd.random, bsdf, pdf);
 
 		if (isnan(bsdf.x) || isnan(bsdf.y) || isnan(bsdf.z))
 			printf("bsdf %f, %f, %f is nan\n", bsdf.x, bsdf.y, bsdf.z);
@@ -102,6 +102,7 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 
 
 		/* RUSSIAN ROULETTE */
+		// at least 3 bounces required to avoid bias
 		float pmax = max(pathThroughput.x, max(pathThroughput.y, pathThroughput.z));
 		if (depth > 3 && prd.random() > pmax) {
 			break;

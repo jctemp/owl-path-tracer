@@ -12,7 +12,70 @@
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           DISNEY'S PRINCIPLED LOBES
+//           DISNEY'S PRINCIPLED F
+
+
+/* DIFFUSE */
+DEVICE Float3 disneyDiffuseF(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3 const& L)
+{
+	Float NdotV{ absCosTheta(V) };
+	Float NdotL{ absCosTheta(L) };
+
+	Float FL{ schlickFresnel(NdotL) };
+	Float FV{ schlickFresnel(NdotV) };
+
+	// Burley 2015, eq (4).
+	return mat.baseColor * INV_PI * (1.0f - FL / 2.0f) * (1.0f - FV / 2.0f);
+}
+
+/* FAKE SSS */
+DEVICE Float3 disneyFakeSubsurfaceF(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3 const& L)
+	// Hanrahan - Krueger BRDF approximation of the BSSRDF
+{
+	Float3 H{ L + V };
+	if (H.x == 0 && H.y == 0 && H.z == 0) return Float3{ 0.0f };
+
+	H = normalize(H);
+	Float cosThetaD{ dot(L, H) };
+	Float NdotV{ absCosTheta(V) };
+	Float NdotL{ absCosTheta(L) };
+
+	// Fss90 used to "flatten" retroreflection based on roughness
+	Float Fss90{ cosThetaD * cosThetaD * mat.roughness };
+	Float FL{ schlickFresnel(NdotL) };
+	Float FV{ schlickFresnel(NdotV) };
+	Float Fss{ mix(1.0f, Fss90, FL) * mix(1.0f, Fss90, FV) };
+
+	// 1.25 scale is used to (roughly) preserve albedo
+	Float Fs{ 1.25f * (Fss * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f) };
+
+	return mat.subsurfaceColor * INV_PI * Fs;
+}
+
+/* RETRO-REFLECTION */
+DEVICE Float3 disneyRetroF(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3 const& L)
+{
+	Float3 H{ L + V };
+	if (H.x == 0 && H.y == 0 && H.z == 0) return Float3{ 0.0f };
+
+	H = normalize(H);
+	Float cosThetaD{ dot(L, H) };
+	Float NdotV{ absCosTheta(V) };
+	Float NdotL{ absCosTheta(L) };
+
+	Float FL{ schlickFresnel(NdotL) };
+	Float FV{ schlickFresnel(NdotV) };
+	Float Rr{ 2 * mat.roughness * cosThetaD * cosThetaD };
+
+	// Burley 2015, eq (4).
+	return mat.baseColor * INV_PI * Rr * (FL + FV + FL * FV * (Rr - 1));
+}
+
+
+
 
 
 /* SHEEN */
@@ -59,24 +122,25 @@ DEVICE Float evalDisneyClearcoat(Float clearcoat, Float alpha, Float3 const& V, 
 
 
 /* SPECULAR */
-DEVICE Float3 evalDisneyMicrofacet(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+DEVICE Float3 evalDisneyMicrofacetIsotropic(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
 	Float3 const& L, Float3 const& H, Float pdf)
 {
-	pdf = 0.0f;
-
-	if (!sameHemisphere(V, L)) return Float3{ 0.0f };
+	Float3 tint{ calculateTint(mat.baseColor) };
+	Float3 spec{ mix(mat.specular * 0.08f * mix(Float3{1.0f}, tint, mat.specularTint), 
+		mat.baseColor, mat.metallic) };
 
 	Float NdotV{ absCosTheta(V) };
 	Float NdotL{ absCosTheta(L) };
+	Float NdotH{ absCosTheta(H) };
 
-	Float2 alphaUV{ roughnessToAlpha(mat.roughness, mat.anisotropic) };
-	Float D{ gtr2Anisotropic(H, alphaUV) };
-	Float G{ smithGAnisotropic(L, alphaUV) * smithGAnisotropic(V, alphaUV) };
-	Float3 F{ disneyFresnel(mat, V, L, H) };
+	Float alpha{ roughnessToAlpha(mat.roughness) };
+	Float Ds{ gtr2(NdotH, alpha) };
+	Float Fs{ disneyFresnel(mat, V, L, H) };
+	Float Vs{ smithVCorrelated(NdotV, NdotL, alpha)};
 
-	pdf = pdfGtr2Anisotropic(V, L, H, alphaUV);
+	pdf = pdfGtr2(V, L, H, alpha);
 
-	return D * G * F / (4.0f * NdotL * NdotV);
+	return Float3{ Ds * Fs * Vs };
 }
 
 
@@ -88,33 +152,6 @@ DEVICE Float3 evalDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3
 }
 
 
-/* DIFFUSE/SSS */
-DEVICE Float3 evalDisneyDiffuse(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
-	Float3 const& L, Float3 const& H)
-	// - Burley did a fit to MERL database
-	// - Materials include Fresnel factor and retro-reflections
-{
-	// absCosTheta is required for sss
-	Float NdotV{ absCosTheta(V) };
-	Float NdotL{ absCosTheta(L) };
-	Float LdotH{ dot(L, H) };
-	Float ClampedNdotL{ saturate<Float>(NdotL) };
-
-	Float FL{ schlickFresnel(NdotL) };
-	Float FV{ schlickFresnel(NdotV) };
-
-	// Fake Subsurface | MAY handle SSS later somewhere else
-	Float Fss90{ pow2(NdotV) * mat.roughness };
-	Float Fss{ mix(1.0f, Fss90, FL) * mix(1.0f, Fss90, FV) };
-	Float Fs{ 1.25f * (Fss * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f)};
-
-	// Diffuse
-	Float Fd90{ 0.5f + 2.0f * mat.roughness * pow2(LdotH)};
-	Float Fd{ (1.0f * (1.0f - FL) + Fd90 * FL) * (1.0f * (1.0f - FV) + Fd90 * FV) };
-
-	return mix(INV_PI * Fd * mat.baseColor, INV_PI * Fs * mat.subsurfaceColor, mat.subsurface) * NdotL;
-}
-
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //           DISNEY'S PRINCIPLED BSDF
@@ -125,25 +162,48 @@ DEVICE Float3 evalDisneyDiffuse(MaterialStruct const& mat, Float3 const& N, Floa
 //  + Subsurface
 //
 
-DEVICE void getLobeWeights(MaterialStruct const& mat, Float& pSpecular, Float& pDiffuse,
-	Float& pClearcoat, Float& pSpecTrans)
-{
-
-}
-
 
 DEVICE void sampleDisneyDiffuse(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
-	Float3& L, Float2 rand, Float3& bsdf, Float& pdf)
+	Float3& L, Random& rand, Float3& bsdf, Float& pdf)
 {
-	Float3 H{ normalize(V + L) };
-	sampleCosineHemisphere(rand, L);
+	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
 	pdfCosineHemisphere(V, L, pdf);
-	bsdf = evalDisneyDiffuse(mat, N, V, L, H);
+	bsdf = disneyDiffuseF(mat, N, V, L) * absCosTheta(L);
 }
+
+DEVICE void sampleDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3& L, Random& rand, Float3& bsdf, Float& pdf)
+{
+	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
+	pdfCosineHemisphere(V, L, pdf);
+	bsdf = disneyFakeSubsurfaceF(mat, N, V, L) * absCosTheta(L);
+}
+
+DEVICE void sampleDisneyRetro(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
+	Float3& L, Random& rand, Float3& bsdf, Float& pdf)
+{
+	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
+	pdfCosineHemisphere(V, L, pdf);
+	bsdf = disneyRetroF(mat, N, V, L) * absCosTheta(L);
+}
+
+
+
+
+
+
 
 
 DEVICE void sampleDisneyMicrofacet(MaterialStruct const& mat, Float3 const& N, Float3 const& V,
-	Float3& L, Float2 rand, Float3& bsdf, Float& pdf)
+	Float3& L, Random& rand, Float3& bsdf, Float& pdf)
+{
+}
+
+
+
+
+DEVICE void getLobeWeights(MaterialStruct const& mat, Float& pSpecular, Float& pDiffuse,
+	Float& pClearcoat, Float& pSpecTrans)
 {
 
 }
