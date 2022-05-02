@@ -28,19 +28,19 @@ DEVICE_INL Float3 calculateTint(Float3 baseColor)
 //  > depending on needs the function can be tailored to more accurate calculations
 //  > using here a very computational inexpensive solution
 
-DEVICE_INL Float schlickFresnel(Float cosTheta)
+DEVICE_INL Float schlickWeight(Float cosTheta)
 {
 	Float m{ owl::clamp(1.0f - cosTheta, 0.0f, 1.0f) };
 	Float m2{ m * m };
 	return m2 * m2 * m; // pow(m,5)
 }
 
-DEVICE_INL Float schlickFresnel(Float R0, Float cosTheta)
+DEVICE_INL Float frSchlick(Float R0, Float cosTheta)
 {
-	return mix(1.0f, schlickFresnel(cosTheta), R0);
+	return mix(1.0f, schlickWeight(cosTheta), R0);
 }
 
-DEVICE_INL Float3 schlickFresnel(Float3 R0, Float cosTheta)
+DEVICE_INL Float3 frSchlick(Float3 R0, Float cosTheta)
 {
 	Float3 exponential = powf(1.0f - cosTheta, 5.0f);
 	return R0 + (Float3{ 1.0f } - R0) * exponential;
@@ -68,10 +68,18 @@ DEVICE_INL Float schlickR0FromRelativeIOR(Float eta)
 	return pow2(eta - 1.0f) / pow2(eta + 1.0f);
 }
 
+DEVICE_INL bool relativeIOR(Float3 const& V, Float IOR, Float& inEta, Float& extEta)
+{
+	bool entering{ cosTheta(V) > 0.0f };
+	inEta = entering ? IOR : 1.0f;
+	extEta = entering ? 1.0f : IOR;
+	return entering;
+}
+
 DEVICE_INL Float disneyFresnel(MaterialStruct const& mat, Float3 const& V,
 	Float3 const& L, Float3 const& H)
 {
-	Float Fmetallic{ schlickFresnel(dot(L,H)) };
+	Float Fmetallic{ schlickWeight(dot(L,H)) };
 	Float Fdielectric{ dielectricFresnel(abs(dot(V,H)), mat.ior) };
 	return mix(Fdielectric, Fmetallic, mat.metallic);
 }
@@ -83,20 +91,11 @@ DEVICE_INL Float disneyFresnel(MaterialStruct const& mat, Float3 const& V,
 //	> newer version which got adopted in 2014 revision
 //  > NOTE: this term is not energy conserving for multi-scattering events
 
-DEVICE_INL Float smithVCorrelated(Float NdotV, Float NdotL, Float alpha)
-// https://google.github.io/filament/Filament.html#materialsystem/specularbrdf
-
+DEVICE_INL Float smithG(Float cosTheta, Float alpha)
 {
-	Float GGXV{ NdotL * sqrt(NdotV * NdotV * (1.0 - alpha) + alpha) };
-	Float GGXL{ NdotV * sqrt(NdotL * NdotL * (1.0 - alpha) + alpha) };
-	return 0.5f / (GGXV + GGXL);
-}
-
-DEVICE_INL Float smithG(Float NdotV, Float alpha)
-{
-	Float alpha2{ pow2(alpha) };
-	Float dot2{ pow2(NdotV) };
-	return (2.0f * NdotV) / (NdotV + sqrtf(alpha2 + dot2 - alpha2 * dot2));
+	Float alpha2{ alpha * alpha };
+	Float cosTheta2{ cosTheta * cosTheta };
+	return 1.0f / (cosTheta + sqrtf(alpha2 + cosTheta2 - alpha2 * cosTheta2));
 }
 
 DEVICE_INL Float smithGAnisotropic(Float3 const& V, Float2 alpha)
@@ -134,61 +133,67 @@ DEVICE_INL Float2 roughnessToAlpha(Float roughness, Float anisotropic)
 //  GTR1 - notes eq. 4
 DEVICE_INL Float gtr1(Float cosThetaH, Float alpha)
 {
-	if (alpha > 1.0f) return INV_PI;
 	Float alpha2{ alpha * alpha };
-	Float t{ 1.0 + (alpha2 - 1.0) * cosThetaH * cosThetaH };
+	Float t{ 1.0f + (alpha2 - 1.0f) * cosThetaH * cosThetaH };
 	return (alpha2 - 1.0f) / (PI * logf(alpha2) * t);
 }
 
 //  GTR2 - notes eq. 8 (know as GGX)
-DEVICE_INL Float gtr2(Float cosThetaH, Float alpha)
+DEVICE Float gtr2(Float3 const& H, Float alphax, Float alphay) // D
 {
-	Float alpha2{ pow2(alpha) };
-	Float t{ 1.0f + (alpha2 - 1.0f) * pow2(cosThetaH) };
-	return alpha2 / (PI * pow2(t));
+	Float tanTheta2{ tan2Theta(H) };
+	if (isnan(tanTheta2)) return 0.0f;
+	Float cos4Theta{ cos2Theta(H) * cos2Theta(H) };
+	Float e{ (cos2Phi(H) / (alphax * alphax) + 
+		sin2Phi(H) / (alphay * alphay)) * tanTheta2 };
+	return 1 / (PI * alphax * alphay * cos4Theta * (1 + e) * (1 + e));
 }
 
-//  GTR2 - later derived and used in 2015 Version
-//	Anisotropic GGX (Trowbridge-Reitz) distribution formula, pbrt-v3 ( page 539 )
-DEVICE_INL Float gtr2Anisotropic(Float3 H, Float2 alpha)
+DEVICE Float gtr2Lambda(Float3 const& H, Float alphax, Float alphay)
 {
-	Float cosThetaH2{ cos2Theta(H) };
-	if (cosThetaH2 <= 0.0f) return 0.0f;
-	Float beta{ cosThetaH2 + pow2(H.x) / pow2(alpha.x) + pow2(H.y) / pow2(alpha.y) };
-	return 1.0f / (PI * alpha.x * alpha.y * pow2(beta));
+	Float absTanTheta{ abs(tanTheta(H)) };
+	if (isinf(absTanTheta)) return 0.;
+	Float alpha{ sqrtf(cos2Phi(H) * alphax * alphax + sin2Phi(H) * alphay * alphay) };
+	Float alpha2Tan2Theta{ (alpha * absTanTheta) * (alpha * absTanTheta) };
+	return (-1 + sqrtf(1.f + alpha2Tan2Theta)) / 2;
 }
 
-
-DEVICE_INL Float pdfGtr2(Float3 const& V, Float3 const& L, Float3 const& H, Float alpha)
+DEVICE Float3 sampleGtr2(Float3 const& V, Float alphax, Float alphay, Float2 u)
 {
-	if (!sameHemisphere(V, L))
-		return 0.f;
+	Float3 H{};
 
-	Float cosThetaH{ absCosTheta(H) };
-	Float D{ gtr2(cosThetaH, alpha) };
-	return D * cosThetaH / (4.f * fabsf(dot(V, H)));
+	Float cosTheta = 0, phi = (2 * PI) * u[1];
+	if (alphax == alphay) {
+		Float tanTheta2 = alphax * alphax * u[0] / (1.0f - u[0]);
+		cosTheta = 1 / sqrtf(1 + tanTheta2);
+	}
+	else {
+		phi = atanf(alphay / alphax * tanf(2 * PI * u[1] + .5f * PI));
+
+		if (u[1] > .5f) phi += PI;
+		Float sinPhi = sinf(phi), cosPhi = cosf(phi);
+		Float alphax2 = alphax * alphax, alphay2 = alphay * alphay;
+		Float alpha2 = 1 / (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
+		Float tanTheta2 = alpha2 * u[0] / (1 - u[0]);
+		cosTheta = 1 / sqrtf(1 + tanTheta2);
+	}
+	Float sinTheta = sqrtf(max((Float)0., (Float)1. - cosTheta * cosTheta));
+	H = toSphereCoordinates(sinTheta, cosTheta, phi);
+	if (!sameHemisphere(V, H)) H = -H;
+
+	return H;
 }
 
-
-DEVICE_INL Float pdfGtr2Anisotropic(Float3 const& V, Float3 const& L, Float3 const& H,
-	Float2 alpha)
+DEVICE Float pdfGtr2(Float3 const& V, Float3 const& H, Float alphax, Float alphay)
 {
-	printf("%f * %f = %f > 0.0f\n", L.z, V.z, L.z * V.z);
-	if (!sameHemisphere(V, L))
-		return 0.f;
-
-	Float cosThetaH{ absCosTheta(H) };
-	Float D{ gtr2Anisotropic(H, alpha) };
-	return D * cosThetaH / (4.f * fabsf(dot(V, H)));
+	Float Dr{ gtr2(H, alphax, alphay) };
+	Float Gr{ smithGAnisotropic(V, {alphax, alphay}) };
+	return Dr * absCosTheta(H) / (4.0f * absCosTheta(V));
 }
 
 
-DEVICE_INL Float3 sampleGtr2Anisotropic(Float3 const& n, Float3 const& v_x, Float3 const& v_y,
-	Float2 alpha, Float2 u) {
-	Float x{ 2.f * M_PI * u.x };
-	Float3 H = owl::sqrt(u.y / (1.0f - u.y)) * (alpha.x * cosf(x) * v_x + alpha.y * sinf(x) * v_y) + n;
-	return normalize(H);
-}
+
+
 
 
 #endif // !DISNEY_BRDF_UITLS_HPP

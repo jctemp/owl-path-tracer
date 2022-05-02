@@ -26,13 +26,17 @@ using Buffer = owl::device::Buffer;
 enum class Material
 {
 	BRDF_LAMBERT = 1 << 0,
-	BRDF_DIFFUSE = 1 << 1,
-	BRDF_GLOSSY = 1 << 2
+	DISNEY_DIFFUSE = 1 << 1,
+	DISNEY_FAKE_SS = 1 << 2,
+	DISNEY_RETRO = 1 << 3,
+	DISNEY_SHEEN = 1 << 4,
+	DISNEY_CLEARCOAT = 1 << 5,
+	DISNEY_MICROFACET = 1 << 6
 };
 
 struct MaterialStruct
 {
-	Material type{ Material::BRDF_LAMBERT };
+	Material type{ Material::DISNEY_DIFFUSE };
 	Float3 baseColor{ 0.8f, 0.8f, 0.8f };
 	Float subsurface{ 0.0f };
 	Float3 subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
@@ -44,7 +48,7 @@ struct MaterialStruct
 	Float sheen{ 0.0f };
 	Float sheenTint{ 0.5f };
 	Float clearcoat{ 0.0f };
-	Float clearcoatRoughness{ 0.03f };
+	Float clearcoatGloss{ 0.03f };
 	Float anisotropic{ 0.0f };
 	Float ior{ 1.45f };
 	Float transmission{ 0.0f };

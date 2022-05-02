@@ -153,6 +153,20 @@ DEVICE_INL Float3 reflect(Float3 const& v)
 }
 
 
+DEVICE_INL Float3 refract(Float3 const& v, Float3 const& n, Float in_eta, Float ext_eta, bool& inner_reflection) {
+	const Float coso = dot(v, n);
+	const Float eta = coso > 0 ? (ext_eta / in_eta) : (in_eta / ext_eta);
+	const Float t = 1.0f - eta * eta * std::max(0.0f, 1.0f - coso * coso);
+
+	// total inner reflection
+	inner_reflection = (t <= 0.0f);
+	if (inner_reflection)
+		return Float3(0.0f, 0.0f, 0.0f);
+	const float scale = coso < 0.0f ? -1.0f : 1.0f;
+	return -eta * v + (eta * coso - scale * sqrtf(t)) * n;
+}
+
+
 DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L, Float3 const& N)
 {
 	return dot(V, N) * dot(L, N) > 0.0f;

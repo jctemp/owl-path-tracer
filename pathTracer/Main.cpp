@@ -32,10 +32,19 @@ int main(void)
 	//	60.0f			  // vfov
 	//};
 
-	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
+	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
+	//Camera cam{
+	//	{ 600 },		  // image size
+	//	{5.0f,5.0f,0.0f}, // look from
+	//	{0.0f,0.75f,0.0f}, // look at
+	//	{0.0f,1.0f,0.0f}, // look up
+	//	30.0f			  // vfov
+	//};
+
+	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/mitsuba.obj")};
 	Camera cam{
 		{ 600 },		  // image size
-		{5.0f,5.0f,0.0f}, // look from
+		{5.0f,3.0f,0.0f}, // look from
 		{0.0f,0.75f,0.0f}, // look at
 		{0.0f,1.0f,0.0f}, // look up
 		30.0f			  // vfov
@@ -65,30 +74,54 @@ int main(void)
 		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
 	renderer.useEnvironmentMap = true;
 	renderer.samplesPerPixel = 1024;
-	renderer.maxDepth = 128;
+	renderer.maxDepth = 5;
 
 	//ImageRgb environmentTexture{};
 	//loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
 	//setEnvironmentTexture(environmentTexture);
 
-	MaterialStruct ground{};
-	ground.baseColor = { 0.8f };
-	ground.roughness = 1.0f;
+	/* STANDARD MATERIALS */
+	MaterialStruct default1{ Material::DISNEY_DIFFUSE };
+	default1.baseColor = { 0.5f };
+	MaterialStruct default2{ Material::DISNEY_DIFFUSE };
+	default2.baseColor = { 0.15f };
 
-	MaterialStruct diffuse{};
-	diffuse.baseColor = { 0.8f };
-	diffuse.roughness = 1.0f;
-	//diffuse.subsurface = 1.0f;
-	//diffuse.subsurfaceColor = { 0.8f, 0.2f, 0.1f };
+	/* DIFFUSE */
+	MaterialStruct diffuse{Material::DISNEY_DIFFUSE};
+	diffuse.baseColor = { 1.0f, 0.364f, 0.084f };
 
-	MaterialStruct lambert{};
-	lambert.baseColor = { 0.8f };
-	lambert.roughness = 0.0f;
+	/* FAKE SUBSURFACE */
+	MaterialStruct fakeSubsurface{ Material::DISNEY_FAKE_SS };
+	fakeSubsurface.subsurface = 1.0f;
+
+	/* RETRO */
+	MaterialStruct retro{ Material::DISNEY_RETRO };
+
+	/* SHEEN */
+	MaterialStruct sheen{ Material::DISNEY_SHEEN };
+	sheen.sheen = 1.0f;
+
+	/* CLEARCOAT */
+	MaterialStruct clearcoat{ Material::DISNEY_CLEARCOAT };
+	clearcoat.clearcoat = 1.0f;
+	//clearcoat.clearcoatGloss = 1.0f;
+	//clearcoat.clearcoatGloss = 0.0f;
+
+	/* MICROFACET */
+	MaterialStruct microfacet{ Material::DISNEY_MICROFACET };
+	microfacet.roughness = 0.1f;
+	microfacet.anisotropic = 0.9f;
+
 
 	std::vector<std::tuple<std::string, MaterialStruct>> mats{
-		{"ground", ground},
-		{"diffuse", diffuse },
-		{"lambert", lambert }
+		{"default1", default1},
+		{"default2", default2},
+		{"diffuse", diffuse},
+		{"fakeSubsurface", fakeSubsurface},
+		{"retro", retro},
+		{"sheen", sheen},
+		{"clearcoat", clearcoat},
+		{"microfacet", microfacet}
 	};
 
 	SL_LOG("===================================");
@@ -115,7 +148,7 @@ int main(void)
 	render(cam, materials);
 
 	Image result{ cam.fbSize.x, cam.fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0) };
-	writeImage(result, fmt::format("{}{}.png", prefixPath, "imgae"));
+	writeImage(result, fmt::format("{}{}.png", prefixPath, "microfacetAnisotropic"));
 	//writeImage(result, fmt::format("{}{}.png", prefixPath, "rough"));
 
 
