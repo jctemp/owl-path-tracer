@@ -25,6 +25,7 @@ using Buffer = owl::device::Buffer;
 
 enum class Material
 {
+	NONE = 0 << 0,
 	BRDF_LAMBERT = 1 << 0,
 	DISNEY_DIFFUSE = 1 << 1,
 	DISNEY_FAKE_SS = 1 << 2,
@@ -38,7 +39,7 @@ enum class Material
 
 struct MaterialStruct
 {
-	Material type{ Material::DISNEY_DIFFUSE };
+	Material type{ Material::NONE };
 	Float3   baseColor{ 0.8f, 0.8f, 0.8f };
 	Float    subsurface{ 0.0f };
 	Float3   subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
@@ -57,10 +58,15 @@ struct MaterialStruct
 	Float    emission{ 0.0f };
 };
 
-// TODO: IMPLEMENT LIGHT SAMPLING :)
+enum class Light
+{
+	NONE = 0 << 0,
+	MSEH = 1 << 0
+};
 
 struct LightStruct
 {
+	Light type{ Light::NONE };
 	Float3 color = Float3{ 0.0f };
 	Float intensity{ 1.0f };
 	Float exposure{ 0.0f };

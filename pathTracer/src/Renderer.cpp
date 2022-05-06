@@ -141,6 +141,7 @@ void add(Mesh* m)
 
 	// set sbt data
 	owlGeomSet1i(geom, "matId", mesh.materialId);
+	owlGeomSet1i(geom, "lightId", mesh.lightId);
 	owlGeomSetBuffer(geom, "vertex", vertexBuffer);
 	owlGeomSetBuffer(geom, "normal", normalBuffer);
 	owlGeomSetBuffer(geom, "index", indexBuffer);
@@ -154,7 +155,7 @@ void add(Mesh* m)
 /// Renderes the Meshes with the specifed render settings
 /// </summary>
 /// <returns>0 in case of success otherwise different</returns>
-void render(Camera const& cam, std::vector<MaterialStruct> const& materials)
+void render(Camera const& cam, std::vector<MaterialStruct> const& materials, std::vector<LightStruct> const& lights)
 {
 	// 1) set mesh data into buffers
 	if (renderer.geoms.size() > 0)
@@ -209,11 +210,10 @@ void render(Camera const& cam, std::vector<MaterialStruct> const& materials)
 	};
 	owlParamsSetBuffer(renderer.launchParams, "materials", materialBuffer);
 
-
-	//auto lightBuffer{
-	//	owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(LightStruct), lights.size(), lights.data())
-	//};
-	//owlParamsSetBuffer(renderer.launchParams, "lights", lightBuffer);
+	auto lightBuffer{
+		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(LightStruct), lights.size(), lights.data())
+	};
+	owlParamsSetBuffer(renderer.launchParams, "lights", lightBuffer);
 
 	owlParamsSetRaw(renderer.launchParams, "maxDepth", &renderer.maxDepth);
 	owlParamsSetRaw(renderer.launchParams, "samplesPerPixel", &renderer.samplesPerPixel);

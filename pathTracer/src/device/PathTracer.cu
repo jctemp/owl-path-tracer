@@ -42,7 +42,6 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 	Float3 pathThroughput{ 1.0f };
 
 	InterfaceStruct is;
-	MaterialStruct mat;
 
 	prd.is = &is;
 
@@ -70,14 +69,28 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 
 
 		/* LOAD OBJECT DATA */
-		GET(mat, MaterialStruct, LP.materials, is.matId);
+		MaterialStruct materials{};
+		LightStruct lights{};
+
+		if (is.matId >= 0)
+		{
+			GET(materials, MaterialStruct, LP.materials, is.matId);
+		}
+
+		if (is.lightId >= 0)
+		{
+			GET(lights, LightStruct, LP.lights, is.lightId);
+		}
+
 		Float3& P{ is.P }, N{ is.N }, V{ is.V }, Ng{ is.Ng };
 		Float3 T{}, B{};
 
 		/* HANDLE LIGHTS */
-		if (mat.type == Material::EMISSION)
+		if (materials.type == Material::EMISSION)
 		{
-			return mat.emission * pathThroughput;
+			if (getLaunchIndex().x == 0)
+				printf("%d\n", lights.type == Light::NONE);
+			return materials.emission * pathThroughput;
 		}
 
 		onb(N, T, B);
@@ -89,7 +102,7 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		Float3 bsdf{ 0.0f };
 		Float3 L{ 0.0f };
 
-		sampleDisneyBSDF(mat, V, L, prd.random, bsdf, pdf);
+		sampleDisneyBSDF(materials, V, L, prd.random, bsdf, pdf);
 
 		if (isnan(bsdf.x) || isnan(bsdf.y) || isnan(bsdf.z))
 			printf("bsdf %f, %f, %f is nan\n", bsdf.x, bsdf.y, bsdf.z);
@@ -182,6 +195,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 	vec3i const index{ self.index[primID] };
 
 	prd.is->matId = self.matId;
+	prd.is->lightId = self.lightId;
 	prd.is->prim = primID;
 
 	// vertices for P and Ng

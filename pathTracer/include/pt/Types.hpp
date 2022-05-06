@@ -7,7 +7,8 @@
 
 struct Mesh
 {
-    Int materialId;
+    Int materialId{ -1 };
+    Int lightId{ -1 };
     std::vector<Int3> index;
     std::vector<Float3> vertex;
     std::vector<Float3> normal;

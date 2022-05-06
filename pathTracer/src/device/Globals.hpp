@@ -54,6 +54,9 @@ struct InterfaceStruct
 
 	/* material id for LP reference */
 	Int matId;
+
+	/* light id for LP reference */
+	Int lightId;
 };
 
 struct PerRayData

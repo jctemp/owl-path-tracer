@@ -73,7 +73,7 @@ int main(void)
 	renderer.frameBuffer = owlHostPinnedBufferCreate(
 		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
 	renderer.useEnvironmentMap = false;
-	renderer.samplesPerPixel = 8196;
+	renderer.samplesPerPixel = 1024;
 	renderer.maxDepth = 128;
 
 	//ImageRgb environmentTexture{};
@@ -104,9 +104,6 @@ int main(void)
 	mat2.clearcoat = 0.0f;
 	mat2.clearcoatGloss = 0.0f;
 
-	MaterialStruct emissive{ Material::EMISSION };
-	emissive.emission = 35.0f;
-
 	MaterialStruct test{ Material::DISNEY_BRDF };
 	test.baseColor = { .8f };
 	test.subsurface = 0.0f;
@@ -119,29 +116,48 @@ int main(void)
 	test.clearcoat = 0.0f;
 	test.clearcoatGloss = 1.0f;
 
+	MaterialStruct temp{ Material::EMISSION };
+	temp.emission = 35.0f;
+
+	LightStruct light{};
+	light.intensity = 35.0f;
+
 	std::vector<std::tuple<std::string, MaterialStruct>> mats{
 		{"mat1", mat1},
 		{"mat2", mat2},
 		{"test", test},
-		{"emissive", emissive}
+		{"light", temp}
 	};
 
-	//int arr[]{ 2,1,0 };
-	//int arr[]{ 1,2,0,0 };
-	//for (uint32_t i{ 0 }; i < meshData.size(); i++)
-	//{
-	//	meshData[i]->materialId = arr[i];
-	//	add(meshData[i]);
-	//}
+	std::vector<std::tuple<std::string, LightStruct>> li{
+		{"light", light}
+	};
 
-	SL_LOG("===================================");
+	SL_LOG("==== MATERIALS ===============================");
 	for (uint32_t i{ 0 }; i < mats.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
+
+	
+	for (uint32_t i{ 0 }; i < meshData.size(); i++)
+	{
+		fmt::print("{}: ", meshNames[i]);
+		std::string in;
+		std::getline(std::cin, in);
+		if (!in.empty())
+			meshData[i]->materialId = std::stoi(in);
+	}
+
+	SL_LOG("==== LIGHTS ===============================");
+	for (uint32_t i{ 0 }; i < li.size(); i++)
+		fmt::print("{} [{}]\n", std::get<std::string>(li[i]), i);
 
 	for (uint32_t i{ 0 }; i < meshData.size(); i++)
 	{
 		fmt::print("{}: ", meshNames[i]);
-		std::cin >> meshData[i]->materialId;
+		std::string in;
+		std::getline(std::cin, in);
+		if (!in.empty())
+			meshData[i]->lightId = std::stoi(in);
 		add(meshData[i]);
 	}
 
@@ -149,7 +165,11 @@ int main(void)
 	for (auto& e : mats)
 		materials.push_back(std::get<MaterialStruct>(e));
 
-	render(cam, materials);
+	std::vector<LightStruct> lights{};
+	for (auto& e : li)
+		lights.push_back(std::get<LightStruct>(e));
+
+	render(cam, materials, lights);
 
 	Image result{ cam.fbSize.x, cam.fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0) };
 	writeImage(result, fmt::format("{}{}.png", prefixPath, "image"));
