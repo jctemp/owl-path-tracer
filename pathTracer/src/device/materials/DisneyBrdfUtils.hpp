@@ -22,178 +22,177 @@ DEVICE_INL Float3 calculateTint(Float3 baseColor)
 	return (lum > 0.0f) ? baseColor * (1.0f / lum) : Float3{ 1.0f };
 }
 
+DEVICE_INL Float calculateEta(Float3 V, Float ior)
+{
+	if (cosTheta(V) > 0.0f)
+		return 1.0f / ior;
+	return ior;
+}
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  FRESNEL TERM
-//  < An Inexpensive BRDF Model for Physically-based Rendering - Christophe Schlick
-//  > depending on needs the function can be tailored to more accurate calculations
-//  > using here a very computational inexpensive solution
 
-DEVICE_INL Float schlickWeight(Float cosTheta)
+DEVICE_INL Float schlickFresnel(Float costheta, Float ior)
 {
-	Float m{ owl::clamp(1.0f - cosTheta, 0.0f, 1.0f) };
+	Float r0{ (1.0f - ior) / (1.0f + ior) };
+	r0 = r0 * r0;
+	Float m{ owl::clamp(1.0f - costheta, 0.0f, 1.0f) };
 	Float m2{ m * m };
-	return m2 * m2 * m; // pow(m,5)
+	return r0 + (1.0f - r0) * (m2 * m2 * m);
 }
 
-DEVICE_INL Float frSchlick(Float R0, Float cosTheta)
+DEVICE_INL Float dielectricFresnel(Float costheta, Float ior)
 {
-	return mix(1.0f, schlickWeight(cosTheta), R0);
-}
+	Float costhetaI{ costheta };
 
-DEVICE_INL Float3 frSchlick(Float3 R0, Float cosTheta)
-{
-	Float3 exponential = powf(1.0f - cosTheta, 5.0f);
-	return R0 + (Float3{ 1.0f } - R0) * exponential;
-}
+	if (costhetaI < 0.0f)
+	{
+		costhetaI = -costhetaI;
+		ior = 1.0f / ior;
+	}
 
-DEVICE_INL Float dielectricFresnel(Float cosThetaI, Float eta)
-{
-	Float sinThetaTSq{ eta * eta * (1.0f - cosThetaI * cosThetaI) };
+	Float sin2thetaI{ 1.0f - costhetaI * costhetaI };
+	Float sin2thetaT{ sin2thetaI / (ior * ior) };
 
-	// Total internal reflection
-	if (sinThetaTSq > 1.0f)
+	if (sin2thetaT > 1.0f)
+	{
 		return 1.0f;
+	}
 
-	Float cosThetaT{ sqrtf(max(1.0f - sinThetaTSq, 0.0f)) };
+	Float cos2thetaT = sqrtf(1.0f - sin2thetaT);
+	Float rp{ (costhetaI - ior * cos2thetaT) / (costhetaI + ior * cos2thetaT) };
+	Float rs{ (ior * costhetaI - cos2thetaT) / (ior * costhetaI + cos2thetaT) };
 
-	Float rs{ (eta * cosThetaT - cosThetaI) / (eta * cosThetaT + cosThetaI) };
-	Float rp{ (eta * cosThetaI - cosThetaT) / (eta * cosThetaI + cosThetaT) };
-
-	return 0.5f * (rs * rs + rp * rp);
+	return 0.5f * (rp * rp + rs * rs);
 }
 
-DEVICE_INL Float schlickR0FromRelativeIOR(Float eta)
-// https://seblagarde.wordpress.com/2013/04/29/memo-on-fresnel-equations/
+DEVICE_INL Float dielectricFresnel(Float ior, Float3 V, Float3 N, Float3 & R, Float3& T, bool& inside)
 {
-	return pow2(eta - 1.0f) / pow2(eta + 1.0f);
+	Float costheta{ cosTheta(V) }, neta{};
+	Float3 Nn;
+
+	if (costheta > 0)
+	{
+		neta = 1 / ior;
+		inside = false;
+		Nn = N;
+	}
+	else
+	{
+		neta = ior;
+		inside = true;
+		Nn = -N;
+	}
+
+	// compute reflection
+	R = (2 * costheta) * Nn - V;
+
+	Float arg = 1 - (neta * neta * (1 - (costheta * costheta)));
+	if (arg < 0) 
+	{
+		T = Float{0.0f};
+		return 1;
+	}
+	else
+	{
+		Float dnp = max(sqrtf(arg), 1e-7f);
+		Float nK = (neta * costheta) - dnp;
+		T = -(neta * V) + (nK * Nn);
+	}
+
+	Float costhetaI{ costheta };
+	Float sin2thetaI{ 1.0f - costhetaI * costhetaI };
+	Float sin2thetaT{ sin2thetaI / (neta * neta) };
+	Float cos2thetaT = sqrtf(1.0f - sin2thetaT);
+	Float rp{ (costhetaI - neta * cos2thetaT) / (costhetaI + neta * cos2thetaT) };
+	Float rs{ (neta * costhetaI - cos2thetaT) / (neta * costhetaI + cos2thetaT) };
+
+	return 0.5f * (rp * rp + rs * rs);
 }
 
-DEVICE_INL bool relativeIOR(Float3 const& V, Float IOR, Float& inEta, Float& extEta)
-{
-	bool entering{ cosTheta(V) > 0.0f };
-	inEta = entering ? IOR : 1.0f;
-	extEta = entering ? 1.0f : IOR;
-	return entering;
-}
 
-DEVICE_INL Float disneyFresnel(MaterialStruct const& mat, Float3 const& V,
-	Float3 const& L, Float3 const& H)
-{
-	Float Fmetallic{ schlickWeight(dot(L,H)) };
-	Float Fdielectric{ dielectricFresnel(abs(dot(V,H)), mat.ior) };
-	return mix(Fdielectric, Fmetallic, mat.metallic);
-}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  SMITH SHADOWING TERM
-//  < Microfacet Models for Refraction through Rough Surfaces - Bruce Walter
-//  > term is for single-scattering accurate and correct
-//	> newer version which got adopted in 2014 revision
-//  > NOTE: this term is not energy conserving for multi-scattering events
 
-DEVICE_INL Float smithG(Float cosTheta, Float alpha)
+DEVICE_INL Float lambda(Float absTanTheta, Float alpha)
 {
-	Float alpha2{ alpha * alpha };
-	Float cosTheta2{ cosTheta * cosTheta };
-	return 1.0f / (cosTheta + sqrtf(alpha2 + cosTheta2 - alpha2 * cosTheta2));
+	Float absTanThetaH{ absTanTheta };
+	if (isinf(absTanThetaH))
+		return 0.0f;
+	Float alpha2Tan2Theta{ alpha * absTanThetaH };
+	alpha2Tan2Theta *= alpha2Tan2Theta;
+	return (-1.0f + sqrtf(1.0f + alpha2Tan2Theta)) / 2.0f;
 }
 
-DEVICE_INL Float smithGAnisotropic(Float3 const& V, Float2 alpha)
+DEVICE_INL Float smithG(Float absTanTheta, Float alpha)
 {
-	Float tanTheta2{ tan2Theta(V) };
-	if (isinf(tanTheta2)) return 0.0f;
-	Float cosPhi2{ cos2Phi(V) };
-	Float alpha2{ cosPhi2 * pow2(alpha.u) + (1.0f - cosPhi2) * pow2(alpha.v) };
-	return 2.0f / (1.0f + sqrtf(1.0f + alpha2 * tanTheta2));
+	return 1.0f / (1.0f + lambda(absTanTheta, alpha));
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GENERALIZED TROWBRIDGE-REITZ DISTRIBUTION
-//  < Disney BRDF notes 2012 - Burley
-//  > has long tails and short peaks in the distribution curve
-//  > allows for normalisation and importance sampling
-//  > Disney uses two fix specular lobes with gamma = [1, 2]
-//  > alpha = roughness^2 result in better linearity
 
 DEVICE_INL Float roughnessToAlpha(Float roughness)
 {
-	return max(MIN_ALPHA, pow2(roughness));
+	return max(MIN_ALPHA, roughness * roughness);
 }
 
-DEVICE_INL Float2 roughnessToAlpha(Float roughness, Float anisotropic)
+DEVICE_INL Float gtr1(Float cosTheta, Float alpha)
 {
-	Float aspect{ sqrtf(1.0f - 0.9f * anisotropic) };
-	Float2 alpha{
-		max(MIN_ALPHA, pow2(roughness) / aspect),
-		max(MIN_ALPHA, pow2(roughness) * aspect)
-	};
-	return alpha;
-}
-
-//  GTR1 - notes eq. 4
-DEVICE_INL Float gtr1(Float cosThetaH, Float alpha)
-{
+	if (alpha >= 1.0f) return 1.0f / PI;
 	Float alpha2{ alpha * alpha };
-	Float t{ 1.0f + (alpha2 - 1.0f) * cosThetaH * cosThetaH };
+	Float t{ 1.0f + (alpha2 - 1.0f) * cosTheta * cosTheta };
 	return (alpha2 - 1.0f) / (PI * logf(alpha2) * t);
 }
 
-//  GTR2 - notes eq. 8 (know as GGX)
-DEVICE Float gtr2(Float3 const& H, Float alphax, Float alphay) // D
+DEVICE_INL Float gtr2(Float cosTheta, Float alpha)
 {
-	Float tanTheta2{ tan2Theta(H) };
-	if (isnan(tanTheta2)) return 0.0f;
-	Float cos4Theta{ cos2Theta(H) * cos2Theta(H) };
-	Float e{ (cos2Phi(H) / (alphax * alphax) + 
-		sin2Phi(H) / (alphay * alphay)) * tanTheta2 };
-	return 1 / (PI * alphax * alphay * cos4Theta * (1 + e) * (1 + e));
+	Float alpha2{ alpha * alpha };
+	Float t{ 1.0f + (alpha2 - 1.0f) * cosTheta * cosTheta };
+	return alpha2 / (PI * t * t);
 }
 
-DEVICE Float gtr2Lambda(Float3 const& H, Float alphax, Float alphay)
+DEVICE Float3 sampleGtr2(Float3 const& V, Float alpha, Float2 u)
 {
-	Float absTanTheta{ abs(tanTheta(H)) };
-	if (isinf(absTanTheta)) return 0.;
-	Float alpha{ sqrtf(cos2Phi(H) * alphax * alphax + sin2Phi(H) * alphay * alphay) };
-	Float alpha2Tan2Theta{ (alpha * absTanTheta) * (alpha * absTanTheta) };
-	return (-1 + sqrtf(1.f + alpha2Tan2Theta)) / 2;
-}
+	// Disney Keynotes eq. (2) and (9) 
+	Float alpha2{ alpha * alpha };
+	Float phi{ (2 * PI) * u[0] };
+	Float cosTheta{ sqrtf((1.0f - u[1]) / (1.0f + (alpha2 - 1.0f) * u[1])) };
+	Float sinTheta{ sqrtf(max(0.0f, 1.0f - cosTheta * cosTheta)) };
 
-DEVICE Float3 sampleGtr2(Float3 const& V, Float alphax, Float alphay, Float2 u)
-{
-	Float3 H{};
-
-	Float cosTheta = 0, phi = (2 * PI) * u[1];
-	if (alphax == alphay) {
-		Float tanTheta2 = alphax * alphax * u[0] / (1.0f - u[0]);
-		cosTheta = 1 / sqrtf(1 + tanTheta2);
-	}
-	else {
-		phi = atanf(alphay / alphax * tanf(2 * PI * u[1] + .5f * PI));
-
-		if (u[1] > .5f) phi += PI;
-		Float sinPhi = sinf(phi), cosPhi = cosf(phi);
-		Float alphax2 = alphax * alphax, alphay2 = alphay * alphay;
-		Float alpha2 = 1 / (cosPhi * cosPhi / alphax2 + sinPhi * sinPhi / alphay2);
-		Float tanTheta2 = alpha2 * u[0] / (1 - u[0]);
-		cosTheta = 1 / sqrtf(1 + tanTheta2);
-	}
-	Float sinTheta = sqrtf(max((Float)0., (Float)1. - cosTheta * cosTheta));
-	H = toSphereCoordinates(sinTheta, cosTheta, phi);
+	Float3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
 	if (!sameHemisphere(V, H)) H = -H;
 
 	return H;
 }
 
-DEVICE Float pdfGtr2(Float3 const& V, Float3 const& H, Float alphax, Float alphay)
+DEVICE Float3 sampleGtr2VNDF(Float3 const& V, Float alpha, Float2 u)
 {
-	Float Dr{ gtr2(H, alphax, alphay) };
-	Float Gr{ smithGAnisotropic(V, {alphax, alphay}) };
-	return Dr * absCosTheta(H) / (4.0f * absCosTheta(V));
+	Float3 Vh = normalize(Float3(alpha * V.x, alpha * V.y, V.z));
+
+	float lensq = Vh.x * Vh.x + Vh.y * Vh.y;
+	Float3 T1 = lensq > 0 ? Float3(-Vh.y, Vh.x, 0) * (1.0f / sqrtf(lensq)) : Float3(1, 0, 0);
+	Float3 T2 = cross(Vh, T1);
+
+	float r = sqrtf(u.x);
+	float phi = 2.0 * PI * u.y;
+	float t1 = r * cos(phi);
+	float t2 = r * sin(phi);
+	float s = 0.5 * (1.0 + Vh.z);
+	t2 = (1.0 - s) * sqrt(1.0 - t1 * t1) + s * t2;
+
+	Float3 Nh = t1 * T1 + t2 * T2 + sqrtf(max(0.0f, 1.0f - t1 * t1 - t2 * t2)) * Vh;
+
+	return normalize(Float3(alpha * Nh.x, alpha * Nh.y, max(0.0f, Nh.z)));
 }
 
-
-
-
+DEVICE Float pdfGtr2(Float3 const& V, Float3 const& H, Float alpha)
+{
+	Float Dr{ gtr2(cosTheta(H), alpha)};
+	Float Gr{ smithG(abs(tanTheta(V)), alpha)};
+	return Dr * Gr * absCosTheta(H) / (4.0f * absCosTheta(V));
+}
 
 
 #endif // !DISNEY_BRDF_UITLS_HPP

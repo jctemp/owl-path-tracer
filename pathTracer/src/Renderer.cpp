@@ -23,6 +23,7 @@ void init(void)
 		{ "maxDepth",          OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth) },
 		{ "samplesPerPixel",   OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, samplesPerPixel) },
 		{ "materials",         OWL_BUFFER,              OWL_OFFSETOF(LaunchParams, materials)},
+		{ "lights",            OWL_BUFFER,              OWL_OFFSETOF(LaunchParams, lights)},
 		{ "world",             OWL_GROUP,               OWL_OFFSETOF(LaunchParams, world) },
 		{ "environmentMap",    OWL_TEXTURE,             OWL_OFFSETOF(LaunchParams, environmentMap) },
 		{ "useEnvironmentMap", OWL_BOOL,                OWL_OFFSETOF(LaunchParams, useEnvironmentMap)},
@@ -56,10 +57,11 @@ void init(void)
 
 	OWLVarDecl trianglesGeomVars[]
 	{
-		{ "matId",  OWL_INT,   OWL_OFFSETOF(TrianglesGeomData, matId) },
-		{ "index",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, index) },
-		{ "vertex", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, vertex) },
-		{ "normal", OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, normal) },
+		{ "matId",   OWL_INT,   OWL_OFFSETOF(TrianglesGeomData, matId) },
+		{ "lightId", OWL_INT,   OWL_OFFSETOF(TrianglesGeomData, lightId) },
+		{ "index",   OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, index) },
+		{ "vertex",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, vertex) },
+		{ "normal",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, normal) },
 		{ nullptr }
 	};
 
@@ -205,10 +207,16 @@ void render(Camera const& cam, std::vector<MaterialStruct> const& materials)
 	auto materialBuffer{
 		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(MaterialStruct), materials.size(), materials.data())
 	};
+	owlParamsSetBuffer(renderer.launchParams, "materials", materialBuffer);
+
+
+	//auto lightBuffer{
+	//	owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(LightStruct), lights.size(), lights.data())
+	//};
+	//owlParamsSetBuffer(renderer.launchParams, "lights", lightBuffer);
 
 	owlParamsSetRaw(renderer.launchParams, "maxDepth", &renderer.maxDepth);
 	owlParamsSetRaw(renderer.launchParams, "samplesPerPixel", &renderer.samplesPerPixel);
-	owlParamsSetBuffer(renderer.launchParams, "materials", materialBuffer);
 	owlParamsSetGroup(renderer.launchParams, "world", renderer.world);
 	owlParamsSetTexture(renderer.launchParams, "environmentMap", renderer.environmentMap);
 	owlParamsSet1b(renderer.launchParams, "useEnvironmentMap", renderer.useEnvironmentMap);

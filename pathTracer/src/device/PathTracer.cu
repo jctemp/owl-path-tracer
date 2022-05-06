@@ -61,8 +61,8 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 			else if (optixLaunchParams.environmentMap)
 				li = sampleEnvironment(ray.direction);
 			else
-				li = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, 0.5f *
-					(ray.direction.y + 1.0f));
+				li = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, { 0.5f *
+					(ray.direction.y + 1.0f) });
 			//li = Float3{ 1.0f };
 
 			return li * pathThroughput;
@@ -74,6 +74,12 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		Float3& P{ is.P }, N{ is.N }, V{ is.V }, Ng{ is.Ng };
 		Float3 T{}, B{};
 
+		/* HANDLE LIGHTS */
+		if (mat.type == Material::EMISSION)
+		{
+			return mat.emission * pathThroughput;
+		}
+
 		onb(N, T, B);
 		toLocal(T, B, N, V);
 
@@ -83,29 +89,7 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		Float3 bsdf{ 0.0f };
 		Float3 L{ 0.0f };
 
-		switch (mat.type)
-		{
-		case Material::DISNEY_DIFFUSE:
-			sampleDisneyDiffuse(mat, V, L, prd.random, bsdf, pdf);
-			break;
-		case Material::DISNEY_FAKE_SS:
-			sampleDisneyFakeSubsurface(mat, V, L, prd.random, bsdf, pdf);
-			break;
-		case Material::DISNEY_RETRO:
-			sampleDisneyRetro(mat, V, L, prd.random, bsdf, pdf);
-			break;
-		case Material::DISNEY_SHEEN:
-			sampleDisneySheen(mat, V, L, prd.random, bsdf, pdf);
-			break;
-		case Material::DISNEY_CLEARCOAT:
-			sampleDisneyClearcoat(mat, V, L, prd.random, bsdf, pdf);
-			break;
-		case Material::DISNEY_MICROFACET:
-			sampleDisneyMicrofacet(mat, V, L, prd.random, bsdf, pdf);
-			break;
-		default:
-			break;
-		}
+		sampleDisneyBSDF(mat, V, L, prd.random, bsdf, pdf);
 
 		if (isnan(bsdf.x) || isnan(bsdf.y) || isnan(bsdf.z))
 			printf("bsdf %f, %f, %f is nan\n", bsdf.x, bsdf.y, bsdf.z);

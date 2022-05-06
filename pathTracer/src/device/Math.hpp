@@ -15,14 +15,14 @@
 #define T_MIN         1E-3f
 #define T_MAX         1E10f
 #define MIN_ROUGHNESS 0.01f
-#define MIN_ALPHA     0.0001f
+#define MIN_ALPHA     0.001f
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 #pragma region UTILITY
 
 template<class T>
-DEVICE_INL T mix(T a, T b, Float t) { return a + (b - a) * t; }
+DEVICE_INL T mix(T a, T b, T t) { return a + (b - a) * t; }
 
 template<class T>
 DEVICE_INL T saturate(T a);
@@ -147,24 +147,42 @@ DEVICE_INL Float3 reflect(Float3 const& V, Float3 const& N)
 }
 
 
-DEVICE_INL Float3 reflect(Float3 const& v)
+DEVICE_INL Float3 refract(Float3 const& V, Float3 const& N, Float eta)
 {
-	return Float3(-v.x, v.y, -v.z);
+	Float cosThetaI{ dot(V, N) };
+	Float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
+	Float sin2ThetaT{ eta * eta * sin2ThetaI };
+
+	if (sin2ThetaT >= 1.0f) return { 0.0f };
+	Float cosThetaT{ sqrtf(1.0f - sin2ThetaT) };
+	return eta * -V + (eta * cosThetaI - cosThetaT) * N;
 }
 
+DEVICE_INL bool refract(Float3 const& V, Float3 const& N, Float eta, Float3& T)
+{
+	T = -V;
+	if (eta == 1.0f)return  true;
+	if (eta <= 0.0f) return false;
+	if (isnan(eta)) return false;
+	if (isinf(eta))return  false;
+	
+	//float costheta = dot(-V, N);
+	//Float3 rOutPerp{ eta * (V + costheta * N) };
+	//Float3 rOutPara{ sqrtf(max(0.0f, 1.0f - dot(rOutPerp,rOutPerp))) * N };
+	//T = rOutPara + rOutPerp;
+	//return true;
 
-DEVICE_INL Float3 refract(Float3 const& v, Float3 const& n, Float in_eta, Float ext_eta, bool& inner_reflection) {
-	const Float coso = dot(v, n);
-	const Float eta = coso > 0 ? (ext_eta / in_eta) : (in_eta / ext_eta);
-	const Float t = 1.0f - eta * eta * std::max(0.0f, 1.0f - coso * coso);
+	Float cosThetaI{ dot(-V, N) };
+	Float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
+	Float sin2ThetaT{ eta * eta * sin2ThetaI };
 
-	// total inner reflection
-	inner_reflection = (t <= 0.0f);
-	if (inner_reflection)
-		return Float3(0.0f, 0.0f, 0.0f);
-	const float scale = coso < 0.0f ? -1.0f : 1.0f;
-	return -eta * v + (eta * coso - scale * sqrtf(t)) * n;
+	if (sin2ThetaT >= 1.0f) return false;
+
+	Float cosThetaT{ sqrtf(1.0f - sin2ThetaT) };
+	T = eta * -V + (eta * cosThetaI - cosThetaT) * N;
+	return true;
 }
+
 
 
 DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L, Float3 const& N)

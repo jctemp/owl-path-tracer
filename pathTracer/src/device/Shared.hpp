@@ -31,28 +31,30 @@ enum class Material
 	DISNEY_RETRO = 1 << 3,
 	DISNEY_SHEEN = 1 << 4,
 	DISNEY_CLEARCOAT = 1 << 5,
-	DISNEY_MICROFACET = 1 << 6
+	DISNEY_MICROFACET = 1 << 6,
+	DISNEY_BRDF = 1 << 7,
+	EMISSION = 1 << 8
 };
 
 struct MaterialStruct
 {
 	Material type{ Material::DISNEY_DIFFUSE };
-	Float3 baseColor{ 0.8f, 0.8f, 0.8f };
-	Float subsurface{ 0.0f };
-	Float3 subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
-	Float3 subsurfaceColor{ 0.8f, 0.8f, 0.8f };
-	Float metallic{ 0.0f };
-	Float specular{ 0.5f };
-	Float specularTint{ 0.0f };
-	Float roughness{ 0.5f };
-	Float sheen{ 0.0f };
-	Float sheenTint{ 0.5f };
-	Float clearcoat{ 0.0f };
-	Float clearcoatGloss{ 0.03f };
-	Float anisotropic{ 0.0f };
-	Float ior{ 1.45f };
-	Float transmission{ 0.0f };
-	Float transmissionRoughness{ 0.0f };
+	Float3   baseColor{ 0.8f, 0.8f, 0.8f };
+	Float    subsurface{ 0.0f };
+	Float3   subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
+	Float3   subsurfaceColor{ 0.8f, 0.8f, 0.8f };
+	Float    metallic{ 0.0f };
+	Float    specular{ 0.5f };
+	Float    specularTint{ 1.0f };
+	Float    roughness{ 0.5f };
+	Float    sheen{ 0.0f };
+	Float    sheenTint{ 1.0f };
+	Float    clearcoat{ 0.0f };
+	Float    clearcoatGloss{ 0.03f };
+	Float    ior{ 1.45f };
+	Float    transmission{ 0.0f };
+	Float    transmissionRoughness{ 0.0f };
+	Float    emission{ 0.0f };
 };
 
 // TODO: IMPLEMENT LIGHT SAMPLING :)
@@ -71,6 +73,7 @@ struct LaunchParams
 	Int maxDepth;
 	Int samplesPerPixel;
 	Buffer materials;
+	Buffer lights;
 	OptixTraversableHandle world;
 	cudaTextureObject_t environmentMap;
 	bool useEnvironmentMap;
@@ -78,7 +81,8 @@ struct LaunchParams
 
 struct TrianglesGeomData
 {
-	Int matId;
+	Int matId{ -1 };
+	Int lightId{ -1 };
 	Int3* index;
 	Float3* vertex;
 	Float3* normal;
