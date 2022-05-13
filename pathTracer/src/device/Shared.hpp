@@ -55,23 +55,22 @@ struct MaterialStruct
 	Float    ior{ 1.45f };
 	Float    transmission{ 0.0f };
 	Float    transmissionRoughness{ 0.0f };
-	Float    emission{ 0.0f };
 };
 
 enum class Light
 {
 	NONE = 0 << 0,
-	MSEH = 1 << 0
+	MESH = 1 << 0
 };
 
 struct LightStruct
 {
-	Light type{ Light::NONE };
-	Float3 color = Float3{ 0.0f };
-	Float intensity{ 1.0f };
-	Float exposure{ 0.0f };
+	Light type{ Light::MESH };
+	Float3 color{ 1.f };
+	Float intensity{ 1.f };
+	Float exposure{ 0.f };
 	Float falloff{ 2.0f };
-	bool useSurfaceArea{ false };
+	bool use_surface_area = false;
 };
 
 struct LaunchParams

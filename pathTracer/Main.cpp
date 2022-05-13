@@ -116,21 +116,17 @@ int main(void)
 	test.clearcoat = 0.0f;
 	test.clearcoatGloss = 1.0f;
 
-	MaterialStruct temp{ Material::EMISSION };
-	temp.emission = 35.0f;
-
-	LightStruct light{};
-	light.intensity = 35.0f;
+	/*LightStruct light{};
+	light.intensity = 5;*/
 
 	std::vector<std::tuple<std::string, MaterialStruct>> mats{
 		{"mat1", mat1},
 		{"mat2", mat2},
 		{"test", test},
-		{"light", temp}
 	};
 
 	std::vector<std::tuple<std::string, LightStruct>> li{
-		{"light", light}
+		//{"light", light}
 	};
 
 	SL_LOG("==== MATERIALS ===============================");

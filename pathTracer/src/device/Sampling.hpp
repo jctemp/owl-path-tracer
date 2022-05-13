@@ -138,6 +138,33 @@ DEVICE void pdfUniformCone(Float cosThetaMax, Float& pdf)
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+#pragma region "TRIANGLE SAMPLING"
+
+DEVICE void sampleUniformTriangle(Float2 rand, Float2& p)
+{
+	Float su0{ sqrtf(rand.u) };
+	p = Float2{ 1 - su0, rand.v * su0 };
+}
+
+DEVICE void sampleTriangle(InterfaceStruct const& i, Random& rand)
+{
+	Float2 b{};
+	sampleUniformTriangle({ rand.random(), rand.random() }, b);
+
+}
+
+DEVICE Float triangleArea(Float3 const& A, Float3 const& B, Float3 const& C)
+{
+	Float a{ owl::length((B - A)) };
+	Float b{ owl::length((C - A)) };
+	Float c{ owl::length((C - B)) };
+
+	return 0.25f * sqrtf((a + b + c) * (-a + b + c) * (a - b + c) * (a + b - c));
+}
+
+#pragma endregion
+
+
 
 
 #endif // SAMPLE_METHODS_HPP

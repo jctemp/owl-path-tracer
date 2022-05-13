@@ -1,6 +1,7 @@
 ﻿#include "Globals.hpp"
 #include "materials/Lambert.hpp"
 #include "materials/Disney.hpp"
+#include "lights/Light.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
@@ -37,12 +38,14 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 {
 	auto& LP = optixLaunchParams;
 
-	Float3 radiance{ 0.0f };
-	Float3 accumulatedRadiance{ 0.0f };
-	Float3 pathThroughput{ 1.0f };
+	// hold total sum of accumulated radiance
+	Float3 L{ 0.0f };
+	// hold the path throughput weight
+	//	 (f * cos(theta)) / pdf
+	// => current implementation has f and cos already combined
+	Float3 beta{ 1.0f };
 
 	InterfaceStruct is;
-
 	prd.is = &is;
 
 	for (Int depth{ 0 }; depth < LP.maxDepth; ++depth)
@@ -51,7 +54,7 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		owl::traceRay(LP.world, ray, prd);
 
 
-		/* SAMPLE ENVIRONMENT FOR NO HIT*/
+		/* TERMINATE PATH AND SAMPLE ENVIRONMENT*/
 		if (prd.scatterEvent == ScatterEvent::MISS)
 		{
 			Float3 li{ 0.0f };
@@ -62,82 +65,83 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 			else
 				li = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, { 0.5f *
 					(ray.direction.y + 1.0f) });
-			//li = Float3{ 1.0f };
 
-			return li * pathThroughput;
+			L += li * beta;
+			break;
 		}
 
 
-		/* SAMPLE LIGHT SOURCE */
-		LightStruct lights{};
-		if (is.lightId >= 0)
-		{
-			GET(lights, LightStruct, LP.lights, is.lightId);
-		}
-
-
-		/* SAMPLE MATERIAL OR VOLUMETRIC */
-		MaterialStruct materials{};
-
-		if (is.matId >= 0)
-		{
-			GET(materials, MaterialStruct, LP.materials, is.matId);
-		}
-
+		/* PREPARE MESH FOR CALCULATIONS */
 		Float3& P{ is.P }, N{ is.N }, V{ is.V }, Ng{ is.Ng };
 		Float3 T{}, B{};
+		onb(N, T, B);
 
-		// --------------------------------------------------------------
-		// TODO: replace with proper sampling for lights
 
-		/* HANDLE LIGHTS */
-		if (materials.type == Material::EMISSION)
+		/* TERMINATE PATH AND SAMPLE LIGHT */
+		if (is.lightId >= 0)
 		{
-			//if (getLaunchIndex().x == 0)
-			//	printf("%d\n", lights.type == Light::NONE);
-			return materials.emission * pathThroughput;
+			// TODO: SAMPLE MESH LIGHTx
+			LightStruct light{};
+			GET(light, LightStruct, LP.lights, is.lightId);
+			Float3 emission{ light.color * light.intensity };
+			L += emission * beta;
+			break;
 		}
 
-		// --------------------------------------------------------------
 
-		onb(N, T, B);
+		/* SAMPLE BRDF OR PHASE FUNCTION */
+		Float3 L{ 0.0f };
 		toLocal(T, B, N, V);
 
-
-		/* SAMPLE MATERIAL */
-		Float pdf{ 0.0f };
-		Float3 bsdf{ 0.0f };
-		Float3 L{ 0.0f };
-
-		sampleDisneyBSDF(materials, V, L, prd.random, bsdf, pdf);
-
-		if (isnan(bsdf.x) || isnan(bsdf.y) || isnan(bsdf.z))
-			printf("bsdf %f, %f, %f is nan\n", bsdf.x, bsdf.y, bsdf.z);
-		if (isinf(bsdf.x) || isinf(bsdf.y) || isinf(bsdf.z))
-			printf("bsdf %f, %f, %f is inf\n", bsdf.x, bsdf.y, bsdf.z);
-
-		// end path if impossible
-		if (pdf <= 0.0f)
-			break;
-
-		// because of the LTE equation => f_d * L(p,\omega_i) * | cos\theta |
-		// => the pathTroughput defines how much radiance is reaching the view 
-		// after the material interaction
-		pathThroughput *= bsdf / pdf;
+		{
+			MaterialStruct material{};
+			if (is.matId >= 0) GET(material, MaterialStruct, LP.materials, is.matId);
 
 
-		/* RUSSIAN ROULETTE */
-		// at least 3 bounces required to avoid bias
-		float pmax = max(pathThroughput.x, max(pathThroughput.y, pathThroughput.z));
-		if (depth > 3 && prd.random() > pmax) {
-			break;
+			Float pdf{ 0.0f };
+			Float3 bsdf{ 0.0f };
+
+			sampleDisneyBSDF(material, V, L, prd.random, bsdf, pdf);
+
+			// end path if impossible
+			if (pdf <= 0.0f)
+				break;
+
+			beta *= bsdf / pdf;
 		}
 
 		toWorld(T, B, N, L);
+
+
+		/* SAMPLE DIRECT LIGHTS */
+		if (LP.lights.count != 0) 
+		{
+			// MAY BE INTRODUCE DOME SAMPLING LATER
+			Int randMax{ LP.lights.count };
+			Int randId{ (Int)min(prd.random() * randMax, randMax - 1.0f) };
+
+
+			LightStruct lights{};
+
+
+
+		}
+
+		/* TERMINATE PATH IF RUSSIAN ROULETTE  */
+		Float betaMax{ max(beta.x, max(beta.y, beta.z)) };
+		if (depth > 3) {
+			Float q{ max(.05f, 1 - betaMax) };
+			if (prd.random() < q) break;
+			beta /= 1 - q;
+
+			ASSERT(isinf(beta.y), "Russian Roulette caused beta to have inf. component");
+		}
+
+
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };
 	}
 
-	return { 0.0f };
+	return L;
 }
 
 
@@ -184,12 +188,14 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
 	PerRayData& prd{ getPRD<PerRayData>() };
 
+	prd.is->t = optixGetRayTmax();
+
 	// barycentrics
 	float b1{ optixGetTriangleBarycentrics().x };
 	float b2{ optixGetTriangleBarycentrics().y };
 	float b0{ 1 - b1 - b2 };
 
-	prd.is->uv = { b1, b2 };
+	prd.is->UV = { b1, b2 };
 
 	// get direction
 	Float3 const direction{ makeFloat3(optixGetWorldRayDirection()) };
@@ -209,6 +215,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 	Float3 const& p0{ self.vertex[index.x] };
 	Float3 const& p1{ self.vertex[index.y] };
 	Float3 const& p2{ self.vertex[index.z] };
+
+	prd.is->TRI[0] = Float3{ p0 };
+	prd.is->TRI[1] = Float3{ p1 };
+	prd.is->TRI[2] = Float3{ p2 };
 
 	prd.is->Ng = normalize(cross(p1 - p0, p2 - p0));
 	prd.is->P = p0 * b0 + p1 * b1 + p2 * b2;

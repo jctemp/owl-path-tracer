@@ -12,15 +12,17 @@ using Random = LCG<4>;
 #define DEVICE __owl_device
 
 #define GET(RETURN, TYPE, BUFFER, ADDRESS)\
+{\
 if (BUFFER.data == nullptr) {\
-	::printf("Device Error (%d): buffer was nullptr.\n", __LINE__); asm("trap;");}\
+	::printf("Device Error (%d, %s): buffer was nullptr.\n", __LINE__, __FILE__); asm("trap;");}\
 if (ADDRESS >= BUFFER.count) {\
 	::printf("Device Error (%d): out of bounds access (address: %d, size %d).\n",\
 	__LINE__, ADDRESS, uint32_t(BUFFER.count)); asm("trap;");} \
-RETURN = ((TYPE*)BUFFER.data)[ADDRESS];
+RETURN = ((TYPE*)BUFFER.data)[ADDRESS];\
+}
 
 #define ASSERT(check, msg) \
-if (check) {::printf("Device Error (%d): %s\n", __LINE__, msg); asm("trap;"); }
+if (check) {::printf("Device Error (%d, %s): %s\n", __LINE__, __FILE__, msg); asm("trap;"); }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -34,6 +36,9 @@ enum class ScatterEvent
 
 struct InterfaceStruct
 {
+	/* triangle points */
+	Float3 TRI[3];
+
 	/* hit position */
 	Float3 P;
 
@@ -47,7 +52,10 @@ struct InterfaceStruct
 	Float3 V;
 
 	/* barycentrics */
-	Float2 uv;
+	Float2 UV;
+
+	/* thit */
+	Float t;
 
 	/* primitive id => 0 if not exists */
 	Int prim;

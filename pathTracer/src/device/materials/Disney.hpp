@@ -431,7 +431,7 @@ DEVICE void sampleDisneyBSDF(MaterialStruct const& mat, Float3 const& V, Float3&
 	Float pDiffuse = diffuseWeight * norm;
 	Float pClearcoat = clearcoatWeight * norm;
 
-	Float cdf[3];
+	Float cdf[3]{};
 	cdf[0] = pDiffuse;
 	cdf[1] = pSpecular + cdf[0];
 	cdf[2] = pClearcoat + cdf[1];

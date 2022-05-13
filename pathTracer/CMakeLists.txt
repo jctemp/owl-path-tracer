@@ -24,9 +24,10 @@ SET(BA_DEVICE_HEADERS
 
 	"src/device/materials/Lambert.hpp"
 	"src/device/materials/Disney.hpp"
-	 
-	"src/device/materials/BrdfUtils.hpp"
-	
+    "src/device/materials/BrdfUtils.hpp"
+
+    "src/device/lights/Light.hpp" 
+    "src/device/lights/LightUtils.hpp"
 )
 
 SET(BA_INCLUDE "include" "src")
