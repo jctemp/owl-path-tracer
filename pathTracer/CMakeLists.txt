@@ -23,9 +23,9 @@ SET(BA_DEVICE_HEADERS
 	"src/device/Sampling.hpp"
 
 	"src/device/materials/Lambert.hpp"
-	"src/device/materials/DisneyBrdf.hpp"
-	"src/device/materials/Materials.hpp" 
-	"src/device/materials/DisneyBrdfUtils.hpp"
+	"src/device/materials/Disney.hpp"
+	 
+	"src/device/materials/BrdfUtils.hpp"
 	
 )
 

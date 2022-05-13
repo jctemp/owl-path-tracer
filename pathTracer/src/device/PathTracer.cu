@@ -1,6 +1,6 @@
 ﻿#include "Globals.hpp"
 #include "materials/Lambert.hpp"
-#include "materials/DisneyBrdf.hpp"
+#include "materials/Disney.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
@@ -68,30 +68,37 @@ DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
 		}
 
 
-		/* LOAD OBJECT DATA */
-		MaterialStruct materials{};
+		/* SAMPLE LIGHT SOURCE */
 		LightStruct lights{};
+		if (is.lightId >= 0)
+		{
+			GET(lights, LightStruct, LP.lights, is.lightId);
+		}
+
+
+		/* SAMPLE MATERIAL OR VOLUMETRIC */
+		MaterialStruct materials{};
 
 		if (is.matId >= 0)
 		{
 			GET(materials, MaterialStruct, LP.materials, is.matId);
 		}
 
-		if (is.lightId >= 0)
-		{
-			GET(lights, LightStruct, LP.lights, is.lightId);
-		}
-
 		Float3& P{ is.P }, N{ is.N }, V{ is.V }, Ng{ is.Ng };
 		Float3 T{}, B{};
+
+		// --------------------------------------------------------------
+		// TODO: replace with proper sampling for lights
 
 		/* HANDLE LIGHTS */
 		if (materials.type == Material::EMISSION)
 		{
-			if (getLaunchIndex().x == 0)
-				printf("%d\n", lights.type == Light::NONE);
+			//if (getLaunchIndex().x == 0)
+			//	printf("%d\n", lights.type == Light::NONE);
 			return materials.emission * pathThroughput;
 		}
+
+		// --------------------------------------------------------------
 
 		onb(N, T, B);
 		toLocal(T, B, N, V);

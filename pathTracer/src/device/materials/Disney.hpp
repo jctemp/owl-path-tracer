@@ -2,9 +2,8 @@
 #define DISNEY_BRDF_HPP
 #pragma once
 
-#include "Materials.hpp"
 #include "../Sampling.hpp"
-#include "DisneyBrdfUtils.hpp"
+#include "BrdfUtils.hpp"
 
 // REFECRENCES:
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
@@ -294,6 +293,8 @@ DEVICE void sampleDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, F
 
 #pragma endregion
 
+// ──────────────────────────────────────────────────────────────────────────────────────
+
 #pragma region TRANSMISSION
 
 DEVICE Float3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
@@ -314,11 +315,6 @@ DEVICE Float3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 co
 	if (H.z < 0) H = -H;
 
 	Float Dr{ gtr2(cosTheta(H), alpha) };
-
-	//if (owl::getLaunchIndex().x == 1 && owl::getLaunchIndex().y == 1)
-	//{
-	//	printf("alpha %f, alpha2 %f, t %f, D %f\n", alpha, alpha2, t, alpha2 / (PI * t * t));
-	//}
 
 	return Dr * mat.transmission * (1.0f - mat.metallic);
 }
@@ -405,6 +401,7 @@ DEVICE void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3
 
 }
 
+// ──────────────────────────────────────────────────────────────────────────────────────
 #pragma endregion
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
