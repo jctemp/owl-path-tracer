@@ -37,7 +37,7 @@ struct Renderer
     uint32_t samplesPerPixel;
 
     // Programs
-    OWLRayGen rayGen;
+    OWLRayGen rayGenenration;
     OWLMissProg missProg;
 
     // link between host and device

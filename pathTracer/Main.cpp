@@ -1,7 +1,7 @@
-﻿#include <pt/ObjLoader.hpp>
-#include <pt/StbUtils.hpp>
+﻿#include <host/ObjLoader.hpp>
+#include <host/StbUtils.hpp>
+#include <host/Renderer.hpp>
 #include <pt/Types.hpp>
-#include <pt/Renderer.hpp>
 
 #include <SimpleLogger.hpp>
 

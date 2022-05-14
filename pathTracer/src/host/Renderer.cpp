@@ -1,7 +1,6 @@
 #include <pt/Types.hpp>
-#include <pt/StbUtils.hpp>
-
-#include <pt/Renderer.hpp>
+#include "StbUtils.hpp"
+#include "Renderer.hpp"
 
 #include <SimpleLogger.hpp>
 
@@ -52,8 +51,8 @@ void init(void)
 		{ nullptr }
 	};
 
-	renderer.rayGen =
-		owlRayGenCreate(renderer.context, renderer.module, "simpleRayGen", sizeof(RayGenData), rayGenVars, -1);
+	renderer.rayGenenration =
+		owlRayGenCreate(renderer.context, renderer.module, "rayGenenration", sizeof(RayGenData), rayGenVars, -1);
 
 	OWLVarDecl trianglesGeomVars[]
 	{
@@ -197,12 +196,12 @@ void render(Camera const& cam, std::vector<MaterialStruct> const& materials, std
 	Float3 const llc{ origin - horizontal / 2.0f - vertical / 2.0f - w };
 
 	// 4) set ray gen data
-	owlRayGenSetBuffer(renderer.rayGen, "fbPtr", renderer.frameBuffer);
-	owlRayGenSet2i(renderer.rayGen, "fbSize", (const owl2i&)cam.fbSize);
-	owlRayGenSet3f(renderer.rayGen, "camera.origin", (const owl3f&)origin);
-	owlRayGenSet3f(renderer.rayGen, "camera.llc", (const owl3f&)llc);
-	owlRayGenSet3f(renderer.rayGen, "camera.horizontal", (const owl3f&)horizontal);
-	owlRayGenSet3f(renderer.rayGen, "camera.vertical", (const owl3f&)vertical);
+	owlRayGenSetBuffer(renderer.rayGenenration, "fbPtr", renderer.frameBuffer);
+	owlRayGenSet2i(renderer.rayGenenration, "fbSize", (const owl2i&)cam.fbSize);
+	owlRayGenSet3f(renderer.rayGenenration, "camera.origin", (const owl3f&)origin);
+	owlRayGenSet3f(renderer.rayGenenration, "camera.llc", (const owl3f&)llc);
+	owlRayGenSet3f(renderer.rayGenenration, "camera.horizontal", (const owl3f&)horizontal);
+	owlRayGenSet3f(renderer.rayGenenration, "camera.vertical", (const owl3f&)vertical);
 
 	// 5) set launch params
 	auto materialBuffer{
@@ -228,5 +227,5 @@ void render(Camera const& cam, std::vector<MaterialStruct> const& materials, std
 
 	// 7) compute image
 	SL_WARN("LAUNCHING TRACER");
-	owlLaunch2D(renderer.rayGen, cam.fbSize.x, cam.fbSize.y, renderer.launchParams);
+	owlLaunch2D(renderer.rayGenenration, cam.fbSize.x, cam.fbSize.y, renderer.launchParams);
 }

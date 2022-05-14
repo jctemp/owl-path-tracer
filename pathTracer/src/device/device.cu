@@ -8,9 +8,9 @@
 
 using namespace owl;
 
-__constant__ LaunchParams optixLaunchParams;
+PT_DEVICE_CONSTANT LaunchParams optixLaunchParams;
 
-OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
+OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 {
 	RayGenData const& self{ getProgramData<RayGenData>() };
 	Int2 const pixelId{ getLaunchIndex() };

@@ -1,4 +1,4 @@
-#include <pt/ObjLoader.hpp>
+#include "ObjLoader.hpp"
 #include <pt/Types.hpp>
 #include <SimpleLogger.hpp>
 

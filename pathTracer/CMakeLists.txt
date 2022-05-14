@@ -1,15 +1,15 @@
 SET(BA_SOURCES
 	"Main.cpp"
-	"src/ObjLoader.cpp"
-	"src/StbUtils.cpp"
-	"src/Renderer.cpp"
+	"src/host/ObjLoader.cpp"
+	"src/host/StbUtils.cpp"
+	"src/host/Renderer.cpp"
 )
 
 SET(BA_HEADERS
 	
-	"include/pt/ObjLoader.hpp"
-	"include/pt/StbUtils.hpp"
-	"include/pt/Renderer.hpp"
+	"src/host/ObjLoader.hpp"
+	"src/host/StbUtils.hpp"
+	"src/host/Renderer.hpp"
 	
 )
 
