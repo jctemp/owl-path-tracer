@@ -30,6 +30,8 @@ endif()
 
 # CONFIGURE EXTERNAL LIBRARIES
 
+find_package(CUDA REQUIRED)
+
 set(log_dir "${CMAKE_CURRENT_SOURCE_DIR}/simpleLogger")
 include_directories(${log_dir})
 add_subdirectory(${log_dir} EXCLUDE_FROM_ALL)

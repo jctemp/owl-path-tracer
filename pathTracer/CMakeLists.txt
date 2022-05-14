@@ -28,7 +28,10 @@ SET(BA_DEVICE_HEADERS
 
     "src/device/lights/Light.hpp" 
     "src/device/lights/LightUtils.hpp"
-)
+
+	"src/device/core/ClosestHit.hpp"
+	"src/device/core/Miss.hpp"
+ )
 
 SET(BA_INCLUDE "include" "src")
 
@@ -41,6 +44,8 @@ EMBED_PTX(
 	SOURCES
 		"src/device/PathTracer.cu"
 )
+
+
 
 add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS} ${BA_DEVICE_HEADERS})
 target_include_directories(bachelorThesis PUBLIC ${BA_INCLUDE})
