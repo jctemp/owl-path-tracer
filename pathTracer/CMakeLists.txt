@@ -6,7 +6,7 @@ SET(BA_SOURCES
 )
 
 SET(BA_HEADERS
-	"include/pt/Types.hpp"
+	
 	"include/pt/ObjLoader.hpp"
 	"include/pt/StbUtils.hpp"
 	"include/pt/Renderer.hpp"
@@ -14,6 +14,10 @@ SET(BA_HEADERS
 )
 
 SET(BA_DEVICE_HEADERS
+	"src/device/core/closestHit.hpp"
+	"src/device/core/miss.hpp"
+    "src/device/core/deviceTypes.hpp"
+
 	"src/device/Shared.hpp"
 
 	"src/device/Random.hpp"
@@ -26,23 +30,19 @@ SET(BA_DEVICE_HEADERS
 	"src/device/materials/Disney.hpp"
     "src/device/materials/BrdfUtils.hpp"
 
-    "src/device/lights/Light.hpp" 
-    "src/device/lights/LightUtils.hpp"
 
-	"src/device/core/ClosestHit.hpp"
-	"src/device/core/Miss.hpp"
- )
+)
 
 SET(BA_INCLUDE "include" "src")
 
 EMBED_PTX(
 	OUTPUT_TARGET
-		pathTracer-ptx
+		device-ptx
 	PTX_LINK_LIBRARIES
 		owl::owl
 		${CUDA_RUNTIME_LIBRARY}
 	SOURCES
-		"src/device/PathTracer.cu"
+		"src/device/device.cu"
 )
 
 
@@ -54,7 +54,7 @@ target_link_libraries(bachelorThesis
 	fmt::fmt
 	glm::glm
 	tinyobjloader
-	pathTracer-ptx
+	device-ptx
 )
 
 if(MSVC)

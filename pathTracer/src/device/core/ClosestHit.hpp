@@ -5,7 +5,6 @@
 #include "Globals.hpp"
 #include "materials/Lambert.hpp"
 #include "materials/Disney.hpp"
-#include "lights/Light.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>

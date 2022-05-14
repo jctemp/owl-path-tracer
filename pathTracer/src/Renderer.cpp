@@ -5,7 +5,7 @@
 
 #include <SimpleLogger.hpp>
 
-extern "C" char PathTracer_ptx[];
+extern "C" char device_ptx[];
 extern Renderer renderer;
 
 /// <summary>
@@ -16,7 +16,7 @@ extern Renderer renderer;
 void init(void)
 {
 	renderer.context = owlContextCreate(nullptr, 1);
-	renderer.module = owlModuleCreate(renderer.context, PathTracer_ptx);
+	renderer.module = owlModuleCreate(renderer.context, device_ptx);
 
 	OWLVarDecl launchParamsVars[]
 	{

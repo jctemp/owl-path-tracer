@@ -5,10 +5,10 @@
 #include "Globals.hpp"
 #include "materials/Lambert.hpp"
 #include "materials/Disney.hpp"
-#include "lights/Light.hpp"
 
 #include <owl/owl_device.h>
 #include <optix_device.h>
+
 
 using namespace owl;
 
@@ -30,19 +30,22 @@ DEVICE Float3 sampleEnvironment(Float3 dir)
 	return vec3f{ texColor };
 }
 
-DEVICE Float3 tracePath(owl::Ray& ray, PerRayData& prd)
+DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 {
-	auto& LP = optixLaunchParams;
+	auto& LP{ optixLaunchParams };
 
 	// hold total sum of accumulated radiance
 	Float3 L{ 0.0f };
-	// hold the path throughput weight
-	//	 (f * cos(theta)) / pdf
+
+	// hold the path throughput weight (f * cos(theta)) / pdf
 	// => current implementation has f and cos already combined
 	Float3 beta{ 1.0f };
 
 	InterfaceStruct is;
-	prd.is = &is;
+	MaterialStruct ms;
+
+	PerRayData prd{ random, ScatterEvent::NONE, &is, &ms };
+
 
 	for (Int depth{ 0 }; depth < LP.maxDepth; ++depth)
 	{
