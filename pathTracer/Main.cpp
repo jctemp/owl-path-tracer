@@ -128,7 +128,7 @@ int main(void)
 	}
 
 	/* BSDF */
-	MaterialStruct mat1{ Material::DISNEY_BRDF };
+	MaterialStruct mat1{ Material::DISNEY };
 	mat1.baseColor = { .3f };
 	mat1.metallic = 0.0f;
 	mat1.specular = 0.0f;
@@ -139,7 +139,7 @@ int main(void)
 	mat1.clearcoat = 0.0f;
 	mat1.clearcoatGloss = 0.0f;
 
-	MaterialStruct mat2{ Material::DISNEY_BRDF };
+	MaterialStruct mat2{ Material::DISNEY };
 	mat2.baseColor = { .1f };
 	mat2.metallic = 0.0f;
 	mat2.specular = 0.0f;
@@ -150,7 +150,7 @@ int main(void)
 	mat2.clearcoat = 0.0f;
 	mat2.clearcoatGloss = 0.0f;
 
-	MaterialStruct test{ Material::DISNEY_BRDF };
+	MaterialStruct test{ Material::DISNEY };
 	test.baseColor = { .8f };
 	test.subsurface = 0.0f;
 	test.metallic = 0.0f;

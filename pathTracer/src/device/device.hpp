@@ -1,9 +1,8 @@
-﻿#ifndef DEVICE_GLOBALS_HPP
-#define DEVICE_GLOBALS_HPP
+﻿#ifndef DEVICE_HPP
+#define DEVICE_HPP
 #pragma once
 
-#include "Shared.hpp"
-#include "utils/random.hpp"
+#include "../shared/shared.hpp"
 
 #define GET(RETURN, TYPE, BUFFER, ADDRESS)\
 {\
@@ -69,6 +68,4 @@ struct PerRayData
 	MaterialStruct* ms;
 };
 
-
-
-#endif // !DEVICE_GLOBALS_HPP
+#endif // !DEVICE_HPP

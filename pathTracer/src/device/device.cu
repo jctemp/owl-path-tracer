@@ -1,19 +1,13 @@
-﻿#include "Globals.hpp"
-#include <owl/owl_device.h>
-#include <optix_device.h>
-
-#include "core/PathTracer.hpp"
-#include "core/ClosestHit.hpp"
-#include "core/Miss.hpp"
-
-using namespace owl;
+﻿
+#include "device.hpp"
+#include "core/core.hpp"
 
 PT_DEVICE_CONSTANT LaunchParams optixLaunchParams;
 
 OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 {
-	RayGenData const& self{ getProgramData<RayGenData>() };
-	Int2 const pixelId{ getLaunchIndex() };
+	RayGenData const& self{ owl::getProgramData<RayGenData>() };
+	Int2 const pixelId{ owl::getLaunchIndex() };
 	Random pxRand{ (Uint)pixelId.x, (Uint)pixelId.y };
 
 	Float3 color{ 0.0f };
@@ -24,7 +18,7 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 		Float2 const screen{ (Float2{pixelId} + rand) / Float2{self.fbSize} };
 
 		// determine initial ray form the camera
-		owl::Ray ray{ self.camera.origin, normalize(self.camera.llc
+		owl::Ray ray{ self.camera.origin, owl::normalize(self.camera.llc
 			+ screen.u * self.camera.horizontal
 			+ screen.v * self.camera.vertical
 			- self.camera.origin), T_MIN, T_MAX };

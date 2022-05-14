@@ -1,55 +1,47 @@
-SET(BA_SOURCES
+SET(HOST_SOURCES
 	"Main.cpp"
 	"src/host/ObjLoader.cpp"
 	"src/host/StbUtils.cpp"
-	"src/host/Renderer.cpp"
-)
+	"src/host/Renderer.cpp"	
 
-SET(BA_HEADERS
-	
 	"src/host/ObjLoader.hpp"
 	"src/host/StbUtils.hpp"
 	"src/host/Renderer.hpp"
-	
 )
 
-SET(BA_DEVICE_HEADERS
+SET(SHARED_SOURCES
+	"src/shared/shared.hpp"
+    "src/shared/types.hpp" 
+    "src/shared/random.hpp"
+	"src/shared/macros.hpp"
+)
+
+SET(DEVICE_SOURCES
+	"src/device/device.hpp"
+
+	"src/device/core/core.hpp"
 	"src/device/core/closestHit.hpp"
 	"src/device/core/miss.hpp"
+	"src/device/core/pathTracer.hpp"
 
-    "src/shared/types.hpp"
-    "src/shared/random.hpp"
-	 "src/shared/macros.hpp"
-
-	"src/device/Shared.hpp"
-
-	
 	"src/device/Math.hpp" 
-
-	"src/device/Globals.hpp"
 	"src/device/Sampling.hpp"
-
 	"src/device/materials/Lambert.hpp"
 	"src/device/materials/Disney.hpp"
     "src/device/materials/BrdfUtils.hpp"
- "src/shared/shared.hpp")
+ )
 
-SET(BA_INCLUDE "include" "src")
-
+SET(INCLUDE_DIRS "include" "src")
 EMBED_PTX(
-	OUTPUT_TARGET
-		device-ptx
-	PTX_LINK_LIBRARIES
-		owl::owl
-		${CUDA_RUNTIME_LIBRARY}
-	SOURCES
-		"src/device/device.cu"
+	OUTPUT_TARGET device-ptx
+	PTX_LINK_LIBRARIES owl::owl ${CUDA_RUNTIME_LIBRARY}
+	SOURCES "src/device/device.cu"
 )
 
 
 
-add_executable(bachelorThesis ${BA_SOURCES} ${BA_HEADERS} ${BA_DEVICE_HEADERS})
-target_include_directories(bachelorThesis PUBLIC ${BA_INCLUDE})
+add_executable(bachelorThesis ${HOST_SOURCES} ${DEVICE_SOURCES} ${SHARED_SOURCES})
+target_include_directories(bachelorThesis PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(bachelorThesis
 	owl::owl
 	fmt::fmt
