@@ -2,7 +2,9 @@
 #define GLOBALS_HPP
 #pragma once
 
-#include "./core/deviceTypes.hpp"
+#include "Shared.hpp"
+#include "./utils/types.hpp"
+#include "./utils/macros.hpp"
 
 #include <owl/owl.h>
 #include <owl/common/math/LinearSpace.h>

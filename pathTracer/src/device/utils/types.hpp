@@ -1,5 +1,6 @@
 #ifndef DEVICE_TYPES_HPP
 #define DEVICE_TYPES_HPP
+#pragma once
 
 #include <owl/common/math/vec.h>
 #include <owl/owl_device_buffer.h>

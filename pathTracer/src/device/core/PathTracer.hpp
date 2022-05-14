@@ -14,7 +14,7 @@ using namespace owl;
 
 extern LaunchParams optixLaunchParams;
 
-DEVICE Float2 uvOnSphere(Float3 n)
+PT_DEVICE Float2 uvOnSphere(Float3 n)
 {
 	auto u = 0.5f + atan2(n.x, n.z) / (2 * M_PI);
 	auto v = 0.5f + asin(n.y) / M_PI;
@@ -22,7 +22,7 @@ DEVICE Float2 uvOnSphere(Float3 n)
 }
 
 
-DEVICE Float3 sampleEnvironment(Float3 dir)
+PT_DEVICE Float3 sampleEnvironment(Float3 dir)
 {
 	vec2f tc{ uvOnSphere(dir) };
 	owl::vec4f const texColor{
@@ -30,7 +30,7 @@ DEVICE Float3 sampleEnvironment(Float3 dir)
 	return vec3f{ texColor };
 }
 
-DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
+PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 {
 	auto& LP{ optixLaunchParams };
 

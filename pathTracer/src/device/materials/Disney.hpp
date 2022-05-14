@@ -15,7 +15,7 @@
 
 #pragma region DIFFUSE
 
-DEVICE Float3 fDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float NdotV{ absCosTheta(V) };
 	Float NdotL{ absCosTheta(L) };
@@ -28,7 +28,7 @@ DEVICE Float3 fDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Float3 
 }
 
 
-DEVICE_INL Float pdfDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -36,7 +36,7 @@ DEVICE_INL Float pdfDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Fl
 }
 
 
-DEVICE void sampleDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -50,7 +50,7 @@ DEVICE void sampleDisneyDiffuse(MaterialStruct const& mat, Float3 const& V, Floa
 
 #pragma region "FAKE SUBSURFACE"
 
-DEVICE Float3 fDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 // Hanrahan - Krueger BRDF approximation of the BSSRDF
 {
 	Float3 H{ L + V };
@@ -74,7 +74,7 @@ DEVICE Float3 fDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& V, 
 }
 
 
-DEVICE_INL Float pdfDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -82,7 +82,7 @@ DEVICE_INL Float pdfDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const
 }
 
 
-DEVICE void sampleDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -96,7 +96,7 @@ DEVICE void sampleDisneyFakeSubsurface(MaterialStruct const& mat, Float3 const& 
 
 #pragma region RETRO
 
-DEVICE Float3 fDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return Float3{ 0.0f };
@@ -115,7 +115,7 @@ DEVICE Float3 fDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3 co
 }
 
 
-DEVICE_INL Float pdfDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -123,7 +123,7 @@ DEVICE_INL Float pdfDisneyRetro(MaterialStruct const& mat, Float3 const& V, Floa
 }
 
 
-DEVICE void sampleDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -137,7 +137,7 @@ DEVICE void sampleDisneyRetro(MaterialStruct const& mat, Float3 const& V, Float3
 
 #pragma region SHEEN
 
-DEVICE Float3 fDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return Float3{ 0.0f };
@@ -151,7 +151,7 @@ DEVICE Float3 fDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3 co
 }
 
 
-DEVICE_INL Float pdfDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -159,7 +159,7 @@ DEVICE_INL Float pdfDisneySheen(MaterialStruct const& mat, Float3 const& V, Floa
 }
 
 
-DEVICE void sampleDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -173,7 +173,7 @@ DEVICE void sampleDisneySheen(MaterialStruct const& mat, Float3 const& V, Float3
 
 #pragma region CLEARCOAT
 
-DEVICE Float3 fDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return Float3{ 0.0f };
@@ -193,7 +193,7 @@ DEVICE Float3 fDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Float
 }
 
 
-DEVICE Float pdfDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
@@ -210,7 +210,7 @@ DEVICE Float pdfDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Floa
 }
 
 
-DEVICE void sampleDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 	// there is no visible normal sampling for BRDF because the Clearcoat has no
 	// physical meaning
@@ -243,7 +243,7 @@ DEVICE void sampleDisneyClearcoat(MaterialStruct const& mat, Float3 const& V, Fl
 
 #pragma region MICROFACETS
 
-DEVICE Float3 fDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	if (!sameHemisphere(V, L)) return Float3{ 0.0f };
 	Float NdotV{ absCosTheta(V) };
@@ -261,7 +261,7 @@ DEVICE Float3 fDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Floa
 }
 
 
-DEVICE Float pdfDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	if (!sameHemisphere(V, L)) return 0.0f;
 
@@ -274,7 +274,7 @@ DEVICE Float pdfDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Flo
 }
 
 
-DEVICE void sampleDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	Float alpha{ roughnessToAlpha(mat.roughness) };
@@ -297,7 +297,7 @@ DEVICE void sampleDisneyMicrofacet(MaterialStruct const& mat, Float3 const& V, F
 
 #pragma region TRANSMISSION
 
-DEVICE Float3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float ior = mat.ior;
 	bool entering = cosTheta(L) > 0;
@@ -320,7 +320,7 @@ DEVICE Float3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 co
 }
 
 
-DEVICE Float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
 {
 	Float ior = mat.ior;
 	bool entering = cosTheta(L) > 0;
@@ -359,7 +359,7 @@ DEVICE Float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 c
 //	return;
 //}*/
 
-DEVICE void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	if (mat.roughness < .2f) // check smoothness
@@ -413,7 +413,7 @@ DEVICE void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, Float3
 //  + Subsurface
 //
 
-DEVICE void sampleDisneyBSDF(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleDisneyBSDF(MaterialStruct const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	bsdf = Float3{ 0.0f };

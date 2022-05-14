@@ -22,16 +22,16 @@
 #pragma region UTILITY
 
 template<class T>
-DEVICE_INL T mix(T a, T b, T t) { return a + (b - a) * t; }
+PT_DEVICE_INLINE T mix(T a, T b, T t) { return a + (b - a) * t; }
 
 template<class T>
-DEVICE_INL T saturate(T a);
+PT_DEVICE_INLINE T saturate(T a);
 
 template<>
-DEVICE_INL Float saturate(Float a) { return owl::clamp(a, 0.0f, 1.0f); }
+PT_DEVICE_INLINE Float saturate(Float a) { return owl::clamp(a, 0.0f, 1.0f); }
 
 template<>
-DEVICE_INL Float3 saturate(Float3 a) {
+PT_DEVICE_INLINE Float3 saturate(Float3 a) {
 	return {
 		owl::clamp(a.x, 0.0f, 1.0f),
 		owl::clamp(a.y, 0.0f, 1.0f),
@@ -40,7 +40,7 @@ DEVICE_INL Float3 saturate(Float3 a) {
 }
 
 template<class T>
-DEVICE_INL T pow2(T value) { return value * value; }
+PT_DEVICE_INLINE T pow2(T value) { return value * value; }
 
 #pragma endregion
 
@@ -48,82 +48,82 @@ DEVICE_INL T pow2(T value) { return value * value; }
 
 #pragma region "SHADING SPACE FUNCTIONS"
 
-DEVICE_INL Float cosTheta(Float3 const& w)
+PT_DEVICE_INLINE Float cosTheta(Float3 const& w)
 {
 	return w.z;
 }
 
 
-DEVICE_INL Float cos2Theta(Float3 const& w)
+PT_DEVICE_INLINE Float cos2Theta(Float3 const& w)
 {
 	return w.z * w.z;
 }
 
 
-DEVICE_INL Float absCosTheta(Float3 const& w)
+PT_DEVICE_INLINE Float absCosTheta(Float3 const& w)
 {
 	return abs(w.z);
 }
 
 
-DEVICE_INL Float sin2Theta(Float3 const& w)
+PT_DEVICE_INLINE Float sin2Theta(Float3 const& w)
 {
 	return fmaxf(0.0f, 1.0f - cos2Theta(w));
 }
 
 
-DEVICE_INL Float sinTheta(Float3 const& w)
+PT_DEVICE_INLINE Float sinTheta(Float3 const& w)
 {
 	return sqrtf(sin2Theta(w));
 }
 
 
-DEVICE_INL Float tanTheta(Float3 const& w)
+PT_DEVICE_INLINE Float tanTheta(Float3 const& w)
 {
 	return sinTheta(w) / cosTheta(w);
 }
 
 
-DEVICE_INL Float tan2Theta(Float3 const& w)
+PT_DEVICE_INLINE Float tan2Theta(Float3 const& w)
 {
 	return sin2Theta(w) / cos2Theta(w);
 }
 
 
-DEVICE_INL Float cosPhi(Float3 const& w)
+PT_DEVICE_INLINE Float cosPhi(Float3 const& w)
 {
 	Float theta{ sinTheta(w) };
 	return (theta == 0) ? 1.0f : owl::clamp(w.x / theta, -1.0f, 1.0f);
 }
 
 
-DEVICE_INL Float sinPhi(Float3 const& w)
+PT_DEVICE_INLINE Float sinPhi(Float3 const& w)
 {
 	Float theta{ sinTheta(w) };
 	return (theta == 0) ? 1.0f : owl::clamp(w.y / theta, -1.0f, 1.0f);
 }
 
 
-DEVICE_INL Float cos2Phi(Float3 const& w)
+PT_DEVICE_INLINE Float cos2Phi(Float3 const& w)
 {
 	return cosPhi(w) * cosPhi(w);
 }
 
 
-DEVICE_INL Float sin2Phi(Float3 const& w)
+PT_DEVICE_INLINE Float sin2Phi(Float3 const& w)
 {
 	return sinPhi(w) * sinPhi(w);
 }
 
 
-DEVICE_INL Float cosDPhi(Float3 const& wa, Float3 const& wb) {
+PT_DEVICE_INLINE Float cosDPhi(Float3 const& wa, Float3 const& wb) {
 	return owl::clamp((wa.x * wb.x + wa.y * wb.y) /
 		sqrtf((wa.x * wa.x + wa.y * wa.y) *
 			(wb.x * wb.x + wb.y * wb.y)), -1.0f, 1.0f);
 }
 
 
-DEVICE_INL Float3 toSphereCoordinates(Float theta, Float phi)
+PT_DEVICE_INLINE Float3 toSphereCoordinates(Float theta, Float phi)
 {
 	Float x = sinf(theta) * cosf(phi);
 	Float y = sinf(theta) * sinf(phi);;
@@ -132,7 +132,7 @@ DEVICE_INL Float3 toSphereCoordinates(Float theta, Float phi)
 }
 
 
-DEVICE_INL Float3 toSphereCoordinates(Float sinTheta, Float cosTheta, Float phi)
+PT_DEVICE_INLINE Float3 toSphereCoordinates(Float sinTheta, Float cosTheta, Float phi)
 {
 	Float x = sinTheta * cosf(phi);
 	Float y = sinTheta * sinf(phi);;
@@ -141,13 +141,13 @@ DEVICE_INL Float3 toSphereCoordinates(Float sinTheta, Float cosTheta, Float phi)
 }
 
 
-DEVICE_INL Float3 reflect(Float3 const& V, Float3 const& N)
+PT_DEVICE_INLINE Float3 reflect(Float3 const& V, Float3 const& N)
 {
 	return (2.0f * dot(V, N)) * N - V;
 }
 
 
-DEVICE_INL Float3 refract(Float3 const& V, Float3 const& N, Float eta)
+PT_DEVICE_INLINE Float3 refract(Float3 const& V, Float3 const& N, Float eta)
 {
 	Float cosThetaI{ dot(V, N) };
 	Float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
@@ -158,7 +158,7 @@ DEVICE_INL Float3 refract(Float3 const& V, Float3 const& N, Float eta)
 	return eta * -V + (eta * cosThetaI - cosThetaT) * N;
 }
 
-DEVICE_INL bool refract(Float3 const& V, Float3 const& N, Float eta, Float3& T)
+PT_DEVICE_INLINE bool refract(Float3 const& V, Float3 const& N, Float eta, Float3& T)
 {
 	T = -V;
 	if (eta == 1.0f)return  true;
@@ -185,13 +185,13 @@ DEVICE_INL bool refract(Float3 const& V, Float3 const& N, Float eta, Float3& T)
 
 
 
-DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L, Float3 const& N)
+PT_DEVICE_INLINE bool sameHemisphere(Float3 const& V, Float3 const& L, Float3 const& N)
 {
 	return dot(V, N) * dot(L, N) > 0.0f;
 }
 
 
-DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L)
+PT_DEVICE_INLINE bool sameHemisphere(Float3 const& V, Float3 const& L)
 {
 	return V.z * L.z > 0.0f;
 }
@@ -202,7 +202,7 @@ DEVICE_INL bool sameHemisphere(Float3 const& V, Float3 const& L)
 
 #pragma region "ORTH. NORMAL BASIS"
 
-DEVICE_INL void onb(Float3 const& N, Float3& T, Float3& B)
+PT_DEVICE_INLINE void onb(Float3 const& N, Float3& T, Float3& B)
 {
 	if (N.x != N.y || N.x != N.z)
 		T = Float3(N.z - N.y, N.x - N.z, N.y - N.x);	// ( 1, 1, 1) x N
@@ -215,14 +215,14 @@ DEVICE_INL void onb(Float3 const& N, Float3& T, Float3& B)
 
 
 // move vector V to local space where N is (0,0,1)
-DEVICE_INL void toLocal(Float3 const& T, Float3 const& B, Float3 const& N, Float3& V)
+PT_DEVICE_INLINE void toLocal(Float3 const& T, Float3 const& B, Float3 const& N, Float3& V)
 {
 	V = normalize(Float3{ dot(V, T), dot(V, B), dot(V, N) });
 }
 
 
 // move V from local to the global space
-DEVICE_INL void toWorld(Float3 const& T, Float3 const& B, Float3 const& N, Float3& V)
+PT_DEVICE_INLINE void toWorld(Float3 const& T, Float3 const& B, Float3 const& N, Float3& V)
 {
 	V = normalize(Float3{ V.x * T + V.y * B + V.z * N });
 }

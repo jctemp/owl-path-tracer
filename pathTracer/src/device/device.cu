@@ -3,6 +3,8 @@
 #include <optix_device.h>
 
 #include "core/PathTracer.hpp"
+#include "core/ClosestHit.hpp"
+#include "core/Miss.hpp"
 
 using namespace owl;
 
@@ -42,5 +44,3 @@ OPTIX_RAYGEN_PROGRAM(simpleRayGen)()
 		= owl::make_rgba(color);
 }
 
-#include "./core/ClosestHit.hpp"
-#include "./core/Miss.hpp"

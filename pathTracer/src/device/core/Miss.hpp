@@ -1,5 +1,6 @@
 #ifndef MISS_HPP
 #define MISS_HPP
+#pragma once
 
 #include "Globals.hpp"
 #include "materials/Lambert.hpp"

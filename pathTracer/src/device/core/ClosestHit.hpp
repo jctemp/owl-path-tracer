@@ -11,7 +11,7 @@
 
 using namespace owl;
 
-DEVICE Float3 makeFloat3(float3 f)
+PT_DEVICE Float3 makeFloat3(float3 f)
 {
 	return Float3{ f.x, f.y, f.z };
 }

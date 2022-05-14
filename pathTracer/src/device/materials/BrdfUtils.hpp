@@ -10,19 +10,19 @@
 // https://github.com/wdas/brdf/blob/main/src/brdfs/disney.brdf
 // https://jcgt.org/published/0007/04/01/
 
-DEVICE_INL Float luminance(Float3 color)
+PT_DEVICE_INLINE Float luminance(Float3 color)
 {
 	return 0.212671f * color.x + 0.715160f * color.y + 0.072169f * color.z;
 }
 
-DEVICE_INL Float3 calculateTint(Float3 baseColor)
+PT_DEVICE_INLINE Float3 calculateTint(Float3 baseColor)
 // diseny uses in the BRDF explorer the luminance for the calculation
 {
 	Float lum{ luminance(baseColor) };
 	return (lum > 0.0f) ? baseColor * (1.0f / lum) : Float3{ 1.0f };
 }
 
-DEVICE_INL Float calculateEta(Float3 V, Float ior)
+PT_DEVICE_INLINE Float calculateEta(Float3 V, Float ior)
 {
 	if (cosTheta(V) > 0.0f)
 		return 1.0f / ior;
@@ -32,7 +32,7 @@ DEVICE_INL Float calculateEta(Float3 V, Float ior)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  FRESNEL TERM
 
-DEVICE_INL Float schlickFresnel(Float costheta, Float ior)
+PT_DEVICE_INLINE Float schlickFresnel(Float costheta, Float ior)
 {
 	Float r0{ (1.0f - ior) / (1.0f + ior) };
 	r0 = r0 * r0;
@@ -41,7 +41,7 @@ DEVICE_INL Float schlickFresnel(Float costheta, Float ior)
 	return r0 + (1.0f - r0) * (m2 * m2 * m);
 }
 
-DEVICE_INL Float dielectricFresnel(Float costheta, Float ior)
+PT_DEVICE_INLINE Float dielectricFresnel(Float costheta, Float ior)
 {
 	Float costhetaI{ costheta };
 
@@ -66,7 +66,7 @@ DEVICE_INL Float dielectricFresnel(Float costheta, Float ior)
 	return 0.5f * (rp * rp + rs * rs);
 }
 
-DEVICE_INL Float dielectricFresnel(Float ior, Float3 V, Float3 N, Float3 & R, Float3& T, bool& inside)
+PT_DEVICE_INLINE Float dielectricFresnel(Float ior, Float3 V, Float3 N, Float3 & R, Float3& T, bool& inside)
 {
 	Float costheta{ cosTheta(V) }, neta{};
 	Float3 Nn;
@@ -115,7 +115,7 @@ DEVICE_INL Float dielectricFresnel(Float ior, Float3 V, Float3 N, Float3 & R, Fl
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  SMITH SHADOWING TERM
 
-DEVICE_INL Float lambda(Float absTanTheta, Float alpha)
+PT_DEVICE_INLINE Float lambda(Float absTanTheta, Float alpha)
 {
 	Float absTanThetaH{ absTanTheta };
 	if (isinf(absTanThetaH))
@@ -125,7 +125,7 @@ DEVICE_INL Float lambda(Float absTanTheta, Float alpha)
 	return (-1.0f + sqrtf(1.0f + alpha2Tan2Theta)) / 2.0f;
 }
 
-DEVICE_INL Float smithG(Float absTanTheta, Float alpha)
+PT_DEVICE_INLINE Float smithG(Float absTanTheta, Float alpha)
 {
 	return 1.0f / (1.0f + lambda(absTanTheta, alpha));
 }
@@ -133,12 +133,12 @@ DEVICE_INL Float smithG(Float absTanTheta, Float alpha)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GENERALIZED TROWBRIDGE-REITZ DISTRIBUTION
 
-DEVICE_INL Float roughnessToAlpha(Float roughness)
+PT_DEVICE_INLINE Float roughnessToAlpha(Float roughness)
 {
 	return max(MIN_ALPHA, roughness * roughness);
 }
 
-DEVICE_INL Float gtr1(Float cosTheta, Float alpha)
+PT_DEVICE_INLINE Float gtr1(Float cosTheta, Float alpha)
 {
 	if (alpha >= 1.0f) return 1.0f / PI;
 	Float alpha2{ alpha * alpha };
@@ -146,14 +146,14 @@ DEVICE_INL Float gtr1(Float cosTheta, Float alpha)
 	return (alpha2 - 1.0f) / (PI * logf(alpha2) * t);
 }
 
-DEVICE_INL Float gtr2(Float cosTheta, Float alpha)
+PT_DEVICE_INLINE Float gtr2(Float cosTheta, Float alpha)
 {
 	Float alpha2{ alpha * alpha };
 	Float t{ 1.0f + (alpha2 - 1.0f) * cosTheta * cosTheta };
 	return alpha2 / (PI * t * t);
 }
 
-DEVICE Float3 sampleGtr2(Float3 const& V, Float alpha, Float2 u)
+PT_DEVICE_INLINE Float3 sampleGtr2(Float3 const& V, Float alpha, Float2 u)
 {
 	// Disney Keynotes eq. (2) and (9) 
 	Float alpha2{ alpha * alpha };
@@ -167,7 +167,7 @@ DEVICE Float3 sampleGtr2(Float3 const& V, Float alpha, Float2 u)
 	return H;
 }
 
-DEVICE Float3 sampleGtr2VNDF(Float3 const& V, Float alpha, Float2 u)
+PT_DEVICE_INLINE Float3 sampleGtr2VNDF(Float3 const& V, Float alpha, Float2 u)
 {
 	Float3 Vh = normalize(Float3(alpha * V.x, alpha * V.y, V.z));
 
@@ -187,7 +187,7 @@ DEVICE Float3 sampleGtr2VNDF(Float3 const& V, Float alpha, Float2 u)
 	return normalize(Float3(alpha * Nh.x, alpha * Nh.y, max(0.0f, Nh.z)));
 }
 
-DEVICE Float pdfGtr2(Float3 const& V, Float3 const& H, Float alpha)
+PT_DEVICE_INLINE Float pdfGtr2(Float3 const& V, Float3 const& H, Float alpha)
 {
 	Float Dr{ gtr2(cosTheta(H), alpha)};
 	Float Gr{ smithG(abs(tanTheta(V)), alpha)};

@@ -7,10 +7,6 @@
 
 using Random = LCG<4>;
 
-#define DEVICE_STATIC static __owl_device
-#define DEVICE_INL inline __owl_device
-#define DEVICE __owl_device
-
 #define GET(RETURN, TYPE, BUFFER, ADDRESS)\
 {\
 if (BUFFER.data == nullptr) {\
