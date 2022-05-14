@@ -19,10 +19,11 @@ SET(BA_DEVICE_HEADERS
 
     "src/device/utils/types.hpp"
     "src/device/utils/random.hpp"
+	 "src/device/utils/macros.hpp"
 
 	"src/device/Shared.hpp"
 
-	"src/device/Random.hpp"
+	
 	"src/device/Math.hpp" 
 
 	"src/device/Globals.hpp"
@@ -31,7 +32,7 @@ SET(BA_DEVICE_HEADERS
 	"src/device/materials/Lambert.hpp"
 	"src/device/materials/Disney.hpp"
     "src/device/materials/BrdfUtils.hpp"
- "src/device/utils/macros.hpp")
+)
 
 SET(BA_INCLUDE "include" "src")
 

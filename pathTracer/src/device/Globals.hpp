@@ -3,9 +3,7 @@
 #pragma once
 
 #include "Shared.hpp"
-#include "Random.hpp"
-
-using Random = LCG<4>;
+#include "utils/random.hpp"
 
 #define GET(RETURN, TYPE, BUFFER, ADDRESS)\
 {\
