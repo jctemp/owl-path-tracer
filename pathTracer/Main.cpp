@@ -14,8 +14,15 @@ using namespace owl;
 
 Renderer renderer{};
 
-//std::tuple<std::vector<std::string>, std::vector<Material*>> loadMaterial();
-	//auto const [materialNames, materialData] {loadMaterial()};
+enum class SCENES
+{
+	THREE_SPHERE,
+	SUZANNE,
+	MITSUBA,
+	CORNELL_W_BOX_AND_SPHERE,
+	CORNELL_W_BOXS,
+	DRAGON
+};
 
 int main(void)
 {
@@ -23,52 +30,88 @@ int main(void)
 
 	std::string prefixPath{ "../../../../" };
 
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/three-sphere-test.obj")};
-	//Camera cam{
-	//	{ 1024 },		  // image size
-	//	{3.0f,0.5f,0.0f}, // look from
-	//	{0.0f,0.5f,0.0f}, // look at
-	//	{0.0f,1.0f,0.0f}, // look up
-	//	60.0f			  // vfov
-	//};
-
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
-	//Camera cam{
-	//	{ 600 },		  // image size
-	//	{5.0f,5.0f,0.0f}, // look from
-	//	{0.0f,0.75f,0.0f}, // look at
-	//	{0.0f,1.0f,0.0f}, // look up
-	//	30.0f			  // vfov
-	//};
-
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/mitsuba.obj")};
-	//Camera cam{
-	//	{ 1024 },		  // image size
-	//	{5.0f,3.0f,0.0f}, // look from
-	//	{0.0f,0.75f,0.0f}, // look at
-	//	{0.0f,1.0f,0.0f}, // look up
-	//	30.0f			  // vfov
-	//};
-
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
-	//auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")}; 
-	//Camera cam{
-	//	{ 600 },		  // image size
-	//	{3.3f,1.0f,0.0f}, // look from
-	//	{0.0f,1.0f,0.0f}, // look at
-	//	{0.0f,1.0f,0.0f}, // look up
-	//	45.0f			  // vfov
-	//};
-
-	auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/dragon.obj")};
-	Camera cam{
-		{ 1024 },		  // image size
-		{2.0f,1.2f,0.0f}, // look from
-		{0.0f,0.5f,0.0f}, // look at
-		{0.0f,1.0f,0.0f}, // look up
-		50.0f			  // vfov
+	auto sceneSelect = [&prefixPath](SCENES i)
+	{
+		switch (i)
+		{
+		case SCENES::THREE_SPHERE:
+		{
+			auto const [meshNames, meshData] { loadOBJ(prefixPath + "scenes/three-sphere-test.obj") };
+			Camera cam{
+				{ 1024 },		  // image size
+				{3.0f,0.5f,0.0f}, // look from
+				{0.0f,0.5f,0.0f}, // look at
+				{0.0f,1.0f,0.0f}, // look up
+				60.0f			  // vfov
+			};
+			return std::make_tuple(meshNames, meshData, cam);
+		}
+		case SCENES::SUZANNE:
+		{
+			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
+			Camera cam{
+				{ 1024 },		  // image size
+				{5.0f,5.0f,0.0f}, // look from
+				{0.0f,0.75f,0.0f}, // look at
+				{0.0f,1.0f,0.0f}, // look up
+				30.0f			  // vfov
+			};
+			return std::make_tuple(meshNames, meshData, cam);
+		}
+		case SCENES::MITSUBA:
+		{
+			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/mitsuba.obj")};
+			Camera cam{
+				{ 1024 },		  // image size
+				{5.0f,3.0f,0.0f}, // look from
+				{0.0f,0.75f,0.0f}, // look at
+				{0.0f,1.0f,0.0f}, // look up
+				30.0f			  // vfov
+			};
+			return std::make_tuple(meshNames, meshData, cam);
+		}
+		case SCENES::CORNELL_W_BOX_AND_SPHERE:
+		{
+			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
+			Camera cam{
+				{ 1024 },		  // image size
+				{3.3f,1.0f,0.0f}, // look from
+				{0.0f,1.0f,0.0f}, // look at
+				{0.0f,1.0f,0.0f}, // look up
+				45.0f			  // vfov
+			};
+			return std::make_tuple(meshNames, meshData, cam);
+		}
+		case SCENES::CORNELL_W_BOXS:
+		{
+			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")};
+			Camera cam{
+				{ 1024 },		  // image size
+				{3.3f,1.0f,0.0f}, // look from
+				{0.0f,1.0f,0.0f}, // look at
+				{0.0f,1.0f,0.0f}, // look up
+				45.0f			  // vfov
+			};
+			return std::make_tuple(meshNames, meshData, cam);
+		}
+		case SCENES::DRAGON:
+		{
+			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/dragon.obj")};
+			Camera cam{
+				{ 1024 },		  // image size
+				{2.0f,1.2f,0.0f}, // look from
+				{0.0f,0.5f,0.0f}, // look at
+				{0.0f,1.0f,0.0f}, // look up
+				50.0f			  // vfov
+			};
+			return std::make_tuple(meshNames, meshData, cam);
+		}
+		}
 	};
 
+	/* SCENE SELECT */
+
+	auto const [meshNames, meshData, cam] = sceneSelect(SCENES::DRAGON);
 
 	renderer.frameBuffer = owlHostPinnedBufferCreate(
 		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
@@ -76,9 +119,13 @@ int main(void)
 	renderer.samplesPerPixel = 1024;
 	renderer.maxDepth = 128;
 
-	//ImageRgb environmentTexture{};
-	//loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
-	//setEnvironmentTexture(environmentTexture);
+	/* ENVMAP */
+	if (false)
+	{
+		ImageRgb environmentTexture{};
+		loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
+		setEnvironmentTexture(environmentTexture);
+	}
 
 	/* BSDF */
 	MaterialStruct mat1{ Material::DISNEY_BRDF };
@@ -91,7 +138,6 @@ int main(void)
 	mat1.sheenTint = 0.5f;
 	mat1.clearcoat = 0.0f;
 	mat1.clearcoatGloss = 0.0f;
-
 
 	MaterialStruct mat2{ Material::DISNEY_BRDF };
 	mat2.baseColor = { .1f };
@@ -116,24 +162,17 @@ int main(void)
 	test.clearcoat = 0.0f;
 	test.clearcoatGloss = 1.0f;
 
-	/*LightStruct light{};
-	light.intensity = 5;*/
-
 	std::vector<std::tuple<std::string, MaterialStruct>> mats{
 		{"mat1", mat1},
 		{"mat2", mat2},
 		{"test", test},
 	};
 
-	std::vector<std::tuple<std::string, LightStruct>> li{
-		//{"light", light}
-	};
-
 	SL_LOG("==== MATERIALS ===============================");
 	for (uint32_t i{ 0 }; i < mats.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
 
-	
+
 	for (uint32_t i{ 0 }; i < meshData.size(); i++)
 	{
 		fmt::print("{}: ", meshNames[i]);
@@ -142,6 +181,14 @@ int main(void)
 		if (!in.empty())
 			meshData[i]->materialId = std::stoi(in);
 	}
+
+	/* LIGHTS */
+	LightStruct light{};
+	light.intensity = 10;
+
+	std::vector<std::tuple<std::string, LightStruct>> li{
+		{"light", light}
+	};
 
 	SL_LOG("==== LIGHTS ===============================");
 	for (uint32_t i{ 0 }; i < li.size(); i++)
@@ -156,6 +203,10 @@ int main(void)
 			meshData[i]->lightId = std::stoi(in);
 		add(meshData[i]);
 	}
+
+	/* RENDER */
+	for (auto& m : meshData)
+		add(m);
 
 	std::vector<MaterialStruct> materials{};
 	for (auto& e : mats)
