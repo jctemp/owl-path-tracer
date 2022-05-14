@@ -6,6 +6,7 @@
 #include "./utils/types.hpp"
 #include "./utils/macros.hpp"
 
+
 #include <owl/owl.h>
 #include <owl/common/math/LinearSpace.h>
 #include <cuda_runtime.h>

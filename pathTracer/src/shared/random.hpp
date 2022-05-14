@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef DEVICE_RANDOM_HPP
-#define DEVICE_RANDOM_HPP
+#ifndef SHARED_RANDOM_HPP
+#define SHARED_RANDOM_HPP
 #pragma once
 
 #include "types.hpp"
@@ -35,15 +35,15 @@
 
 struct Random
 {
-	PT_BOTH_INLINE Random() { /* REQUIRED FOR DEVICE VARS */ }
+	PT_SHARED_INLINE Random() { /* REQUIRED FOR DEVICE VARS */ }
 
-	PT_BOTH_INLINE Random(Int seedu, Int seedv) { init((Uint)seedu, (Uint)seedv); }
-	PT_BOTH_INLINE Random(Int2 seed) { init((Uint)seed.u, (Uint)seed.v); }
+	PT_SHARED_INLINE Random(Int seedu, Int seedv) { init((Uint)seedu, (Uint)seedv); }
+	PT_SHARED_INLINE Random(Int2 seed) { init((Uint)seed.u, (Uint)seed.v); }
 
-	PT_BOTH_INLINE Random(Uint seedu, Uint seedv) { init(seedu, seedv); }
-	PT_BOTH_INLINE Random(Uint2 seed) { init(seed.u, seed.v); }
+	PT_SHARED_INLINE Random(Uint seedu, Uint seedv) { init(seedu, seedv); }
+	PT_SHARED_INLINE Random(Uint2 seed) { init(seed.u, seed.v); }
 
-	PT_BOTH_INLINE void init(Uint seedu, Uint seedv)
+	PT_SHARED_INLINE void init(Uint seedu, Uint seedv)
 	{
 		Uint s{ 0 };
 		for (Uint n = 0; n < N; n++) {
@@ -55,10 +55,10 @@ struct Random
 	}
 
 	template<typename T = Float>
-	PT_BOTH_INLINE T random();
+	PT_SHARED_INLINE T random();
 
 	template<>
-	PT_BOTH_INLINE Float random()
+	PT_SHARED_INLINE Float random()
 	{
 		Uint constexpr A{ 16807 };
 		Uint constexpr C{ 1013904223 };
@@ -68,13 +68,13 @@ struct Random
 	}
 
 	template<>
-	PT_BOTH_INLINE Float2 random()
+	PT_SHARED_INLINE Float2 random()
 	{
 		return { this->random(), this->random() };
 	}
 
 	template<typename T = Float>
-	PT_BOTH_INLINE Float operator()()
+	PT_SHARED_INLINE Float operator()()
 	{
 		return this->random<T>();
 	}
@@ -83,4 +83,4 @@ struct Random
 	Uint state;
 };
 
-#endif // ! DEVICE_RANDOM_HPP
+#endif // ! SHARED_RANDOM_HPP

@@ -1,5 +1,5 @@
-#ifndef DEVICE_TYPES_HPP
-#define DEVICE_TYPES_HPP
+#ifndef SHARED_TYPES_HPP
+#define SHARED_TYPES_HPP
 #pragma once
 
 #include <owl/common/math/vec.h>
@@ -20,4 +20,4 @@ using Uint3 = owl::vec3ui;
 
 using Buffer = owl::device::Buffer;
 
-#endif // !DEVICE_TYPES_HPP
+#endif // !SHARED_TYPES_HPP

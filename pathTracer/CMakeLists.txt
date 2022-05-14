@@ -17,9 +17,9 @@ SET(BA_DEVICE_HEADERS
 	"src/device/core/closestHit.hpp"
 	"src/device/core/miss.hpp"
 
-    "src/device/utils/types.hpp"
-    "src/device/utils/random.hpp"
-	 "src/device/utils/macros.hpp"
+    "src/shared/types.hpp"
+    "src/shared/random.hpp"
+	 "src/shared/macros.hpp"
 
 	"src/device/Shared.hpp"
 
@@ -32,7 +32,7 @@ SET(BA_DEVICE_HEADERS
 	"src/device/materials/Lambert.hpp"
 	"src/device/materials/Disney.hpp"
     "src/device/materials/BrdfUtils.hpp"
-)
+ "src/shared/shared.hpp")
 
 SET(BA_INCLUDE "include" "src")
 
