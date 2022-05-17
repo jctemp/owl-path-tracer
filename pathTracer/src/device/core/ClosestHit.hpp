@@ -35,7 +35,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 	prd.is->V = -direction;
 
 	// get geometric data:
-	TrianglesGeomData const& self = getProgramData<TrianglesGeomData>();
+	triangle_geom_data const& self = getProgramData<triangle_geom_data>();
 	uint32_t const primID{ optixGetPrimitiveIndex() };
 	vec3i const index{ self.index[primID] };
 

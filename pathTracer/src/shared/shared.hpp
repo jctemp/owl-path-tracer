@@ -62,7 +62,7 @@ struct launch_params_data
 	bool use_environment_map;
 };
 
-struct TrianglesGeomData
+struct triangle_geom_data
 {
 	Int matId{ -1 };
 	Int lightId{ -1 };

@@ -69,16 +69,16 @@ void optix_triangle_geom()
 {
 	OWLVarDecl trianglesGeomVars[]
 	{
-		{ "matId",   OWL_INT,   OWL_OFFSETOF(TrianglesGeomData, matId) },
-		{ "lightId", OWL_INT,   OWL_OFFSETOF(TrianglesGeomData, lightId) },
-		{ "index",   OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, index) },
-		{ "vertex",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, vertex) },
-		{ "normal",  OWL_BUFPTR, OWL_OFFSETOF(TrianglesGeomData, normal) },
+		{ "matId",   OWL_INT,   OWL_OFFSETOF(triangle_geom_data, matId) },
+		{ "lightId", OWL_INT,   OWL_OFFSETOF(triangle_geom_data, lightId) },
+		{ "index",   OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index) },
+		{ "vertex",  OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex) },
+		{ "normal",  OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal) },
 		{ nullptr }
 	};
 
 	od.triangle_geom = owlGeomTypeCreate(od.context, OWLGeomKind::OWL_GEOM_TRIANGLES,
-		sizeof(TrianglesGeomData), trianglesGeomVars, -1);
+		sizeof(triangle_geom_data), trianglesGeomVars, -1);
 
 	owlGeomTypeSetClosestHit(od.triangle_geom, 0, od.module, "TriangleMesh");
 }
