@@ -5,9 +5,9 @@
 
 #include <tiny_obj_loader.h>
 
-Mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attribute)
+mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attribute)
 {
-    auto const mesh{ new Mesh{} };
+    auto const meshptr{ new mesh{} };
 
     // global, no offset, shared by all meshes
     auto const& mesh_vertices{ attribute.vertices };
@@ -25,8 +25,8 @@ Mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
 
     for (std::size_t f{ 0 }; f < shape.mesh.num_face_vertices.size(); ++f)
     {
-        mesh->indices.emplace_back(0, 0, 0);
-        auto& vertex_local{ mesh->indices[mesh->indices.size() - 1] };
+        meshptr->indices.emplace_back(0, 0, 0);
+        auto& vertex_local{ meshptr->indices[meshptr->indices.size() - 1] };
 
         for (size_t v{ 0 }; v < OBJ_TRIANGLE; v++)
         {
@@ -40,8 +40,8 @@ Mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
             // check if global ID is mapped
             if (!vertex_mapping.contains(vertex_id))
             {
-                vertex_mapping.insert({ vertex_id, static_cast<int32_t>(mesh->vertices.size()) });
-                mesh->vertices.emplace_back(
+                vertex_mapping.insert({ vertex_id, static_cast<int32_t>(meshptr->vertices.size()) });
+                meshptr->vertices.emplace_back(
                     mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 0],
                     mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 1],
                     mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 2]
@@ -53,9 +53,9 @@ Mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
             if (index.normal_index >= 0)
             {
                 // wtf no idea why this works lol
-                while (mesh->normals.size() < mesh->vertices.size())
+                while (meshptr->normals.size() < meshptr->vertices.size())
                 {
-                    mesh->normals.emplace_back(
+                    meshptr->normals.emplace_back(
                         mesh_normals[3 * static_cast<uint64_t>(normal_id) + 0],
                         mesh_normals[3 * static_cast<uint64_t>(normal_id) + 1],
                         mesh_normals[3 * static_cast<uint64_t>(normal_id) + 2]
@@ -65,10 +65,10 @@ Mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
         }
         index_offset += OBJ_TRIANGLE;
     }
-    return mesh;
+    return meshptr;
 }
 
-std::vector<std::tuple<std::string, std::shared_ptr<Mesh>>> load_obj(std::string const& obj_file)
+std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> load_obj(std::string const& obj_file)
 {
     // 1.) create OBJ reader
     tinyobj::ObjReader reader{};
@@ -97,7 +97,7 @@ std::vector<std::tuple<std::string, std::shared_ptr<Mesh>>> load_obj(std::string
     std::vector<tinyobj::shape_t> const& shapes{ reader.GetShapes() };
 
     // 5.) create meshes
-    std::vector<std::tuple<std::string, std::shared_ptr<Mesh>>> tuples{};
+    std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> tuples{};
     for (std::size_t i{ 0 }; i < shapes.size(); ++i)
         tuples.emplace_back(shapes[i].name, create_mesh(shapes[i], attribute));
 

@@ -4,6 +4,11 @@
 #include <device/device.hpp>
 #include <vector>
 
+struct entity
+{
+    Int materialId{ -1 };
+    Int lightId{ -1 };
+};
 
 struct Camera
 {

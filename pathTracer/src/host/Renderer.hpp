@@ -8,7 +8,7 @@
 void init(void);
 void release(void);
 void setEnvironmentTexture(image_buffer const& texture);
-void add(Mesh* m);
+void add(mesh* m, entity e);
 void render(Camera const& cam, std::vector<MaterialStruct> const& materials, std::vector<LightStruct> const& lights);
 
 

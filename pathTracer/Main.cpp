@@ -84,6 +84,8 @@ int main(void)
 		{"test", test},
 	};
 
+	std::vector<entity> entities{};
+
 	SL_LOG("==== MATERIALS ===============================");
 	for (uint32_t i{ 0 }; i < mats.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
@@ -94,7 +96,7 @@ int main(void)
 		std::string in;
 		std::getline(std::cin, in);
 		if (!in.empty())
-			mesh->materialId = std::stoi(in);
+			entities.push_back({ std::stoi(in) });
 	}
 
 	/* LIGHTS */
@@ -115,12 +117,13 @@ int main(void)
 		std::string in;
 		std::getline(std::cin, in);
 		if (!in.empty())
-			mesh->lightId = std::stoi(in);
+			entities[entities.size()-1].lightId = std::stoi(in);
 	}
 
 	/* RENDER */
+	uint64_t i{ 0 };
 	for (auto& [n, m] : meshes)
-		add(m.get());
+		add(m.get(), entities[i++]);
 
 	std::vector<MaterialStruct> materials{};
 	for (auto& e : mats)

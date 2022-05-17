@@ -110,9 +110,9 @@ void setEnvironmentTexture(image_buffer const& texture)
 /// </summary>
 /// <param name="m">An object of the type Mesh</param>
 /// <returns>0 in case of success otherwise different</returns>
-void add(Mesh* m)
+void add(mesh* m, entity e)
 {
-	Mesh& mesh{ *m };
+	mesh& mesh{ *m };
 
 	auto& vertices{ mesh.vertices };
 	auto& indices{ mesh.indices};
@@ -140,8 +140,8 @@ void add(Mesh* m)
 		indices.size(), sizeof(owl::vec3i), 0);
 
 	// set sbt data
-	owlGeomSet1i(geom, "matId", mesh.materialId);
-	owlGeomSet1i(geom, "lightId", mesh.lightId);
+	owlGeomSet1i(geom, "matId", e.materialId);
+	owlGeomSet1i(geom, "lightId", e.lightId);
 	owlGeomSetBuffer(geom, "vertex", vertexBuffer);
 	owlGeomSetBuffer(geom, "normal", normalBuffer);
 	owlGeomSetBuffer(geom, "index", indexBuffer);
