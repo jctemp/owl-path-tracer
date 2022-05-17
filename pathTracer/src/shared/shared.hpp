@@ -39,9 +39,15 @@ enum class Light
 	MESH = 1 << 0
 };
 
-struct LightStruct
+struct light_data
 {
-	Light type{ Light::MESH };
+	enum class type
+	{
+		NONE = 0 << 0,
+		MESH = 1 << 0
+	};
+
+	type type{ type::MESH };
 	Float3 color{ 1.f };
 	Float intensity{ 1.f };
 	Float exposure{ 0.f };

@@ -155,7 +155,7 @@ void add(mesh* m, entity e)
 /// Renderes the Meshes with the specifed render settings
 /// </summary>
 /// <returns>0 in case of success otherwise different</returns>
-void render(Camera const& cam, std::vector<material_data> const& materials, std::vector<LightStruct> const& lights)
+void render(Camera const& cam, std::vector<material_data> const& materials, std::vector<light_data> const& lights)
 {
 	// 1) set mesh data into buffers
 	if (renderer.geoms.size() > 0)
@@ -211,7 +211,7 @@ void render(Camera const& cam, std::vector<material_data> const& materials, std:
 	owlParamsSetBuffer(renderer.launchParams, "materials", materialBuffer);
 
 	auto lightBuffer{
-		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(LightStruct), lights.size(), lights.data())
+		owlDeviceBufferCreate(renderer.context, OWL_USER_TYPE(light_data), lights.size(), lights.data())
 	};
 	owlParamsSetBuffer(renderer.launchParams, "lights", lightBuffer);
 

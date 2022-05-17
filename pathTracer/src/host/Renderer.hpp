@@ -9,7 +9,7 @@ void init(void);
 void release(void);
 void setEnvironmentTexture(image_buffer const& texture);
 void add(mesh* m, entity e);
-void render(Camera const& cam, std::vector<material_data> const& materials, std::vector<LightStruct> const& lights);
+void render(Camera const& cam, std::vector<material_data> const& materials, std::vector<light_data> const& lights);
 
 
 #endif // !RENDERER_HPP

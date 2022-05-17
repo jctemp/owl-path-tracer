@@ -98,10 +98,10 @@ int main(void)
 	}
 
 	/* LIGHTS */
-	LightStruct light{};
+	light_data light{};
 	light.intensity = 10;
 
-	std::vector<std::tuple<std::string, LightStruct>> li{
+	std::vector<std::tuple<std::string, light_data>> li{
 		{"light", light}
 	};
 
@@ -148,9 +148,9 @@ int main(void)
 	for (auto& e : mats)
 		materials.push_back(std::get<material_data>(e));
 
-	std::vector<LightStruct> lights{};
+	std::vector<light_data> lights{};
 	for (auto& e : li)
-		lights.push_back(std::get<LightStruct>(e));
+		lights.push_back(std::get<light_data>(e));
 
 
 	render(cam, materials, lights);

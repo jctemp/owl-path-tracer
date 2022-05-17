@@ -80,8 +80,8 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 		if (is.lightId >= 0)
 		{
 			// TODO: SAMPLE MESH LIGHTx
-			LightStruct light{};
-			GET(light, LightStruct, LP.lights, is.lightId);
+			light_data light{};
+			GET(light, light_data, LP.lights, is.lightId);
 			Float3 emission{ light.color * light.intensity };
 			L += emission * beta;
 			break;
@@ -120,7 +120,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 			Int randId{ (Int)min(prd.random() * randMax, randMax - 1.0f) };
 
 
-			LightStruct lights{};
+			light_data lights{};
 
 
 
