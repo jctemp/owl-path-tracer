@@ -1,4 +1,7 @@
-
+IF(MSVC)
+	# not receiving errors due to msvc safe functions
+	add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
+ENDIF()
 
 SET(HEADER_FILES
 	"src/device/camera.hpp"
@@ -35,9 +38,8 @@ SET(SRC_FILES
 
 SET(INCLUDE_DIRS "include" "src")
 ADD_LIBRARY(lib${PROJECT_NAME} ${HEADER_FILES} ${SRC_FILES})
-TARGET_LINK_LIBRARIES(lib${PROJECT_NAME}
+TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC
 	owl::owl
-	glm::glm
 	fmt::fmt
 	tinyobjloader
 )
@@ -47,7 +49,7 @@ TARGET_INCLUDE_DIRECTORIES(lib${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 
 EMBED_PTX(
 	OUTPUT_TARGET device-ptx
-	PTX_LINK_LIBRARIES owl::owl glm::glm ${CUDA_RUNTIME_LIBRARY} lib${PROJECT_NAME}
+	PTX_LINK_LIBRARIES ${CUDA_RUNTIME_LIBRARY} lib${PROJECT_NAME}
 	SOURCES "src/device/device.cu"
 )
 
@@ -58,8 +60,3 @@ target_link_libraries(${PROJECT_NAME}
 	lib${PROJECT_NAME}
 	device-ptx
 )
-
-if(MSVC)
-	# not receiving errors due to msvc safe functions
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
-endif()

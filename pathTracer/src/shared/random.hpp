@@ -46,7 +46,7 @@ struct Random
 	PT_SHARED_INLINE void init(Uint seedu, Uint seedv)
 	{
 		Uint s{ 0 };
-		for (Uint n = 0; n < N; n++) {
+		for (int32_t n = 0; n < N; n++) {
 			s += 0x9e3779b9;
 			seedu += ((seedv << 4) + 0xa341316c) ^ (seedv + s) ^ ((seedv >> 5) + 0xc8013ea4);
 			seedv += ((seedu << 4) + 0xad90777d) ^ (seedu + s) ^ ((seedu >> 5) + 0x7e95761e);

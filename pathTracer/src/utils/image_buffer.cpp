@@ -29,7 +29,7 @@ image_buffer load_image(std::string const& name, std::string const& path)
     image.buffer = reinterpret_cast<uint32_t*>(stbi_load(file_path.c_str(), &image.width,
         &image.height, &comp, STBI_rgb_alpha));
 
-    for (uint32_t y{ 0 }; y < image.height / 2; y++)
+    for (int32_t y{ 0 }; y < image.height / 2; y++)
     {
         uint32_t* line_y{ image.buffer + y * image.width };
         uint32_t* mirrored_y{ image.buffer + (image.height - 1 - y) * image.width };

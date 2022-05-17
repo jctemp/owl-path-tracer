@@ -6,20 +6,20 @@
 
 struct camera
 {
-    glm::vec3 const look_from;
-    glm::vec3 const look_at;
-    glm::vec3 const look_up;
+    owl::vec3f const look_from;
+    owl::vec3f const look_at;
+    owl::vec3f const look_up;
     float const vertical_fov;
 };
 
 struct camera_data
 {
-    glm::vec3 origin;
-    glm::vec3 llc;
-    glm::vec3 horizontal;
-    glm::vec3 vertical;
+    owl::vec3f origin;
+    owl::vec3f llc;
+    owl::vec3f horizontal;
+    owl::vec3f vertical;
 };
 
-extern camera_data to_camera_data(camera const& c, glm::ivec2 const& buffer_size);
+extern camera_data to_camera_data(camera const& c, owl::vec2i const& buffer_size);
 
 #endif // !CAMERA_HPP

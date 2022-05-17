@@ -1,9 +1,10 @@
-﻿
+﻿#define GLM_FORCE_CUDA
+#define PMEVENT( x ) asm volatile("pmevent " #x ";")
+
 #include "device.hpp"
 #include "core/core.hpp"
-#include <glm/geometric.hpp>
 
-PT_DEVICE_CONSTANT launch_params_data optixLaunchParams;
+__constant__ launch_params_data optixLaunchParams;
 
 OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 {
@@ -20,16 +21,16 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 
 		// determine initial ray form the camera
 		owl::Ray ray{
-			make_owl_type(self.camera.origin),
-			make_owl_type(glm::normalize(
-				self.camera.llc + screen.u * self.camera.horizontal + screen.v * self.camera.vertical - self.camera.origin)),
+			self.camera.origin,
+			normalize(
+				self.camera.llc + screen.u * self.camera.horizontal + screen.v * self.camera.vertical - self.camera.origin),
 			T_MIN, T_MAX };
 
 		color += tracePath(ray, pxRand);
 	}
 
 	// take the average of all samples per pixel and apply gamma correction
-	color *= 1.0f / optixLaunchParams.max_samples;
+	color *= 1.0f / static_cast<float>(optixLaunchParams.max_samples);
 	color = owl::sqrt(color);
 	color = saturate<Float3>(color);
 

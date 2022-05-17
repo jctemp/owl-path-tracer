@@ -23,11 +23,6 @@ if(NOT DEFINED CMAKE_C_STANDARD)
 	set(CMAKE_C_EXTENSIONS OFF)
 endif()
 
-if(MSVC)
-	# not receiving errors due to msvc safe functions
-	add_compile_definitions(_CRT_SECURE_NO_WARNINGS=1)
-endif()
-
 # CONFIGURE EXTERNAL LIBRARIES
 set(OptiX_ROOT_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0")
 
@@ -40,9 +35,6 @@ add_subdirectory(${obj_dir} EXCLUDE_FROM_ALL)
 
 set(stb_dir "external/stb")
 include_directories(${stb_dir} EXCLUDE_FROM_ALL)
-
-set(glm_dir "external/glm")
-add_subdirectory(${glm_dir})
 
 set(fmt_dir "external/fmt")
 add_subdirectory(${fmt_dir})

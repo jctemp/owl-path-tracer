@@ -7,17 +7,15 @@
 #include "materials/Disney.hpp"
 
 #include <owl/owl_device.h>
-#include <optix_device.h>
-
 
 using namespace owl;
 
-extern launch_params_data optixLaunchParams;
+extern __constant__ launch_params_data optixLaunchParams;
 
 PT_DEVICE Float2 uvOnSphere(Float3 n)
 {
-	auto u = 0.5f + atan2(n.x, n.z) / (2 * M_PI);
-	auto v = 0.5f + asin(n.y) / M_PI;
+	float const u{ 0.5f + atan2(n.x, n.z) / (2.0f * PI) };
+	float const v{ 0.5f + asin(n.y) / PI };
 	return Float2{ u,v };
 }
 
@@ -71,7 +69,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 
 
 		/* PREPARE MESH FOR CALCULATIONS */
-		Float3& P{ is.P }, N{ is.N }, V{ is.V }, Ng{ is.Ng };
+		Float3& P{ is.P }, N{ is.N }, V{ is.V };
 		Float3 T{}, B{};
 		onb(N, T, B);
 
@@ -111,19 +109,13 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 
 		toWorld(T, B, N, L);
 
-
 		/* SAMPLE DIRECT LIGHTS */
 		if (LP.light_buffer.count != 0)
 		{
 			// MAY BE INTRODUCE DOME SAMPLING LATER
-			Int randMax{ LP.light_buffer.count };
-			Int randId{ (Int)min(prd.random() * randMax, randMax - 1.0f) };
-
-
+			int32_t rand_max{ static_cast<int32_t>(LP.light_buffer.count)};
+			int32_t rand_id{ static_cast<int32_t>(min(prd.random() * rand_max, rand_max - 1.0f))};
 			light_data lights{};
-
-
-
 		}
 
 		/* TERMINATE PATH IF RUSSIAN ROULETTE  */
@@ -135,7 +127,6 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 
 			ASSERT(isinf(beta.y), "Russian Roulette caused beta to have inf. component");
 		}
-
 
 		ray = owl::Ray{ P,L,T_MIN, T_MAX };
 	}

@@ -323,12 +323,12 @@ int main()
 
 	/* SCENE SELECT */
 
-	od.buffer_size = glm::ivec2{ 1024 };
+	od.buffer_size = vec2i{ 1024 };
 	od.frame_buffer = owlHostPinnedBufferCreate(
 		od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
 	od.use_environment_map = true;
-	od.max_samples = 1024;
-	od.max_path_depth = 128;
+	od.max_samples = 256;
+	od.max_path_depth = 64;
 
 	/* ENVMAP */
 	if (false)
