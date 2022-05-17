@@ -1,6 +1,7 @@
 #include <pt/Types.hpp>
-#include "StbUtils.hpp"
 #include "Renderer.hpp"
+
+#include <utils/image_buffer.hpp>
 
 #include <SimpleLogger.hpp>
 
@@ -87,7 +88,7 @@ void release(void)
 /// <summary>
 /// </summary>
 /// <returns></returns>
-void setEnvironmentTexture(ImageRgb const& texture)
+void setEnvironmentTexture(image_buffer const& texture)
 {
 	if (renderer.environmentMap != nullptr)
 		owlTexture2DDestroy(renderer.environmentMap);
@@ -96,7 +97,7 @@ void setEnvironmentTexture(ImageRgb const& texture)
 		renderer.context,
 		OWL_TEXEL_FORMAT_RGBA8,
 		texture.width, texture.height,
-		texture.pixel,
+		texture.buffer,
 		OWL_TEXTURE_NEAREST,
 		OWL_TEXTURE_CLAMP
 	);
@@ -113,9 +114,9 @@ void add(Mesh* m)
 {
 	Mesh& mesh{ *m };
 
-	auto& vertices{ mesh.vertex };
-	auto& indices{ mesh.index };
-	auto& normals{ mesh.normal };
+	auto& vertices{ mesh.vertices };
+	auto& indices{ mesh.indices};
+	auto& normals{ mesh.normals };
 
 	// set geometry in the buffers of the object
 	OWLBuffer vertexBuffer{

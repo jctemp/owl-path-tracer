@@ -1,12 +1,14 @@
+
+
 SET(HOST_SOURCES
 	"Main.cpp"
-	"src/host/ObjLoader.cpp"
-	"src/host/StbUtils.cpp"
-	"src/host/Renderer.cpp"	
+	
+	"src/utils/image_buffer.hpp"
+	"src/utils/image_buffer.cpp"
+	"src/utils/mesh_loader.hpp"
+	"src/utils/mesh_loader.cpp"
 
-	"src/host/ObjLoader.hpp"
-	"src/host/StbUtils.hpp"
-	"src/host/Renderer.hpp"
+	"src/host/Renderer.cpp"	
 )
 
 SET(SHARED_SOURCES
@@ -40,7 +42,7 @@ EMBED_PTX(
 
 
 
-add_executable(bachelorThesis ${HOST_SOURCES} ${DEVICE_SOURCES} ${SHARED_SOURCES})
+add_executable(bachelorThesis ${SOURCES_UTLS} ${HOST_SOURCES} ${DEVICE_SOURCES} ${SHARED_SOURCES})
 target_include_directories(bachelorThesis PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(bachelorThesis
 	owl::owl

@@ -1,28 +1,15 @@
-﻿#include <host/ObjLoader.hpp>
-#include <host/StbUtils.hpp>
+﻿
 #include <host/Renderer.hpp>
 #include <pt/Types.hpp>
-
 #include <SimpleLogger.hpp>
-
-#include <map>
-#include <vector>
-
 #include <device/device.hpp>
+
+#include "utils/image_buffer.hpp"
+#include "utils/mesh_loader.hpp"
 
 using namespace owl;
 
 Renderer renderer{};
-
-enum class SCENES
-{
-	THREE_SPHERE,
-	SUZANNE,
-	MITSUBA,
-	CORNELL_W_BOX_AND_SPHERE,
-	CORNELL_W_BOXS,
-	DRAGON
-};
 
 int main(void)
 {
@@ -30,88 +17,18 @@ int main(void)
 
 	std::string prefixPath{ "../../../../" };
 
-	auto sceneSelect = [&prefixPath](SCENES i)
-	{
-		switch (i)
-		{
-		case SCENES::THREE_SPHERE:
-		{
-			auto const [meshNames, meshData] { loadOBJ(prefixPath + "scenes/three-sphere-test.obj") };
-			Camera cam{
-				{ 1024 },		  // image size
-				{3.0f,0.5f,0.0f}, // look from
-				{0.0f,0.5f,0.0f}, // look at
-				{0.0f,1.0f,0.0f}, // look up
-				60.0f			  // vfov
-			};
-			return std::make_tuple(meshNames, meshData, cam);
-		}
-		case SCENES::SUZANNE:
-		{
-			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/suzanne.obj")};
-			Camera cam{
-				{ 1024 },		  // image size
-				{5.0f,5.0f,0.0f}, // look from
-				{0.0f,0.75f,0.0f}, // look at
-				{0.0f,1.0f,0.0f}, // look up
-				30.0f			  // vfov
-			};
-			return std::make_tuple(meshNames, meshData, cam);
-		}
-		case SCENES::MITSUBA:
-		{
-			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/mitsuba.obj")};
-			Camera cam{
-				{ 1024 },		  // image size
-				{5.0f,3.0f,0.0f}, // look from
-				{0.0f,0.75f,0.0f}, // look at
-				{0.0f,1.0f,0.0f}, // look up
-				30.0f			  // vfov
-			};
-			return std::make_tuple(meshNames, meshData, cam);
-		}
-		case SCENES::CORNELL_W_BOX_AND_SPHERE:
-		{
-			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-box-sphere.obj")};
-			Camera cam{
-				{ 1024 },		  // image size
-				{3.3f,1.0f,0.0f}, // look from
-				{0.0f,1.0f,0.0f}, // look at
-				{0.0f,1.0f,0.0f}, // look up
-				45.0f			  // vfov
-			};
-			return std::make_tuple(meshNames, meshData, cam);
-		}
-		case SCENES::CORNELL_W_BOXS:
-		{
-			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/cornell-box-w-boxes.obj")};
-			Camera cam{
-				{ 1024 },		  // image size
-				{3.3f,1.0f,0.0f}, // look from
-				{0.0f,1.0f,0.0f}, // look at
-				{0.0f,1.0f,0.0f}, // look up
-				45.0f			  // vfov
-			};
-			return std::make_tuple(meshNames, meshData, cam);
-		}
-		case SCENES::DRAGON:
-		{
-			auto const [meshNames, meshData] {loadOBJ(prefixPath + "scenes/dragon.obj")};
-			Camera cam{
-				{ 1024 },		  // image size
-				{2.0f,1.2f,0.0f}, // look from
-				{0.0f,0.5f,0.0f}, // look at
-				{0.0f,1.0f,0.0f}, // look up
-				50.0f			  // vfov
-			};
-			return std::make_tuple(meshNames, meshData, cam);
-		}
-		}
+
+	auto const meshes{ load_obj(prefixPath + "scenes/dragon.obj") };
+	Camera cam{
+		{ 1024 },		  // image size
+		{3.0f,0.5f,0.0f}, // look from
+		{0.0f,0.5f,0.0f}, // look at
+		{0.0f,1.0f,0.0f}, // look up
+		60.0f			  // vfov
 	};
 
-	/* SCENE SELECT */
 
-	auto const [meshNames, meshData, cam] = sceneSelect(SCENES::DRAGON);
+	/* SCENE SELECT */
 
 	renderer.frameBuffer = owlHostPinnedBufferCreate(
 		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
@@ -122,9 +39,8 @@ int main(void)
 	/* ENVMAP */
 	if (false)
 	{
-		ImageRgb environmentTexture{};
-		loadImage(environmentTexture, "env.hdr", "C:/Users/jamie/Desktop");
-		setEnvironmentTexture(environmentTexture);
+		image_buffer environmentTexture{};
+		environmentTexture = load_image("env.hdr", "C:/Users/jamie/Desktop");
 	}
 
 	/* BSDF */
@@ -172,14 +88,13 @@ int main(void)
 	for (uint32_t i{ 0 }; i < mats.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
 
-
-	for (uint32_t i{ 0 }; i < meshData.size(); i++)
+	for (auto& [name, mesh] : meshes)
 	{
-		fmt::print("{}: ", meshNames[i]);
+		fmt::print("{}: ", name);
 		std::string in;
 		std::getline(std::cin, in);
 		if (!in.empty())
-			meshData[i]->materialId = std::stoi(in);
+			mesh->materialId = std::stoi(in);
 	}
 
 	/* LIGHTS */
@@ -194,19 +109,18 @@ int main(void)
 	for (uint32_t i{ 0 }; i < li.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(li[i]), i);
 
-	for (uint32_t i{ 0 }; i < meshData.size(); i++)
+	for (auto& [name, mesh] : meshes)
 	{
-		fmt::print("{}: ", meshNames[i]);
+		fmt::print("{}: ", name);
 		std::string in;
 		std::getline(std::cin, in);
 		if (!in.empty())
-			meshData[i]->lightId = std::stoi(in);
-		add(meshData[i]);
+			mesh->lightId = std::stoi(in);
 	}
 
 	/* RENDER */
-	for (auto& m : meshData)
-		add(m);
+	for (auto& [n, m] : meshes)
+		add(m.get());
 
 	std::vector<MaterialStruct> materials{};
 	for (auto& e : mats)
@@ -216,10 +130,14 @@ int main(void)
 	for (auto& e : li)
 		lights.push_back(std::get<LightStruct>(e));
 
+
 	render(cam, materials, lights);
 
-	Image result{ cam.fbSize.x, cam.fbSize.y, (const uint32_t*)owlBufferGetPointer(renderer.frameBuffer, 0) };
-	writeImage(result, fmt::format("{}{}.png", prefixPath, "image"));
+	// copy image buffer
+
+	image_buffer result{ cam.fbSize.x, cam.fbSize.y,
+		(Uint *)owlBufferGetPointer(renderer.frameBuffer, 0), image_buffer::tag::referenced };
+	write_image(result, fmt::format("{}{}.png", prefixPath, "image"));
 
 	release();
 }
