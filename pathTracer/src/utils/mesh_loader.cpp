@@ -5,64 +5,65 @@
 
 #include <tiny_obj_loader.h>
 
-Mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib)
+Mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attribute)
 {
-    Mesh* mesh{ new Mesh{} };
+    auto const mesh{ new Mesh{} };
 
     // global, no offset, shared by all meshes
-    auto& meshvertices{ attrib.vertices };
-    auto& meshnormals{ attrib.normals };
-    auto& meshuv{ attrib.texcoords };
+    auto const& mesh_vertices{ attribute.vertices };
+    auto const& mesh_normals{ attribute.normals };
+    auto const& mesh_uv{ attribute.texcoords };
 
     // per mesh data with global indices
     auto& indices{ shape.mesh.indices };
 
     // mapping of global ids to local ids
-    std::map<int32_t, int32_t> vertexMapping{};
+    std::map<int32_t, int32_t> vertex_mapping{};
 
-    std::size_t indexOffset{ 0 };
     // num_face_vertices gives the amount of faces + how many vertices per face
+    std::size_t index_offset{ 0 };
+
     for (std::size_t f{ 0 }; f < shape.mesh.num_face_vertices.size(); ++f)
     {
         mesh->indices.emplace_back(0, 0, 0);
-        auto& vertexLocal{ mesh->indices[mesh->indices.size() - 1] };
+        auto& vertex_local{ mesh->indices[mesh->indices.size() - 1] };
 
         for (size_t v{ 0 }; v < OBJ_TRIANGLE; v++)
         {
             // get vertex, normal and uv ID
-            tinyobj::index_t idx{ indices[indexOffset + v] };
+            tinyobj::index_t const index{ indices[index_offset + v] };
 
             // set global vertex ID
-            int32_t vertexID{ idx.vertex_index };
-            int32_t normalID{ idx.normal_index };
+            int32_t const vertex_id{ index.vertex_index };
+            int32_t const normal_id{ index.normal_index };
 
             // check if global ID is mapped
-            if (!vertexMapping.contains(vertexID))
+            if (!vertex_mapping.contains(vertex_id))
             {
-                vertexMapping.insert({ vertexID, int32_t(mesh->vertices.size()) });
+                vertex_mapping.insert({ vertex_id, static_cast<int32_t>(mesh->vertices.size()) });
                 mesh->vertices.emplace_back(
-                    meshvertices[3 * size_t(vertexID) + 0],
-                    meshvertices[3 * size_t(vertexID) + 1],
-                    meshvertices[3 * size_t(vertexID) + 2]
+                    mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 0],
+                    mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 1],
+                    mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 2]
                 );
             }
-            vertexLocal[v] = vertexMapping[vertexID];
+            vertex_local[v] = vertex_mapping[vertex_id];
 
             // add normals
-            if (idx.normal_index >= 0)
+            if (index.normal_index >= 0)
             {
                 // wtf no idea why this works lol
                 while (mesh->normals.size() < mesh->vertices.size())
                 {
                     mesh->normals.emplace_back(
-                        meshnormals[3 * size_t(normalID) + 0],
-                        meshnormals[3 * size_t(normalID) + 1],
-                        meshnormals[3 * size_t(normalID) + 2]
+                        mesh_normals[3 * static_cast<uint64_t>(normal_id) + 0],
+                        mesh_normals[3 * static_cast<uint64_t>(normal_id) + 1],
+                        mesh_normals[3 * static_cast<uint64_t>(normal_id) + 2]
                     );
                 }
             }
         }
-        indexOffset += OBJ_TRIANGLE;
+        index_offset += OBJ_TRIANGLE;
     }
     return mesh;
 }
@@ -78,27 +79,27 @@ std::vector<std::tuple<std::string, std::shared_ptr<Mesh>>> load_obj(std::string
     // 2.) load obj file and checking for errors
     if (!reader.ParseFromFile(obj_file, readerConfig))
         if (!reader.Error().empty())
-            std::runtime_error(reader.Error());
+            throw std::runtime_error(reader.Error());
 
     // 3). check for warings
     if (!reader.Warning().empty())
         printf("WARNING: %s\n", reader.Warning().c_str());
 
-    // 4.) get references to attrib and shapes of reader
+    // 4.) get references to attribute and shapes of reader
     /*
     > tinyobj::attrib_t contains for all object vertex, normals and uv data
-    > hence the indices inside shapes referres to the global index
+    > hence the indices inside shapes refers to the global index
     >
     > tinyobj::shape_t has meta data of object. It helps to build faces
     > lines and points. Creating custom meshes needs an internal mapping
     */
-    tinyobj::attrib_t const& attrib{ reader.GetAttrib() };
+    tinyobj::attrib_t const& attribute{ reader.GetAttrib() };
     std::vector<tinyobj::shape_t> const& shapes{ reader.GetShapes() };
 
     // 5.) create meshes
     std::vector<std::tuple<std::string, std::shared_ptr<Mesh>>> tuples{};
     for (std::size_t i{ 0 }; i < shapes.size(); ++i)
-        tuples.emplace_back(shapes[i].name, create_mesh(shapes[i], attrib));
+        tuples.emplace_back(shapes[i].name, create_mesh(shapes[i], attribute));
 
     return tuples;
 }

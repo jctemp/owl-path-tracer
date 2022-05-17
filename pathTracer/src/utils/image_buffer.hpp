@@ -3,7 +3,6 @@
 #include <types.hpp>
 
 #include <string>
-#include <memory>
 #include <filesystem>
 
 struct image_buffer
