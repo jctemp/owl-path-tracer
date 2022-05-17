@@ -71,14 +71,14 @@ struct triangle_geom_data
 	vec3* normal;
 };
 
-struct RayGenData
+struct ray_gen_data
 {
 	uint32_t* fbPtr;
 	ivec2 fbSize;
 	camera_data camera;
 };
 
-struct MissProgData
+struct miss_data
 {
 };
 

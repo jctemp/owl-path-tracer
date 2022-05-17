@@ -137,7 +137,7 @@ PT_DEVICE_INLINE vec3 reflect(vec3 const& V, vec3 const& N)
 PT_DEVICE_INLINE vec3 refract(vec3 const& V, vec3 const& N, float eta)
 {
 	float cosThetaI{ dot(V, N) };
-	float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
+	float sin2ThetaI{ fmax(0.0f, 1.0f - cosThetaI * cosThetaI) };
 	float sin2ThetaT{ eta * eta * sin2ThetaI };
 
 	if (sin2ThetaT >= 1.0f) return { 0.0f };
@@ -160,7 +160,7 @@ PT_DEVICE_INLINE bool refract(vec3 const& V, vec3 const& N, float eta, vec3& T)
 	//return true;
 
 	float cosThetaI{ dot(-V, N) };
-	float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
+	float sin2ThetaI{ fmax(0.0f, 1.0f - cosThetaI * cosThetaI) };
 	float sin2ThetaT{ eta * eta * sin2ThetaI };
 
 	if (sin2ThetaT >= 1.0f) return false;

@@ -5,7 +5,7 @@ __constant__ launch_params_data optixLaunchParams;
 
 OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 {
-	RayGenData const& self{ owl::getProgramData<RayGenData>() };
+	ray_gen_data const& self{ owl::getProgramData<ray_gen_data>() };
 	ivec2 const pixelId{ owl::getLaunchIndex() };
 	Random pxRand{ (uint32_t)pixelId.x, (uint32_t)pixelId.y };
 

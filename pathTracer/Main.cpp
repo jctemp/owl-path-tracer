@@ -24,17 +24,17 @@ void optix_raygen_program()
 {
 	OWLVarDecl rayGenVars[]
 	{
-		{ "fbPtr",             OWL_BUFPTR, OWL_OFFSETOF(RayGenData, fbPtr)},
-		{ "fbSize",            OWL_INT2,   OWL_OFFSETOF(RayGenData, fbSize)},
-		{ "camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.origin)},
-		{ "camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.llc)},
-		{ "camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.horizontal)},
-		{ "camera.vertical",   OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.vertical)},
+		{ "fbPtr",             OWL_BUFPTR, OWL_OFFSETOF(ray_gen_data, fbPtr)},
+		{ "fbSize",            OWL_INT2,   OWL_OFFSETOF(ray_gen_data, fbSize)},
+		{ "camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.origin)},
+		{ "camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.llc)},
+		{ "camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.horizontal)},
+		{ "camera.vertical",   OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.vertical)},
 		{ nullptr }
 	};
 
 	od.ray_gen_program =
-		owlRayGenCreate(od.context, od.module, "rayGenenration", sizeof(RayGenData), rayGenVars, -1);
+		owlRayGenCreate(od.context, od.module, "rayGenenration", sizeof(ray_gen_data), rayGenVars, -1);
 }
 
 void optix_miss_program()
@@ -46,7 +46,7 @@ void optix_miss_program()
 	};
 
 	od.miss_program =
-		owlMissProgCreate(od.context, od.module, "miss", sizeof(MissProgData), missProgVars, -1);
+		owlMissProgCreate(od.context, od.module, "miss", sizeof(miss_data), missProgVars, -1);
 }
 
 void optix_launch_params()

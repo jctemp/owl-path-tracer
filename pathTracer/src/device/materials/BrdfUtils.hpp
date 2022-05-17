@@ -95,7 +95,7 @@ PT_DEVICE_INLINE float dielectricFresnel(float ior, vec3 V, vec3 N, vec3 & R, ve
 	}
 	else
 	{
-		float dnp = max(sqrtf(arg), 1e-7f);
+		float dnp = fmax(sqrtf(arg), 1e-7f);
 		float nK = (neta * costheta) - dnp;
 		T = -(neta * V) + (nK * Nn);
 	}
@@ -135,7 +135,7 @@ PT_DEVICE_INLINE float smithG(float absTanTheta, float alpha)
 
 PT_DEVICE_INLINE float roughnessToAlpha(float roughness)
 {
-	return max(MIN_ALPHA, roughness * roughness);
+	return fmax(MIN_ALPHA, roughness * roughness);
 }
 
 PT_DEVICE_INLINE float gtr1(float cosTheta, float alpha)
@@ -159,7 +159,7 @@ PT_DEVICE_INLINE vec3 sampleGtr2(vec3 const& V, float alpha, vec2 u)
 	float alpha2{ alpha * alpha };
 	float phi{ (2 * PI) * u[0] };
 	float cosTheta{ sqrtf((1.0f - u[1]) / (1.0f + (alpha2 - 1.0f) * u[1])) };
-	float sinTheta{ sqrtf(max(0.0f, 1.0f - cosTheta * cosTheta)) };
+	float sinTheta{ sqrtf(fmax(0.0f, 1.0f - cosTheta * cosTheta)) };
 
 	vec3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
 	if (!sameHemisphere(V, H)) H = -H;
@@ -182,9 +182,9 @@ PT_DEVICE_INLINE vec3 sampleGtr2VNDF(vec3 const& V, float alpha, vec2 u)
 	float s = 0.5 * (1.0 + Vh.z);
 	t2 = (1.0 - s) * sqrt(1.0 - t1 * t1) + s * t2;
 
-	vec3 Nh = t1 * T1 + t2 * T2 + sqrtf(max(0.0f, 1.0f - t1 * t1 - t2 * t2)) * Vh;
+	vec3 Nh = t1 * T1 + t2 * T2 + sqrtf(fmax(0.0f, 1.0f - t1 * t1 - t2 * t2)) * Vh;
 
-	return normalize(vec3(alpha * Nh.x, alpha * Nh.y, max(0.0f, Nh.z)));
+	return normalize(vec3(alpha * Nh.x, alpha * Nh.y, fmax(0.0f, Nh.z)));
 }
 
 PT_DEVICE_INLINE float pdfGtr2(vec3 const& V, vec3 const& H, float alpha)

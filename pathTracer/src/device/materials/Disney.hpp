@@ -219,8 +219,8 @@ PT_DEVICE void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, ve
 {
 	float alphaG{ (1 - mat.clearcoatGloss) * 0.1f + mat.clearcoatGloss * 0.001f };
 	float alpha2{ alphaG * alphaG };
-	float cosTheta{ sqrtf(max(0.0f, (1 - powf(alpha2, 1 - rand.random())) / (1 - alpha2))) };
-	float sinTheta{ sqrtf(max(0.0f, 1 - cosTheta * cosTheta)) };
+	float cosTheta{ sqrtf(fmax(0.0f, (1 - powf(alpha2, 1 - rand.random())) / (1 - alpha2))) };
+	float sinTheta{ sqrtf(fmax(0.0f, 1 - cosTheta * cosTheta)) };
 	float phi{ TWO_PI * rand.random() };
 
 	vec3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
