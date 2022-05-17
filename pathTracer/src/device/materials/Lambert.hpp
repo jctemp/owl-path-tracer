@@ -4,13 +4,13 @@
 
 #include "../Sampling.hpp"
 
-PT_DEVICE Float3 fLambert(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float3 fLambert(material_data const& mat, Float3 const& V, Float3 const& L)
 {
 	if (!sameHemisphere(V, L)) return Float3{ 0.0f };
 	return mat.baseColor * INV_PI;
 }
 
-PT_DEVICE Float pdfLambert(MaterialStruct const& mat, Float3 const& V, Float3 const& L)
+PT_DEVICE Float pdfLambert(material_data const& mat, Float3 const& V, Float3 const& L)
 {
 	if (!sameHemisphere(V, L)) return 0.0f;
 	Float pdf{ 0.0f };
@@ -18,7 +18,7 @@ PT_DEVICE Float pdfLambert(MaterialStruct const& mat, Float3 const& V, Float3 co
 	return pdf;
 }
 
-PT_DEVICE void sampleLambert(MaterialStruct const& mat, Float3 const& V, Float3& L,
+PT_DEVICE void sampleLambert(material_data const& mat, Float3 const& V, Float3& L,
 	Random& rand, Float3& bsdf, Float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() , rand.random()}, L);

@@ -25,41 +25,58 @@ int main(void)
 	};
 
 	/* BSDF */
-	MaterialStruct mat1{ Material::DISNEY };
-	mat1.baseColor = { .3f };
-	mat1.metallic = 0.0f;
-	mat1.specular = 0.0f;
-	mat1.specularTint = 0.0f;
-	mat1.roughness = 0.5f;
-	mat1.sheen = 0.5f;
-	mat1.sheenTint = 0.5f;
-	mat1.clearcoat = 0.0f;
-	mat1.clearcoatGloss = 0.0f;
+	material_data mat1{
+		material_data::type::DISNEY,
+		{.3f, .3f, .3f},	  
+		0.0f ,				  
+		{ 1.0f, 0.2f, 0.1f }, 
+		{ 0.8f, 0.8f, 0.8f }, 
+		0.0f,				  
+		0.0f,				  
+		0.0f,				  
+		0.5f,				  
+		0.5f,				  
+		0.5f,				  
+		0.0f,				  
+		0.0f,				  
+		1.45f				  
+	};
 
-	MaterialStruct mat2{ Material::DISNEY };
-	mat2.baseColor = { .8f,.4f,.1f };
-	mat2.metallic = 0.0f;
-	mat2.specular = 0.0f;
-	mat2.specularTint = 0.0f;
-	mat2.roughness = 0.5f;
-	mat2.sheen = 0.5f;
-	mat2.sheenTint = 0.5f;
-	mat2.clearcoat = 0.0f;
-	mat2.clearcoatGloss = 0.0f;
+	material_data mat2{
+		material_data::type::DISNEY,
+		{.8f,.4f,.1f},
+		0.0f ,
+		{ 1.0f, 0.2f, 0.1f },
+		{ 0.8f, 0.8f, 0.8f },
+		0.0f,
+		0.0f,
+		0.0f,
+		0.5f,
+		0.5f,
+		0.5f,
+		0.0f,
+		0.0f,
+		1.45f
+	};
 
-	MaterialStruct test{ Material::DISNEY };
-	test.baseColor = { .8f };
-	test.subsurface = 0.0f;
-	test.metallic = 1.0f;
-	test.specular = 0.0f;
-	test.specularTint = 0.0f;
-	test.roughness = 0.05f;
-	test.sheen = 0.0f;
-	test.sheenTint = 0.5f;
-	test.clearcoat = 0.0f;
-	test.clearcoatGloss = 1.0f;
+	material_data test{
+		material_data::type::DISNEY,
+		{.8f, .8f, .8f},
+		0.0f ,
+		{ 1.0f, 0.2f, 0.1f },
+		{ 0.8f, 0.8f, 0.8f },
+		1.0f,
+		0.0f,
+		0.0f,
+		0.05f,
+		0.0f,
+		0.5f,
+		0.0f,
+		0.0f,
+		1.45f
+	};
 
-	std::vector<std::tuple<std::string, MaterialStruct>> mats{
+	std::vector<std::tuple<std::string, material_data>> mats{
 		{"mat1", mat1},
 		{"mat2", mat2},
 		{"test", test},
@@ -127,9 +144,9 @@ int main(void)
 	for (auto& [n, m] : meshes)
 		add(m.get(), entities[i++]);
 
-	std::vector<MaterialStruct> materials{};
+	std::vector<material_data> materials{};
 	for (auto& e : mats)
-		materials.push_back(std::get<MaterialStruct>(e));
+		materials.push_back(std::get<material_data>(e));
 
 	std::vector<LightStruct> lights{};
 	for (auto& e : li)
@@ -141,7 +158,7 @@ int main(void)
 	// copy image buffer
 
 	image_buffer result{ framebuffer_size.x, framebuffer_size.y,
-		(Uint *)owlBufferGetPointer(renderer.frameBuffer, 0), image_buffer::tag::referenced };
+		(Uint*)owlBufferGetPointer(renderer.frameBuffer, 0), image_buffer::tag::referenced };
 	write_image(result, fmt::format("{}{}.png", prefix_path, "image"));
 
 	release();

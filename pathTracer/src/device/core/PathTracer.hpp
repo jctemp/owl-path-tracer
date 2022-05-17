@@ -42,7 +42,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 	Float3 beta{ 1.0f };
 
 	InterfaceStruct is;
-	MaterialStruct ms;
+	material_data ms;
 
 	PerRayData prd{ random, ScatterEvent::NONE, &is, &ms };
 
@@ -93,8 +93,8 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 		toLocal(T, B, N, V);
 
 		{
-			MaterialStruct material{};
-			if (is.matId >= 0) GET(material, MaterialStruct, LP.materials, is.matId);
+			material_data material{};
+			if (is.matId >= 0) GET(material, material_data, LP.materials, is.matId);
 
 
 			Float pdf{ 0.0f };

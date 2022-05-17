@@ -65,7 +65,7 @@ struct PerRayData
 	Random& random;
 	ScatterEvent scatterEvent;
 	InterfaceStruct* is;
-	MaterialStruct* ms;
+	material_data* ms;
 };
 
 #endif // !DEVICE_HPP

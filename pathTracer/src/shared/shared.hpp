@@ -8,16 +8,16 @@
 #include <owl/owl.h>
 #include <cuda_runtime.h>
 
-enum class Material
+struct material_data
 {
-	NONE = 0 << 0,
-	LAMBERT = 1 << 0,
-	DISNEY = 1 << 0,
-};
+	enum class type
+	{
+		NONE = 0 << 0,
+		LAMBERT = 1 << 0,
+		DISNEY = 1 << 0,
+	};
 
-struct MaterialStruct
-{
-	Material type{ Material::NONE };
+	type type{ type::NONE };
 	Float3   baseColor{ 0.8f, 0.8f, 0.8f };
 	Float    subsurface{ 0.0f };
 	Float3   subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
@@ -31,8 +31,6 @@ struct MaterialStruct
 	Float    clearcoat{ 0.0f };
 	Float    clearcoatGloss{ 0.03f };
 	Float    ior{ 1.45f };
-	Float    transmission{ 0.0f };
-	Float    transmissionRoughness{ 0.0f };
 };
 
 enum class Light
