@@ -1,7 +1,7 @@
 #ifndef TYPES_HPP
 #define TYPES_HPP
 
-#include <device/Globals.hpp>
+#include <device/device.hpp>
 #include <vector>
 
 

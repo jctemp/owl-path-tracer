@@ -2,7 +2,7 @@
 #define MATH_HPP
 #pragma once
 
-#include "Globals.hpp"
+#include "device.hpp"
 
 #define PI            3.14159265358979323f // pi
 #define TWO_PI        6.28318530717958648f // 2pi

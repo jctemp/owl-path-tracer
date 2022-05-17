@@ -2,7 +2,7 @@
 #define MISS_HPP
 #pragma once
 
-#include "Globals.hpp"
+#include "device.hpp"
 #include "materials/Lambert.hpp"
 #include "materials/Disney.hpp"
 

@@ -8,7 +8,7 @@
 #include <map>
 #include <vector>
 
-#include <device/Globals.hpp>
+#include <device/device.hpp>
 
 using namespace owl;
 
@@ -115,7 +115,7 @@ int main(void)
 
 	renderer.frameBuffer = owlHostPinnedBufferCreate(
 		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
-	renderer.useEnvironmentMap = false;
+	renderer.useEnvironmentMap = true;
 	renderer.samplesPerPixel = 1024;
 	renderer.maxDepth = 128;
 
@@ -140,7 +140,7 @@ int main(void)
 	mat1.clearcoatGloss = 0.0f;
 
 	MaterialStruct mat2{ Material::DISNEY };
-	mat2.baseColor = { .1f };
+	mat2.baseColor = { .8f,.4f,.1f };
 	mat2.metallic = 0.0f;
 	mat2.specular = 0.0f;
 	mat2.specularTint = 0.0f;
@@ -153,10 +153,10 @@ int main(void)
 	MaterialStruct test{ Material::DISNEY };
 	test.baseColor = { .8f };
 	test.subsurface = 0.0f;
-	test.metallic = 0.0f;
+	test.metallic = 1.0f;
 	test.specular = 0.0f;
 	test.specularTint = 0.0f;
-	test.roughness = 0.5f;
+	test.roughness = 0.05f;
 	test.sheen = 0.0f;
 	test.sheenTint = 0.5f;
 	test.clearcoat = 0.0f;

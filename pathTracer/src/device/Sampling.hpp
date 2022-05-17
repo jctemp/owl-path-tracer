@@ -2,7 +2,7 @@
 #define SAMPLE_METHODS_HPP
 #pragma once
 
-#include "Globals.hpp"
+#include "device.hpp"
 #include "Math.hpp"
 
 /*
