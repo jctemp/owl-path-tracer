@@ -12,7 +12,7 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 	Random pxRand{ (Uint)pixelId.x, (Uint)pixelId.y };
 
 	Float3 color{ 0.0f };
-	for (Int s{ 0 }; s < optixLaunchParams.samplesPerPixel; ++s)
+	for (Int s{ 0 }; s < optixLaunchParams.max_samples; ++s)
 	{
 		// shot ray with slight randomness to make soft edges
 		Float2 const rand{ pxRand(), pxRand() };
@@ -29,7 +29,7 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 	}
 
 	// take the average of all samples per pixel and apply gamma correction
-	color *= 1.0f / optixLaunchParams.samplesPerPixel;
+	color *= 1.0f / optixLaunchParams.max_samples;
 	color = owl::sqrt(color);
 	color = saturate<Float3>(color);
 

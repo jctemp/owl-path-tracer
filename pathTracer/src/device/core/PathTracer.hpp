@@ -26,7 +26,7 @@ PT_DEVICE Float3 sampleEnvironment(Float3 dir)
 {
 	vec2f tc{ uvOnSphere(dir) };
 	owl::vec4f const texColor{
-		tex2D<float4>(optixLaunchParams.environmentMap, tc.x, tc.y) };
+		tex2D<float4>(optixLaunchParams.environment_map, tc.x, tc.y) };
 	return vec3f{ texColor };
 }
 
@@ -47,7 +47,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 	PerRayData prd{ random, ScatterEvent::NONE, &is, &ms };
 
 
-	for (Int depth{ 0 }; depth < LP.maxDepth; ++depth)
+	for (Int depth{ 0 }; depth < LP.max_path_depth; ++depth)
 	{
 		/* FIND INTERSECTION */
 		owl::traceRay(LP.world, ray, prd);
@@ -57,9 +57,9 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 		if (prd.scatterEvent == ScatterEvent::MISS)
 		{
 			Float3 li{ 0.0f };
-			if (!LP.useEnvironmentMap)
+			if (!LP.use_environment_map)
 				li = 0.0f;
-			else if (optixLaunchParams.environmentMap)
+			else if (optixLaunchParams.environment_map)
 				li = sampleEnvironment(ray.direction);
 			else
 				li = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, { 0.5f *
@@ -81,7 +81,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 		{
 			// TODO: SAMPLE MESH LIGHTx
 			light_data light{};
-			GET(light, light_data, LP.lights, is.lightId);
+			GET(light, light_data, LP.light_buffer, is.lightId);
 			Float3 emission{ light.color * light.intensity };
 			L += emission * beta;
 			break;
@@ -94,7 +94,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 
 		{
 			material_data material{};
-			if (is.matId >= 0) GET(material, material_data, LP.materials, is.matId);
+			if (is.matId >= 0) GET(material, material_data, LP.material_buffer, is.matId);
 
 
 			Float pdf{ 0.0f };
@@ -113,10 +113,10 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 
 
 		/* SAMPLE DIRECT LIGHTS */
-		if (LP.lights.count != 0)
+		if (LP.light_buffer.count != 0)
 		{
 			// MAY BE INTRODUCE DOME SAMPLING LATER
-			Int randMax{ LP.lights.count };
+			Int randMax{ LP.light_buffer.count };
 			Int randId{ (Int)min(prd.random() * randMax, randMax - 1.0f) };
 
 

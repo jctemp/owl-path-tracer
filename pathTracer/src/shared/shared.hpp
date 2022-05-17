@@ -53,13 +53,13 @@ struct light_data
 
 struct launch_params_data
 {
-	Int maxDepth;
-	Int samplesPerPixel;
-	Buffer materials;
-	Buffer lights;
+	Int max_path_depth;
+	Int max_samples;
+	Buffer material_buffer;
+	Buffer light_buffer;
 	OptixTraversableHandle world;
-	cudaTextureObject_t environmentMap;
-	bool useEnvironmentMap;
+	cudaTextureObject_t environment_map;
+	bool use_environment_map;
 };
 
 struct TrianglesGeomData

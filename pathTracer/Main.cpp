@@ -51,13 +51,13 @@ void optix_launch_params()
 {
 	OWLVarDecl launchParamsVars[]
 	{
-		{ "maxDepth",          OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, maxDepth) },
-		{ "samplesPerPixel",   OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, samplesPerPixel) },
-		{ "materials",         OWL_BUFFER,              OWL_OFFSETOF(launch_params_data, materials)},
-		{ "lights",            OWL_BUFFER,              OWL_OFFSETOF(launch_params_data, lights)},
+		{ "max_path_depth",          OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, max_path_depth) },
+		{ "max_samples",   OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, max_samples) },
+		{ "material_buffer",         OWL_BUFFER,              OWL_OFFSETOF(launch_params_data, material_buffer)},
+		{ "light_buffer",            OWL_BUFFER,              OWL_OFFSETOF(launch_params_data, light_buffer)},
 		{ "world",             OWL_GROUP,               OWL_OFFSETOF(launch_params_data, world) },
-		{ "environmentMap",    OWL_TEXTURE,             OWL_OFFSETOF(launch_params_data, environmentMap) },
-		{ "useEnvironmentMap", OWL_BOOL,                OWL_OFFSETOF(launch_params_data, useEnvironmentMap)},
+		{ "environment_map",    OWL_TEXTURE,             OWL_OFFSETOF(launch_params_data, environment_map) },
+		{ "use_environment_map", OWL_BOOL,                OWL_OFFSETOF(launch_params_data, use_environment_map)},
 		{ nullptr }
 	};
 
@@ -175,21 +175,21 @@ void render(camera_data const& camera, std::vector<material_data> const& materia
 	owlRayGenSet3f(od.ray_gen_program, "camera.vertical", (const owl3f&)camera.vertical);
 
 	// 5) set launch params
-	auto materialBuffer{
+	auto material_buffer{
 		owlDeviceBufferCreate(od.context, OWL_USER_TYPE(material_data), materials.size(), materials.data())
 	};
-	owlParamsSetBuffer(od.launch_params, "materials", materialBuffer);
 
-	auto lightBuffer{
+	auto light_buffer{
 		owlDeviceBufferCreate(od.context, OWL_USER_TYPE(light_data), lights.size(), lights.data())
 	};
-	owlParamsSetBuffer(od.launch_params, "lights", lightBuffer);
 
-	owlParamsSetRaw(od.launch_params, "maxDepth", &od.max_path_depth);
-	owlParamsSetRaw(od.launch_params, "samplesPerPixel", &od.max_samples);
+	owlParamsSetRaw(od.launch_params, "max_path_depth", &od.max_path_depth);
+	owlParamsSetRaw(od.launch_params, "max_samples", &od.max_samples);
+	owlParamsSetBuffer(od.launch_params, "material_buffer", material_buffer);
+	owlParamsSetBuffer(od.launch_params, "light_buffer", light_buffer);
 	owlParamsSetGroup(od.launch_params, "world", od.world);
-	owlParamsSetTexture(od.launch_params, "environmentMap", od.environment_map);
-	owlParamsSet1b(od.launch_params, "useEnvironmentMap", od.use_environment_map);
+	owlParamsSetTexture(od.launch_params, "environment_map", od.environment_map);
+	owlParamsSet1b(od.launch_params, "use_environment_map", od.use_environment_map);
 
 	// 6) build sbt tables and load data
 	owlBuildPrograms(od.context);
