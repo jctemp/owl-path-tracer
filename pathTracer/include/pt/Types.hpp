@@ -26,7 +26,7 @@ struct optix_data
     OWLMissProg miss_program;
 
     // link between host and device
-    owl::vec2i buffer_size{ 1024 };
+    ivec2 buffer_size{ 1024 };
     OWLBuffer frame_buffer;
 
     // Geometry and mesh

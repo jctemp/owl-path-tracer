@@ -10,19 +10,19 @@
 // https://github.com/wdas/brdf/blob/main/src/brdfs/disney.brdf
 // https://jcgt.org/published/0007/04/01/
 
-PT_DEVICE_INLINE float luminance(Float3 color)
+PT_DEVICE_INLINE float luminance(vec3 color)
 {
 	return 0.212671f * color.x + 0.715160f * color.y + 0.072169f * color.z;
 }
 
-PT_DEVICE_INLINE Float3 calculateTint(Float3 baseColor)
+PT_DEVICE_INLINE vec3 calculateTint(vec3 baseColor)
 // diseny uses in the BRDF explorer the luminance for the calculation
 {
 	float lum{ luminance(baseColor) };
-	return (lum > 0.0f) ? baseColor * (1.0f / lum) : Float3{ 1.0f };
+	return (lum > 0.0f) ? baseColor * (1.0f / lum) : vec3{ 1.0f };
 }
 
-PT_DEVICE_INLINE float calculateEta(Float3 V, float ior)
+PT_DEVICE_INLINE float calculateEta(vec3 V, float ior)
 {
 	if (cosTheta(V) > 0.0f)
 		return 1.0f / ior;
@@ -66,10 +66,10 @@ PT_DEVICE_INLINE float dielectricFresnel(float costheta, float ior)
 	return 0.5f * (rp * rp + rs * rs);
 }
 
-PT_DEVICE_INLINE float dielectricFresnel(float ior, Float3 V, Float3 N, Float3 & R, Float3& T, bool& inside)
+PT_DEVICE_INLINE float dielectricFresnel(float ior, vec3 V, vec3 N, vec3 & R, vec3& T, bool& inside)
 {
 	float costheta{ cosTheta(V) }, neta{};
-	Float3 Nn;
+	vec3 Nn;
 
 	if (costheta > 0)
 	{
@@ -153,7 +153,7 @@ PT_DEVICE_INLINE float gtr2(float cosTheta, float alpha)
 	return alpha2 / (PI * t * t);
 }
 
-PT_DEVICE_INLINE Float3 sampleGtr2(Float3 const& V, float alpha, Float2 u)
+PT_DEVICE_INLINE vec3 sampleGtr2(vec3 const& V, float alpha, vec2 u)
 {
 	// Disney Keynotes eq. (2) and (9) 
 	float alpha2{ alpha * alpha };
@@ -161,19 +161,19 @@ PT_DEVICE_INLINE Float3 sampleGtr2(Float3 const& V, float alpha, Float2 u)
 	float cosTheta{ sqrtf((1.0f - u[1]) / (1.0f + (alpha2 - 1.0f) * u[1])) };
 	float sinTheta{ sqrtf(max(0.0f, 1.0f - cosTheta * cosTheta)) };
 
-	Float3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
+	vec3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
 	if (!sameHemisphere(V, H)) H = -H;
 
 	return H;
 }
 
-PT_DEVICE_INLINE Float3 sampleGtr2VNDF(Float3 const& V, float alpha, Float2 u)
+PT_DEVICE_INLINE vec3 sampleGtr2VNDF(vec3 const& V, float alpha, vec2 u)
 {
-	Float3 Vh = normalize(Float3(alpha * V.x, alpha * V.y, V.z));
+	vec3 Vh = normalize(vec3(alpha * V.x, alpha * V.y, V.z));
 
 	float lensq = Vh.x * Vh.x + Vh.y * Vh.y;
-	Float3 T1 = lensq > 0 ? Float3(-Vh.y, Vh.x, 0) * (1.0f / sqrtf(lensq)) : Float3(1, 0, 0);
-	Float3 T2 = cross(Vh, T1);
+	vec3 T1 = lensq > 0 ? vec3(-Vh.y, Vh.x, 0) * (1.0f / sqrtf(lensq)) : vec3(1, 0, 0);
+	vec3 T2 = cross(Vh, T1);
 
 	float r = sqrtf(u.x);
 	float phi = 2.0 * PI * u.y;
@@ -182,12 +182,12 @@ PT_DEVICE_INLINE Float3 sampleGtr2VNDF(Float3 const& V, float alpha, Float2 u)
 	float s = 0.5 * (1.0 + Vh.z);
 	t2 = (1.0 - s) * sqrt(1.0 - t1 * t1) + s * t2;
 
-	Float3 Nh = t1 * T1 + t2 * T2 + sqrtf(max(0.0f, 1.0f - t1 * t1 - t2 * t2)) * Vh;
+	vec3 Nh = t1 * T1 + t2 * T2 + sqrtf(max(0.0f, 1.0f - t1 * t1 - t2 * t2)) * Vh;
 
-	return normalize(Float3(alpha * Nh.x, alpha * Nh.y, max(0.0f, Nh.z)));
+	return normalize(vec3(alpha * Nh.x, alpha * Nh.y, max(0.0f, Nh.z)));
 }
 
-PT_DEVICE_INLINE float pdfGtr2(Float3 const& V, Float3 const& H, float alpha)
+PT_DEVICE_INLINE float pdfGtr2(vec3 const& V, vec3 const& H, float alpha)
 {
 	float Dr{ gtr2(cosTheta(H), alpha)};
 	float Gr{ smithG(abs(tanTheta(V)), alpha)};

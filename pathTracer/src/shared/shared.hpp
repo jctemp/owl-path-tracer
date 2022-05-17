@@ -20,19 +20,19 @@ struct material_data
 	};
 
 	type type{ type::NONE };
-	Float3   baseColor{ 0.8f, 0.8f, 0.8f };
-	float    subsurface{ 0.0f };
-	Float3   subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
-	Float3   subsurfaceColor{ 0.8f, 0.8f, 0.8f };
-	float    metallic{ 0.0f };
-	float    specular{ 0.5f };
-	float    specularTint{ 1.0f };
-	float    roughness{ 0.5f };
-	float    sheen{ 0.0f };
-	float    sheenTint{ 1.0f };
-	float    clearcoat{ 0.0f };
-	float    clearcoatGloss{ 0.03f };
-	float    ior{ 1.45f };
+	vec3  baseColor{ 0.8f, 0.8f, 0.8f };
+	float subsurface{ 0.0f };
+	vec3  subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
+	vec3  subsurfaceColor{ 0.8f, 0.8f, 0.8f };
+	float metallic{ 0.0f };
+	float specular{ 0.5f };
+	float specularTint{ 1.0f };
+	float roughness{ 0.5f };
+	float sheen{ 0.0f };
+	float sheenTint{ 1.0f };
+	float clearcoat{ 0.0f };
+	float clearcoatGloss{ 0.03f };
+	float ior{ 1.45f };
 };
 
 struct light_data
@@ -44,7 +44,7 @@ struct light_data
 	};
 
 	type type{ type::MESH };
-	Float3 color{ 1.f };
+	vec3 color{ 1.f };
 	float intensity{ 1.f };
 	float exposure{ 0.f };
 	float falloff{ 2.0f };
@@ -66,15 +66,15 @@ struct triangle_geom_data
 {
 	int32_t matId{ -1 };
 	int32_t lightId{ -1 };
-	Int3* index;
-	Float3* vertex;
-	Float3* normal;
+	ivec3* index;
+	vec3* vertex;
+	vec3* normal;
 };
 
 struct RayGenData
 {
 	uint32_t* fbPtr;
-	Int2 fbSize;
+	ivec2 fbSize;
 	camera_data camera;
 };
 

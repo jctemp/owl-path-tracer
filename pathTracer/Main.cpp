@@ -132,7 +132,7 @@ void add(mesh* m, entity e)
 		vertices.size(), sizeof(owl::vec3f), 0);
 
 	owlTrianglesSetIndices(geom, indexBuffer,
-		indices.size(), sizeof(owl::vec3i), 0);
+		indices.size(), sizeof(ivec3), 0);
 
 	// set sbt data
 	owlGeomSet1i(geom, "matId", e.materialId);
@@ -323,7 +323,7 @@ int main()
 
 	/* SCENE SELECT */
 
-	od.buffer_size = vec2i{ 1024 };
+	od.buffer_size = ivec2{ 1024 };
 	od.frame_buffer = owlHostPinnedBufferCreate(
 		od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
 	od.use_environment_map = true;

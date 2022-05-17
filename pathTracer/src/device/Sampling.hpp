@@ -14,7 +14,7 @@
 
 #pragma region "GENERIC SAMPLING"
 
-PT_DEVICE void sampleUniformDisk(Float2& rand)
+PT_DEVICE void sampleUniformDisk(vec2& rand)
 {
 	float phi{ TWO_PI * rand.y };
 	float r{ owl::sqrt(rand.x) };
@@ -24,7 +24,7 @@ PT_DEVICE void sampleUniformDisk(Float2& rand)
 }
 
 
-PT_DEVICE void sampleConcentricDisk(Float2& rand)
+PT_DEVICE void sampleConcentricDisk(vec2& rand)
 {
 	// re-scale rand to be between [-1,1]
 	float dx{ 2.0f * rand.x - 1 };
@@ -56,7 +56,7 @@ PT_DEVICE void sampleConcentricDisk(Float2& rand)
 }
 
 
-PT_DEVICE Float3 sampleUniformSphere(Float2& rand)
+PT_DEVICE vec3 sampleUniformSphere(vec2& rand)
 {
 	float z{ 1.0f - 2.0f * rand.x };
 	float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
@@ -64,7 +64,7 @@ PT_DEVICE Float3 sampleUniformSphere(Float2& rand)
 	float x = r * owl::cos(phi);
 	float y = r * owl::sin(phi);
 
-	return Float3{ x, y, z };
+	return vec3{ x, y, z };
 }
 
 #pragma endregion
@@ -73,7 +73,7 @@ PT_DEVICE Float3 sampleUniformSphere(Float2& rand)
 
 #pragma region "COSINE HEMISPHERE SAMPLING"
 
-PT_DEVICE void sampleCosineHemisphere(Float2 rand, Float3& L)
+PT_DEVICE void sampleCosineHemisphere(vec2 rand, vec3& L)
 {
 	// 1. sample unit circle and save position into randu, randv
 	sampleConcentricDisk(rand);
@@ -81,11 +81,11 @@ PT_DEVICE void sampleCosineHemisphere(Float2 rand, Float3& L)
 	// 2. calculate cosTheta => 1 = randu^2 + randv^2 => cos = 1 - (randu^2 + randv^2)
 	float cosTheta{ owl::sqrt(owl::max(0.0f, 1.0f - rand.x * rand.x - rand.y * rand.y)) };
 
-	L = Float3{ rand.x, rand.y, cosTheta };
+	L = vec3{ rand.x, rand.y, cosTheta };
 }
 
 
-PT_DEVICE void pdfCosineHemisphere(Float3 const& V, Float3 const& L, float& pdf)
+PT_DEVICE void pdfCosineHemisphere(vec3 const& V, vec3 const& L, float& pdf)
 {
 	pdf = absCosTheta(L) * INV_PI;
 }
@@ -96,7 +96,7 @@ PT_DEVICE void pdfCosineHemisphere(Float3 const& V, Float3 const& L, float& pdf)
 
 #pragma region "UNIFORM HEMISPHERE SAMPLING"
 
-PT_DEVICE void sampleUniformHemisphere(Float2 rand, Float3& L)
+PT_DEVICE void sampleUniformHemisphere(vec2 rand, vec3& L)
 {
 	float z{ rand.x };
 	float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
@@ -105,11 +105,11 @@ PT_DEVICE void sampleUniformHemisphere(Float2 rand, Float3& L)
 	float x = r * owl::cos(phi);
 	float y = r * owl::sin(phi);
 
-	L = Float3{ x, y, z };
+	L = vec3{ x, y, z };
 }
 
 
-PT_DEVICE void pdfUniformHemisphere(Float3 const& V, Float3 const& L, float& pdf)
+PT_DEVICE void pdfUniformHemisphere(vec3 const& V, vec3 const& L, float& pdf)
 {
 	pdf = 0.5f * INV_PI;
 }
@@ -120,12 +120,12 @@ PT_DEVICE void pdfUniformHemisphere(Float3 const& V, Float3 const& L, float& pdf
 
 #pragma region "CONE SAMPLING"
 
-PT_DEVICE void sampleUniformCone(Float2 rand, float cosThetaMax, Float3& w)
+PT_DEVICE void sampleUniformCone(vec2 rand, float cosThetaMax, vec3& w)
 {
 	float cosTheta{ (1.0f - rand.u) + rand.u * cosThetaMax };
 	float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
 	float phi{ rand.v * 2.0f * PI };
-	w = Float3(cosf(phi) * sinTheta, sinf(phi) * sinTheta, cosTheta);
+	w = vec3(cosf(phi) * sinTheta, sinf(phi) * sinTheta, cosTheta);
 }
 
 
@@ -140,20 +140,20 @@ PT_DEVICE void pdfUniformCone(float cosThetaMax, float& pdf)
 
 #pragma region "TRIANGLE SAMPLING"
 
-PT_DEVICE void sampleUniformTriangle(Float2 rand, Float2& p)
+PT_DEVICE void sampleUniformTriangle(vec2 rand, vec2& p)
 {
 	float su0{ sqrtf(rand.u) };
-	p = Float2{ 1 - su0, rand.v * su0 };
+	p = vec2{ 1 - su0, rand.v * su0 };
 }
 
 PT_DEVICE void sampleTriangle(InterfaceStruct const& i, Random& rand)
 {
-	Float2 b{};
+	vec2 b{};
 	sampleUniformTriangle({ rand.random(), rand.random() }, b);
 
 }
 
-PT_DEVICE float triangleArea(Float3 const& A, Float3 const& B, Float3 const& C)
+PT_DEVICE float triangleArea(vec3 const& A, vec3 const& B, vec3 const& C)
 {
 	float a{ owl::length((B - A)) };
 	float b{ owl::length((C - A)) };

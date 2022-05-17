@@ -30,22 +30,22 @@ enum class ScatterEvent
 struct InterfaceStruct
 {
 	/* triangle points */
-	Float3 TRI[3];
+	vec3 TRI[3];
 
 	/* hit position */
-	Float3 P;
+	vec3 P;
 
 	/* shading normal */
-	Float3 N;
+	vec3 N;
 
 	/* geometric normal */
-	Float3 Ng;
+	vec3 Ng;
 
 	/* view direction (wo or V) */
-	Float3 V;
+	vec3 V;
 
 	/* barycentrics */
-	Float2 UV;
+	vec2 UV;
 
 	/* thit */
 	float t;

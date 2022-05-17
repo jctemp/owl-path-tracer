@@ -38,10 +38,10 @@ struct Random
 	PT_SHARED_INLINE Random() { /* REQUIRED FOR DEVICE VARS */ }
 
 	PT_SHARED_INLINE Random(int32_t seedu, int32_t seedv) { init((uint32_t)seedu, (uint32_t)seedv); }
-	PT_SHARED_INLINE Random(Int2 seed) { init((uint32_t)seed.u, (uint32_t)seed.v); }
+	PT_SHARED_INLINE Random(uvec2 seed) { init((uint32_t)seed.u, (uint32_t)seed.v); }
 
 	PT_SHARED_INLINE Random(uint32_t seedu, uint32_t seedv) { init(seedu, seedv); }
-	PT_SHARED_INLINE Random(Uint2 seed) { init(seed.u, seed.v); }
+	PT_SHARED_INLINE Random(ivec2 seed) { init(seed.u, seed.v); }
 
 	PT_SHARED_INLINE void init(uint32_t seedu, uint32_t seedv)
 	{
@@ -68,7 +68,7 @@ struct Random
 	}
 
 	template<>
-	PT_SHARED_INLINE Float2 random()
+	PT_SHARED_INLINE vec2 random()
 	{
 		return { this->random(), this->random() };
 	}

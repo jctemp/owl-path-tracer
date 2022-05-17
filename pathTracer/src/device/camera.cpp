@@ -1,6 +1,6 @@
 #include "camera.hpp"
 
-camera_data to_camera_data(camera const& c, owl::vec2i const& buffer_size)
+camera_data to_camera_data(camera const& c, ivec2 const& buffer_size)
 {
 	float const aspect{static_cast<float>(buffer_size.x) / static_cast<float>(buffer_size.y)};
 

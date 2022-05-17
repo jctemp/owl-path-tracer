@@ -20,6 +20,6 @@ struct camera_data
     owl::vec3f vertical;
 };
 
-extern camera_data to_camera_data(camera const& c, owl::vec2i const& buffer_size);
+extern camera_data to_camera_data(camera const& c, ivec2 const& buffer_size);
 
 #endif // !CAMERA_HPP

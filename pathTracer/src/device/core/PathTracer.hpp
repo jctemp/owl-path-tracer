@@ -12,15 +12,15 @@ using namespace owl;
 
 extern __constant__ launch_params_data optixLaunchParams;
 
-PT_DEVICE Float2 uvOnSphere(Float3 n)
+PT_DEVICE vec2 uvOnSphere(vec3 n)
 {
 	float const u{ 0.5f + atan2(n.x, n.z) / (2.0f * PI) };
 	float const v{ 0.5f + asin(n.y) / PI };
-	return Float2{ u,v };
+	return vec2{ u,v };
 }
 
 
-PT_DEVICE Float3 sampleEnvironment(Float3 dir)
+PT_DEVICE vec3 sampleEnvironment(vec3 dir)
 {
 	vec2f tc{ uvOnSphere(dir) };
 	owl::vec4f const texColor{
@@ -28,16 +28,16 @@ PT_DEVICE Float3 sampleEnvironment(Float3 dir)
 	return vec3f{ texColor };
 }
 
-PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
+PT_DEVICE vec3 tracePath(owl::Ray& ray, Random& random)
 {
 	auto& LP{ optixLaunchParams };
 
 	// hold total sum of accumulated radiance
-	Float3 L{ 0.0f };
+	vec3 L{ 0.0f };
 
 	// hold the path throughput weight (f * cos(theta)) / pdf
 	// => current implementation has f and cos already combined
-	Float3 beta{ 1.0f };
+	vec3 beta{ 1.0f };
 
 	InterfaceStruct is;
 	material_data ms;
@@ -54,13 +54,13 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 		/* TERMINATE PATH AND SAMPLE ENVIRONMENT*/
 		if (prd.scatterEvent == ScatterEvent::MISS)
 		{
-			Float3 li{ 0.0f };
+			vec3 li{ 0.0f };
 			if (!LP.use_environment_map)
 				li = 0.0f;
 			else if (optixLaunchParams.environment_map)
 				li = sampleEnvironment(ray.direction);
 			else
-				li = mix(Float3{ 1.0f }, Float3{ 0.5f, 0.7f, 1.0f }, { 0.5f *
+				li = mix(vec3{ 1.0f }, vec3{ 0.5f, 0.7f, 1.0f }, { 0.5f *
 					(ray.direction.y + 1.0f) });
 
 			L += li * beta;
@@ -69,8 +69,8 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 
 
 		/* PREPARE MESH FOR CALCULATIONS */
-		Float3& P{ is.P }, N{ is.N }, V{ is.V };
-		Float3 T{}, B{};
+		vec3& P{ is.P }, N{ is.N }, V{ is.V };
+		vec3 T{}, B{};
 		onb(N, T, B);
 
 
@@ -80,14 +80,14 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 			// TODO: SAMPLE MESH LIGHTx
 			light_data light{};
 			GET(light, light_data, LP.light_buffer, is.lightId);
-			Float3 emission{ light.color * light.intensity };
+			vec3 emission{ light.color * light.intensity };
 			L += emission * beta;
 			break;
 		}
 
 
 		/* SAMPLE BRDF OR PHASE FUNCTION */
-		Float3 L{ 0.0f };
+		vec3 L{ 0.0f };
 		toLocal(T, B, N, V);
 
 		{
@@ -96,7 +96,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 
 
 			float pdf{ 0.0f };
-			Float3 bsdf{ 0.0f };
+			vec3 bsdf{ 0.0f };
 
 			sampleDisneyBSDF(material, V, L, prd.random, bsdf, pdf);
 

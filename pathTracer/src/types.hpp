@@ -30,20 +30,10 @@ namespace color
 
 using vec2 = owl::vec2f;
 using vec3 = owl::vec3f;
-using vec4 = owl::vec4f;
-using vec2i = owl::vec2i;
-using vec3i = owl::vec3i;
-using vec4i = owl::vec4i;
-
-using Float2 = owl::vec2f;
-using Float3 = owl::vec3f;
-using Float4 = owl::vec4f;
-
-using Int2 = owl::vec2i;
-using Int3 = owl::vec3i;
-
-using Uint2 = owl::vec2ui;
-using Uint3 = owl::vec3ui;
+using ivec2 = owl::vec2i;
+using ivec3 = owl::vec3i;
+using uvec2 = owl::vec2ui;
+using uvec3 = owl::vec3ui;
 
 using Buffer = owl::device::Buffer;
 
