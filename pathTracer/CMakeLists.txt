@@ -36,7 +36,7 @@ SET(DEVICE_SOURCES
 SET(INCLUDE_DIRS "include" "src")
 EMBED_PTX(
 	OUTPUT_TARGET device-ptx
-	PTX_LINK_LIBRARIES owl::owl ${CUDA_RUNTIME_LIBRARY}
+	PTX_LINK_LIBRARIES owl::owl glm::glm ${CUDA_RUNTIME_LIBRARY}
 	SOURCES "src/device/device.cu"
 )
 

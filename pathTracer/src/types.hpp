@@ -3,7 +3,11 @@
 #include <owl/common/math/vec.h>
 #include <owl/owl_device_buffer.h>
 
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
 
+using vec2i= owl::vec2i;
+using vec3i= owl::vec3i;
 
 using Float = float;
 using Float2 = owl::vec2f;

@@ -13,35 +13,16 @@ Renderer renderer{};
 
 int main(void)
 {
-	init();
+	auto const prefix_path{ std::string{"../../../../"} };
+	auto const meshes{ load_obj(prefix_path + "scenes/dragon.obj") };
 
-	std::string prefixPath{ "../../../../" };
-
-
-	auto const meshes{ load_obj(prefixPath + "scenes/dragon.obj") };
 	Camera cam{
-		{ 1024 },		  // image size
-		{3.0f,0.5f,0.0f}, // look from
-		{0.0f,0.5f,0.0f}, // look at
-		{0.0f,1.0f,0.0f}, // look up
-		60.0f			  // vfov
+	{ 1024 },		  // image size
+	{3.0f,0.5f,0.0f}, // look from
+	{0.0f,0.5f,0.0f}, // look at
+	{0.0f,1.0f,0.0f}, // look up
+	60.0f			  // vfov
 	};
-
-
-	/* SCENE SELECT */
-
-	renderer.frameBuffer = owlHostPinnedBufferCreate(
-		renderer.context, OWL_INT, cam.fbSize.x * cam.fbSize.y);
-	renderer.useEnvironmentMap = true;
-	renderer.samplesPerPixel = 1024;
-	renderer.maxDepth = 128;
-
-	/* ENVMAP */
-	if (false)
-	{
-		image_buffer environmentTexture{};
-		environmentTexture = load_image("env.hdr", "C:/Users/jamie/Desktop");
-	}
 
 	/* BSDF */
 	MaterialStruct mat1{ Material::DISNEY };
@@ -117,7 +98,28 @@ int main(void)
 		std::string in;
 		std::getline(std::cin, in);
 		if (!in.empty())
-			entities[entities.size()-1].lightId = std::stoi(in);
+			entities[entities.size() - 1].lightId = std::stoi(in);
+	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+	init();
+
+	/* SCENE SELECT */
+
+	glm::ivec2 constexpr framebuffer_size{ 1024 };
+
+	renderer.frameBuffer = owlHostPinnedBufferCreate(
+		renderer.context, OWL_INT, framebuffer_size.x * framebuffer_size.y);
+	renderer.useEnvironmentMap = true;
+	renderer.samplesPerPixel = 1024;
+	renderer.maxDepth = 128;
+
+	/* ENVMAP */
+	if (false)
+	{
+		image_buffer environmentTexture{};
+		environmentTexture = load_image("env.hdr", "C:/Users/jamie/Desktop");
 	}
 
 	/* RENDER */
@@ -138,9 +140,9 @@ int main(void)
 
 	// copy image buffer
 
-	image_buffer result{ cam.fbSize.x, cam.fbSize.y,
+	image_buffer result{ framebuffer_size.x, framebuffer_size.y,
 		(Uint *)owlBufferGetPointer(renderer.frameBuffer, 0), image_buffer::tag::referenced };
-	write_image(result, fmt::format("{}{}.png", prefixPath, "image"));
+	write_image(result, fmt::format("{}{}.png", prefix_path, "image"));
 
 	release();
 }
