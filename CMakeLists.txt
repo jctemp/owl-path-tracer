@@ -27,16 +27,16 @@ endif()
 set(OptiX_ROOT_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0")
 
 set(OWL_BUILD_SAMPLES OFF CACHE BOOL "Build the Samples?")
-set(owl_dir "external/owl")
+set(owl_dir "extern/owl")
 add_subdirectory(${owl_dir} EXCLUDE_FROM_ALL)
 
-set(obj_dir "external/tinyobjloader")
+set(obj_dir "extern/tinyobjloader")
 add_subdirectory(${obj_dir} EXCLUDE_FROM_ALL)
 
-set(stb_dir "external/stb")
+set(stb_dir "extern/stb")
 include_directories(${stb_dir} EXCLUDE_FROM_ALL)
 
-set(fmt_dir "external/fmt")
+set(fmt_dir "extern/fmt")
 add_subdirectory(${fmt_dir})
 
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/pathTracer")
