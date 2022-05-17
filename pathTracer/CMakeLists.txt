@@ -1,10 +1,12 @@
 
 
 SET(HEADER_FILES
+	"src/device/camera.hpp"
+
 	"src/utils/image_buffer.hpp"
 	"src/utils/mesh_loader.hpp"
 
-	"src/device/camera.hpp"
+	# ------------------------------
 
 	"src/device/device.hpp"
 	"src/device/core/core.hpp"
@@ -25,8 +27,8 @@ SET(HEADER_FILES
 )
 
 SET(SRC_FILES
-	
 	"src/device/camera.cpp"
+
 	"src/utils/image_buffer.cpp"
 	"src/utils/mesh_loader.cpp"
 )
@@ -35,8 +37,8 @@ SET(INCLUDE_DIRS "include" "src")
 ADD_LIBRARY(lib${PROJECT_NAME} ${HEADER_FILES} ${SRC_FILES})
 TARGET_LINK_LIBRARIES(lib${PROJECT_NAME}
 	owl::owl
-	fmt::fmt
 	glm::glm
+	fmt::fmt
 	tinyobjloader
 )
 TARGET_INCLUDE_DIRECTORIES(lib${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})

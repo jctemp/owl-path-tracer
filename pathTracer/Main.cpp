@@ -1,11 +1,13 @@
 ﻿
 #include <pt/Types.hpp>
-#include <SimpleLogger.hpp>
 #include <device/device.hpp>
 
-#include "device/camera.hpp"
-#include "utils/image_buffer.hpp"
-#include "utils/mesh_loader.hpp"
+#include <device/camera.hpp>
+#include <utils/image_buffer.hpp>
+#include <utils/mesh_loader.hpp>
+
+#include <fmt/core.h>
+#include <fmt/color.h>
 
 using namespace owl;
 
@@ -197,14 +199,16 @@ void render(camera_data const& camera, std::vector<material_data> const& materia
 	owlBuildSBT(od.context);
 
 	// 7) compute image
-	SL_WARN("LAUNCHING TRACER");
+	fmt::print(fg(color::start), "LAUNCH TRACER\n");
 	owlLaunch2D(od.ray_gen_program, od.buffer_size.x, od.buffer_size.y, od.launch_params);
+	fmt::print(fg(color::stop), "LAUNCHING TRACER\n");
 }
 
-int main(void)
+int main()
 {
-	auto const prefix_path{ std::string{"../../../../"} };
-	auto const meshes{ load_obj(prefix_path + "scenes/dragon.obj") };
+	auto const prefix_path{ std::string{"../../../.."} };
+	auto const meshes{
+		load_obj(fmt::format("{}/{}", prefix_path, "scenes/dragon.obj")) };
 
 	camera cam{
 	{3.0f,0.5f,0.0f}, // look from
@@ -273,13 +277,13 @@ int main(void)
 
 	std::vector<entity> entities{};
 
-	SL_LOG("==== MATERIALS ===============================");
+	fmt::print(fg(color::log), "> MATERIALS\n");
 	for (uint32_t i{ 0 }; i < mats.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
 
 	for (auto& [name, mesh] : meshes)
 	{
-		fmt::print("{}: ", name);
+		fmt::print("{}", name);
 		std::string in;
 		std::getline(std::cin, in);
 		if (!in.empty())
@@ -294,13 +298,14 @@ int main(void)
 		{"light", light}
 	};
 
-	SL_LOG("==== LIGHTS ===============================");
+	fmt::print(fg(color::log), "> LIGHTS\n");
 	for (uint32_t i{ 0 }; i < li.size(); i++)
 		fmt::print("{} [{}]\n", std::get<std::string>(li[i]), i);
 
+
 	for (auto& [name, mesh] : meshes)
 	{
-		fmt::print("{}: ", name);
+		fmt::print("{}", name);
 		std::string in;
 		std::getline(std::cin, in);
 		if (!in.empty())
@@ -318,10 +323,9 @@ int main(void)
 
 	/* SCENE SELECT */
 
-	glm::ivec2 constexpr framebuffer_size{ 1024 };
-
+	od.buffer_size = glm::ivec2{ 1024 };
 	od.frame_buffer = owlHostPinnedBufferCreate(
-		od.context, OWL_INT, framebuffer_size.x * framebuffer_size.y);
+		od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
 	od.use_environment_map = true;
 	od.max_samples = 1024;
 	od.max_path_depth = 128;
@@ -351,9 +355,9 @@ int main(void)
 
 	// copy image buffer
 
-	image_buffer result{ framebuffer_size.x, framebuffer_size.y,
+	image_buffer result{ od.buffer_size.x, od.buffer_size.y,
 		(Uint*)owlBufferGetPointer(od.frame_buffer, 0), image_buffer::tag::referenced };
-	write_image(result, fmt::format("{}{}.png", prefix_path, "image"));
+	write_image(result, fmt::format("{}/{}.png", prefix_path, "image"));
 
 	optix_destroy();
 }

@@ -29,18 +29,11 @@ if(MSVC)
 endif()
 
 # CONFIGURE EXTERNAL LIBRARIES
-set(log_dir "${CMAKE_CURRENT_SOURCE_DIR}/simpleLogger")
-include_directories(${log_dir})
-add_subdirectory(${log_dir} EXCLUDE_FROM_ALL)
-
 set(OptiX_ROOT_DIR "C:/ProgramData/NVIDIA Corporation/OptiX SDK 7.4.0")
 
 set(OWL_BUILD_SAMPLES OFF CACHE BOOL "Build the Samples?")
 set(owl_dir "external/owl")
 add_subdirectory(${owl_dir} EXCLUDE_FROM_ALL)
-
-set(fmt_dir "external/fmt")
-add_subdirectory(${fmt_dir} EXCLUDE_FROM_ALL)
 
 set(obj_dir "external/tinyobjloader")
 add_subdirectory(${obj_dir} EXCLUDE_FROM_ALL)
@@ -51,7 +44,7 @@ include_directories(${stb_dir} EXCLUDE_FROM_ALL)
 set(glm_dir "external/glm")
 add_subdirectory(${glm_dir})
 
-set(json_dir "external/json")
-add_subdirectory(${json_dir} EXCLUDE_FROM_ALL)
+set(fmt_dir "external/fmt")
+add_subdirectory(${fmt_dir})
 
 add_subdirectory ("${CMAKE_CURRENT_SOURCE_DIR}/pathTracer")
