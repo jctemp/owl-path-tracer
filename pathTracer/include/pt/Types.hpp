@@ -20,7 +20,7 @@ struct Camera
 };
 
 
-struct Renderer
+struct optix_data
 {
     // make context and shader
     OWLContext context;
@@ -51,5 +51,6 @@ struct Renderer
     bool useEnvironmentMap;
 };
 
+static optix_data od{};
 
-#endif // !TYPES_HPP
+#endif // TYPES_HPP
