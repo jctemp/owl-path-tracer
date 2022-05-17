@@ -45,7 +45,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 	PerRayData prd{ random, ScatterEvent::NONE, &is, &ms };
 
 
-	for (Int depth{ 0 }; depth < LP.max_path_depth; ++depth)
+	for (int32_t depth{ 0 }; depth < LP.max_path_depth; ++depth)
 	{
 		/* FIND INTERSECTION */
 		owl::traceRay(LP.world, ray, prd);
@@ -95,7 +95,7 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 			if (is.matId >= 0) GET(material, material_data, LP.material_buffer, is.matId);
 
 
-			Float pdf{ 0.0f };
+			float pdf{ 0.0f };
 			Float3 bsdf{ 0.0f };
 
 			sampleDisneyBSDF(material, V, L, prd.random, bsdf, pdf);
@@ -119,9 +119,9 @@ PT_DEVICE Float3 tracePath(owl::Ray& ray, Random& random)
 		}
 
 		/* TERMINATE PATH IF RUSSIAN ROULETTE  */
-		Float betaMax{ max(beta.x, max(beta.y, beta.z)) };
+		float betaMax{ max(beta.x, max(beta.y, beta.z)) };
 		if (depth > 3) {
-			Float q{ max(.05f, 1 - betaMax) };
+			float q{ max(.05f, 1 - betaMax) };
 			if (prd.random() < q) break;
 			beta /= 1 - q;
 

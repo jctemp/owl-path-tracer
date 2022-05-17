@@ -15,7 +15,7 @@ template<class T>
 PT_DEVICE_INLINE T saturate(T a);
 
 template<>
-PT_DEVICE_INLINE Float saturate(Float a) { return owl::clamp(a, 0.0f, 1.0f); }
+PT_DEVICE_INLINE float saturate(float a) { return owl::clamp(a, 0.0f, 1.0f); }
 
 template<>
 PT_DEVICE_INLINE Float3 saturate(Float3 a) {
@@ -35,95 +35,95 @@ PT_DEVICE_INLINE T pow2(T value) { return value * value; }
 
 #pragma region "SHADING SPACE FUNCTIONS"
 
-PT_DEVICE_INLINE Float cosTheta(Float3 const& w)
+PT_DEVICE_INLINE float cosTheta(Float3 const& w)
 {
 	return w.z;
 }
 
 
-PT_DEVICE_INLINE Float cos2Theta(Float3 const& w)
+PT_DEVICE_INLINE float cos2Theta(Float3 const& w)
 {
 	return w.z * w.z;
 }
 
 
-PT_DEVICE_INLINE Float absCosTheta(Float3 const& w)
+PT_DEVICE_INLINE float absCosTheta(Float3 const& w)
 {
 	return abs(w.z);
 }
 
 
-PT_DEVICE_INLINE Float sin2Theta(Float3 const& w)
+PT_DEVICE_INLINE float sin2Theta(Float3 const& w)
 {
 	return fmaxf(0.0f, 1.0f - cos2Theta(w));
 }
 
 
-PT_DEVICE_INLINE Float sinTheta(Float3 const& w)
+PT_DEVICE_INLINE float sinTheta(Float3 const& w)
 {
 	return sqrtf(sin2Theta(w));
 }
 
 
-PT_DEVICE_INLINE Float tanTheta(Float3 const& w)
+PT_DEVICE_INLINE float tanTheta(Float3 const& w)
 {
 	return sinTheta(w) / cosTheta(w);
 }
 
 
-PT_DEVICE_INLINE Float tan2Theta(Float3 const& w)
+PT_DEVICE_INLINE float tan2Theta(Float3 const& w)
 {
 	return sin2Theta(w) / cos2Theta(w);
 }
 
 
-PT_DEVICE_INLINE Float cosPhi(Float3 const& w)
+PT_DEVICE_INLINE float cosPhi(Float3 const& w)
 {
-	Float theta{ sinTheta(w) };
+	float theta{ sinTheta(w) };
 	return (theta == 0) ? 1.0f : owl::clamp(w.x / theta, -1.0f, 1.0f);
 }
 
 
-PT_DEVICE_INLINE Float sinPhi(Float3 const& w)
+PT_DEVICE_INLINE float sinPhi(Float3 const& w)
 {
-	Float theta{ sinTheta(w) };
+	float theta{ sinTheta(w) };
 	return (theta == 0) ? 1.0f : owl::clamp(w.y / theta, -1.0f, 1.0f);
 }
 
 
-PT_DEVICE_INLINE Float cos2Phi(Float3 const& w)
+PT_DEVICE_INLINE float cos2Phi(Float3 const& w)
 {
 	return cosPhi(w) * cosPhi(w);
 }
 
 
-PT_DEVICE_INLINE Float sin2Phi(Float3 const& w)
+PT_DEVICE_INLINE float sin2Phi(Float3 const& w)
 {
 	return sinPhi(w) * sinPhi(w);
 }
 
 
-PT_DEVICE_INLINE Float cosDPhi(Float3 const& wa, Float3 const& wb) {
+PT_DEVICE_INLINE float cosDPhi(Float3 const& wa, Float3 const& wb) {
 	return owl::clamp((wa.x * wb.x + wa.y * wb.y) /
 		sqrtf((wa.x * wa.x + wa.y * wa.y) *
 			(wb.x * wb.x + wb.y * wb.y)), -1.0f, 1.0f);
 }
 
 
-PT_DEVICE_INLINE Float3 toSphereCoordinates(Float theta, Float phi)
+PT_DEVICE_INLINE Float3 toSphereCoordinates(float theta, float phi)
 {
-	Float x = sinf(theta) * cosf(phi);
-	Float y = sinf(theta) * sinf(phi);;
-	Float z = cosf(theta);
+	float x = sinf(theta) * cosf(phi);
+	float y = sinf(theta) * sinf(phi);;
+	float z = cosf(theta);
 	return Float3{ x, y, z };
 }
 
 
-PT_DEVICE_INLINE Float3 toSphereCoordinates(Float sinTheta, Float cosTheta, Float phi)
+PT_DEVICE_INLINE Float3 toSphereCoordinates(float sinTheta, float cosTheta, float phi)
 {
-	Float x = sinTheta * cosf(phi);
-	Float y = sinTheta * sinf(phi);;
-	Float z = cosTheta;
+	float x = sinTheta * cosf(phi);
+	float y = sinTheta * sinf(phi);;
+	float z = cosTheta;
 	return Float3{ x, y, z };
 }
 
@@ -134,18 +134,18 @@ PT_DEVICE_INLINE Float3 reflect(Float3 const& V, Float3 const& N)
 }
 
 
-PT_DEVICE_INLINE Float3 refract(Float3 const& V, Float3 const& N, Float eta)
+PT_DEVICE_INLINE Float3 refract(Float3 const& V, Float3 const& N, float eta)
 {
-	Float cosThetaI{ dot(V, N) };
-	Float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
-	Float sin2ThetaT{ eta * eta * sin2ThetaI };
+	float cosThetaI{ dot(V, N) };
+	float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
+	float sin2ThetaT{ eta * eta * sin2ThetaI };
 
 	if (sin2ThetaT >= 1.0f) return { 0.0f };
-	Float cosThetaT{ sqrtf(1.0f - sin2ThetaT) };
+	float cosThetaT{ sqrtf(1.0f - sin2ThetaT) };
 	return eta * -V + (eta * cosThetaI - cosThetaT) * N;
 }
 
-PT_DEVICE_INLINE bool refract(Float3 const& V, Float3 const& N, Float eta, Float3& T)
+PT_DEVICE_INLINE bool refract(Float3 const& V, Float3 const& N, float eta, Float3& T)
 {
 	T = -V;
 	if (eta == 1.0f)return  true;
@@ -159,13 +159,13 @@ PT_DEVICE_INLINE bool refract(Float3 const& V, Float3 const& N, Float eta, Float
 	//T = rOutPara + rOutPerp;
 	//return true;
 
-	Float cosThetaI{ dot(-V, N) };
-	Float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
-	Float sin2ThetaT{ eta * eta * sin2ThetaI };
+	float cosThetaI{ dot(-V, N) };
+	float sin2ThetaI{ max(0.0f, 1.0f - cosThetaI * cosThetaI) };
+	float sin2ThetaT{ eta * eta * sin2ThetaI };
 
 	if (sin2ThetaT >= 1.0f) return false;
 
-	Float cosThetaT{ sqrtf(1.0f - sin2ThetaT) };
+	float cosThetaT{ sqrtf(1.0f - sin2ThetaT) };
 	T = eta * -V + (eta * cosThetaI - cosThetaT) * N;
 	return true;
 }

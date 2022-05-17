@@ -28,17 +28,20 @@ namespace color
 	static fmt::terminal_color constexpr stop{ fmt::terminal_color::magenta };
 }
 
-using Float = float;
+using vec2 = owl::vec2f;
+using vec3 = owl::vec3f;
+using vec4 = owl::vec4f;
+using vec2i = owl::vec2i;
+using vec3i = owl::vec3i;
+using vec4i = owl::vec4i;
+
 using Float2 = owl::vec2f;
 using Float3 = owl::vec3f;
 using Float4 = owl::vec4f;
 
-using Int = int32_t;
 using Int2 = owl::vec2i;
 using Int3 = owl::vec3i;
 
-using Uint = uint32_t;
-using Uint64 = uint64_t;
 using Uint2 = owl::vec2ui;
 using Uint3 = owl::vec3ui;
 

@@ -10,10 +10,10 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 {
 	RayGenData const& self{ owl::getProgramData<RayGenData>() };
 	Int2 const pixelId{ owl::getLaunchIndex() };
-	Random pxRand{ (Uint)pixelId.x, (Uint)pixelId.y };
+	Random pxRand{ (uint32_t)pixelId.x, (uint32_t)pixelId.y };
 
 	Float3 color{ 0.0f };
-	for (Int s{ 0 }; s < optixLaunchParams.max_samples; ++s)
+	for (int32_t s{ 0 }; s < optixLaunchParams.max_samples; ++s)
 	{
 		// shot ray with slight randomness to make soft edges
 		Float2 const rand{ pxRand(), pxRand() };

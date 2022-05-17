@@ -58,11 +58,11 @@ PT_DEVICE void sampleConcentricDisk(Float2& rand)
 
 PT_DEVICE Float3 sampleUniformSphere(Float2& rand)
 {
-	Float z{ 1.0f - 2.0f * rand.x };
-	Float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
-	Float phi{ TWO_PI * rand.y };
-	Float x = r * owl::cos(phi);
-	Float y = r * owl::sin(phi);
+	float z{ 1.0f - 2.0f * rand.x };
+	float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
+	float phi{ TWO_PI * rand.y };
+	float x = r * owl::cos(phi);
+	float y = r * owl::sin(phi);
 
 	return Float3{ x, y, z };
 }
@@ -79,13 +79,13 @@ PT_DEVICE void sampleCosineHemisphere(Float2 rand, Float3& L)
 	sampleConcentricDisk(rand);
 
 	// 2. calculate cosTheta => 1 = randu^2 + randv^2 => cos = 1 - (randu^2 + randv^2)
-	Float cosTheta{ owl::sqrt(owl::max(0.0f, 1.0f - rand.x * rand.x - rand.y * rand.y)) };
+	float cosTheta{ owl::sqrt(owl::max(0.0f, 1.0f - rand.x * rand.x - rand.y * rand.y)) };
 
 	L = Float3{ rand.x, rand.y, cosTheta };
 }
 
 
-PT_DEVICE void pdfCosineHemisphere(Float3 const& V, Float3 const& L, Float& pdf)
+PT_DEVICE void pdfCosineHemisphere(Float3 const& V, Float3 const& L, float& pdf)
 {
 	pdf = absCosTheta(L) * INV_PI;
 }
@@ -98,18 +98,18 @@ PT_DEVICE void pdfCosineHemisphere(Float3 const& V, Float3 const& L, Float& pdf)
 
 PT_DEVICE void sampleUniformHemisphere(Float2 rand, Float3& L)
 {
-	Float z{ rand.x };
-	Float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
-	Float phi = TWO_PI * rand.y;
+	float z{ rand.x };
+	float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
+	float phi = TWO_PI * rand.y;
 
-	Float x = r * owl::cos(phi);
-	Float y = r * owl::sin(phi);
+	float x = r * owl::cos(phi);
+	float y = r * owl::sin(phi);
 
 	L = Float3{ x, y, z };
 }
 
 
-PT_DEVICE void pdfUniformHemisphere(Float3 const& V, Float3 const& L, Float& pdf)
+PT_DEVICE void pdfUniformHemisphere(Float3 const& V, Float3 const& L, float& pdf)
 {
 	pdf = 0.5f * INV_PI;
 }
@@ -120,16 +120,16 @@ PT_DEVICE void pdfUniformHemisphere(Float3 const& V, Float3 const& L, Float& pdf
 
 #pragma region "CONE SAMPLING"
 
-PT_DEVICE void sampleUniformCone(Float2 rand, Float cosThetaMax, Float3& w)
+PT_DEVICE void sampleUniformCone(Float2 rand, float cosThetaMax, Float3& w)
 {
-	Float cosTheta{ (1.0f - rand.u) + rand.u * cosThetaMax };
-	Float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
-	Float phi{ rand.v * 2.0f * PI };
+	float cosTheta{ (1.0f - rand.u) + rand.u * cosThetaMax };
+	float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
+	float phi{ rand.v * 2.0f * PI };
 	w = Float3(cosf(phi) * sinTheta, sinf(phi) * sinTheta, cosTheta);
 }
 
 
-PT_DEVICE void pdfUniformCone(Float cosThetaMax, Float& pdf)
+PT_DEVICE void pdfUniformCone(float cosThetaMax, float& pdf)
 {
 	pdf = 1.0f / (2.0f * PI * (1.0f - cosThetaMax));
 }
@@ -142,7 +142,7 @@ PT_DEVICE void pdfUniformCone(Float cosThetaMax, Float& pdf)
 
 PT_DEVICE void sampleUniformTriangle(Float2 rand, Float2& p)
 {
-	Float su0{ sqrtf(rand.u) };
+	float su0{ sqrtf(rand.u) };
 	p = Float2{ 1 - su0, rand.v * su0 };
 }
 
@@ -153,11 +153,11 @@ PT_DEVICE void sampleTriangle(InterfaceStruct const& i, Random& rand)
 
 }
 
-PT_DEVICE Float triangleArea(Float3 const& A, Float3 const& B, Float3 const& C)
+PT_DEVICE float triangleArea(Float3 const& A, Float3 const& B, Float3 const& C)
 {
-	Float a{ owl::length((B - A)) };
-	Float b{ owl::length((C - A)) };
-	Float c{ owl::length((C - B)) };
+	float a{ owl::length((B - A)) };
+	float b{ owl::length((C - A)) };
+	float c{ owl::length((C - B)) };
 
 	return 0.25f * sqrtf((a + b + c) * (-a + b + c) * (a - b + c) * (a + b - c));
 }

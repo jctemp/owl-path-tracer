@@ -48,16 +48,16 @@ struct InterfaceStruct
 	Float2 UV;
 
 	/* thit */
-	Float t;
+	float t;
 
 	/* primitive id => 0 if not exists */
-	Int prim;
+	int32_t prim;
 
 	/* material id for LP reference */
-	Int matId;
+	int32_t matId;
 
 	/* light id for LP reference */
-	Int lightId;
+	int32_t lightId;
 };
 
 struct PerRayData

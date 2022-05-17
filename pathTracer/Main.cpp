@@ -356,7 +356,7 @@ int main()
 	// copy image buffer
 
 	image_buffer result{ od.buffer_size.x, od.buffer_size.y,
-		(Uint*)owlBufferGetPointer(od.frame_buffer, 0), image_buffer::tag::referenced };
+		(uint32_t*)owlBufferGetPointer(od.frame_buffer, 0), image_buffer::tag::referenced };
 	write_image(result, fmt::format("{}/{}.png", prefix_path, "image"));
 
 	optix_destroy();

@@ -37,15 +37,15 @@ struct Random
 {
 	PT_SHARED_INLINE Random() { /* REQUIRED FOR DEVICE VARS */ }
 
-	PT_SHARED_INLINE Random(Int seedu, Int seedv) { init((Uint)seedu, (Uint)seedv); }
-	PT_SHARED_INLINE Random(Int2 seed) { init((Uint)seed.u, (Uint)seed.v); }
+	PT_SHARED_INLINE Random(int32_t seedu, int32_t seedv) { init((uint32_t)seedu, (uint32_t)seedv); }
+	PT_SHARED_INLINE Random(Int2 seed) { init((uint32_t)seed.u, (uint32_t)seed.v); }
 
-	PT_SHARED_INLINE Random(Uint seedu, Uint seedv) { init(seedu, seedv); }
+	PT_SHARED_INLINE Random(uint32_t seedu, uint32_t seedv) { init(seedu, seedv); }
 	PT_SHARED_INLINE Random(Uint2 seed) { init(seed.u, seed.v); }
 
-	PT_SHARED_INLINE void init(Uint seedu, Uint seedv)
+	PT_SHARED_INLINE void init(uint32_t seedu, uint32_t seedv)
 	{
-		Uint s{ 0 };
+		uint32_t s{ 0 };
 		for (int32_t n = 0; n < N; n++) {
 			s += 0x9e3779b9;
 			seedu += ((seedv << 4) + 0xa341316c) ^ (seedv + s) ^ ((seedv >> 5) + 0xc8013ea4);
@@ -54,16 +54,16 @@ struct Random
 		state = seedu;
 	}
 
-	template<typename T = Float>
+	template<typename T = float>
 	PT_SHARED_INLINE T random();
 
 	template<>
-	PT_SHARED_INLINE Float random()
+	PT_SHARED_INLINE float random()
 	{
-		Uint constexpr A{ 16807 };
-		Uint constexpr C{ 1013904223 };
+		uint32_t constexpr A{ 16807 };
+		uint32_t constexpr C{ 1013904223 };
 		state = A * state + C;
-		return ldexpf((Float)state, -32);
+		return ldexpf((float)state, -32);
 
 	}
 
@@ -73,14 +73,14 @@ struct Random
 		return { this->random(), this->random() };
 	}
 
-	template<typename T = Float>
-	PT_SHARED_INLINE Float operator()()
+	template<typename T = float>
+	PT_SHARED_INLINE float operator()()
 	{
 		return this->random<T>();
 	}
 
-	Int N{4};
-	Uint state;
+	int32_t N{4};
+	uint32_t state;
 };
 
 #endif // ! SHARED_RANDOM_HPP

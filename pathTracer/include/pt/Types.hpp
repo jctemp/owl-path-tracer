@@ -6,8 +6,8 @@
 
 struct entity
 {
-    Int materialId{ -1 };
-    Int lightId{ -1 };
+    int32_t materialId{ -1 };
+    int32_t lightId{ -1 };
 };
 
 struct optix_data

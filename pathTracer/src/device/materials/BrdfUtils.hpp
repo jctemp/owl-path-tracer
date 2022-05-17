@@ -10,7 +10,7 @@
 // https://github.com/wdas/brdf/blob/main/src/brdfs/disney.brdf
 // https://jcgt.org/published/0007/04/01/
 
-PT_DEVICE_INLINE Float luminance(Float3 color)
+PT_DEVICE_INLINE float luminance(Float3 color)
 {
 	return 0.212671f * color.x + 0.715160f * color.y + 0.072169f * color.z;
 }
@@ -18,11 +18,11 @@ PT_DEVICE_INLINE Float luminance(Float3 color)
 PT_DEVICE_INLINE Float3 calculateTint(Float3 baseColor)
 // diseny uses in the BRDF explorer the luminance for the calculation
 {
-	Float lum{ luminance(baseColor) };
+	float lum{ luminance(baseColor) };
 	return (lum > 0.0f) ? baseColor * (1.0f / lum) : Float3{ 1.0f };
 }
 
-PT_DEVICE_INLINE Float calculateEta(Float3 V, Float ior)
+PT_DEVICE_INLINE float calculateEta(Float3 V, float ior)
 {
 	if (cosTheta(V) > 0.0f)
 		return 1.0f / ior;
@@ -32,18 +32,18 @@ PT_DEVICE_INLINE Float calculateEta(Float3 V, Float ior)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  FRESNEL TERM
 
-PT_DEVICE_INLINE Float schlickFresnel(Float costheta, Float ior)
+PT_DEVICE_INLINE float schlickFresnel(float costheta, float ior)
 {
-	Float r0{ (1.0f - ior) / (1.0f + ior) };
+	float r0{ (1.0f - ior) / (1.0f + ior) };
 	r0 = r0 * r0;
-	Float m{ owl::clamp(1.0f - costheta, 0.0f, 1.0f) };
-	Float m2{ m * m };
+	float m{ owl::clamp(1.0f - costheta, 0.0f, 1.0f) };
+	float m2{ m * m };
 	return r0 + (1.0f - r0) * (m2 * m2 * m);
 }
 
-PT_DEVICE_INLINE Float dielectricFresnel(Float costheta, Float ior)
+PT_DEVICE_INLINE float dielectricFresnel(float costheta, float ior)
 {
-	Float costhetaI{ costheta };
+	float costhetaI{ costheta };
 
 	if (costhetaI < 0.0f)
 	{
@@ -51,24 +51,24 @@ PT_DEVICE_INLINE Float dielectricFresnel(Float costheta, Float ior)
 		ior = 1.0f / ior;
 	}
 
-	Float sin2thetaI{ 1.0f - costhetaI * costhetaI };
-	Float sin2thetaT{ sin2thetaI / (ior * ior) };
+	float sin2thetaI{ 1.0f - costhetaI * costhetaI };
+	float sin2thetaT{ sin2thetaI / (ior * ior) };
 
 	if (sin2thetaT > 1.0f)
 	{
 		return 1.0f;
 	}
 
-	Float cos2thetaT = sqrtf(1.0f - sin2thetaT);
-	Float rp{ (costhetaI - ior * cos2thetaT) / (costhetaI + ior * cos2thetaT) };
-	Float rs{ (ior * costhetaI - cos2thetaT) / (ior * costhetaI + cos2thetaT) };
+	float cos2thetaT = sqrtf(1.0f - sin2thetaT);
+	float rp{ (costhetaI - ior * cos2thetaT) / (costhetaI + ior * cos2thetaT) };
+	float rs{ (ior * costhetaI - cos2thetaT) / (ior * costhetaI + cos2thetaT) };
 
 	return 0.5f * (rp * rp + rs * rs);
 }
 
-PT_DEVICE_INLINE Float dielectricFresnel(Float ior, Float3 V, Float3 N, Float3 & R, Float3& T, bool& inside)
+PT_DEVICE_INLINE float dielectricFresnel(float ior, Float3 V, Float3 N, Float3 & R, Float3& T, bool& inside)
 {
-	Float costheta{ cosTheta(V) }, neta{};
+	float costheta{ cosTheta(V) }, neta{};
 	Float3 Nn;
 
 	if (costheta > 0)
@@ -87,25 +87,25 @@ PT_DEVICE_INLINE Float dielectricFresnel(Float ior, Float3 V, Float3 N, Float3 &
 	// compute reflection
 	R = (2 * costheta) * Nn - V;
 
-	Float arg = 1 - (neta * neta * (1 - (costheta * costheta)));
+	float arg = 1 - (neta * neta * (1 - (costheta * costheta)));
 	if (arg < 0) 
 	{
-		T = Float{0.0f};
+		T = float{0.0f};
 		return 1;
 	}
 	else
 	{
-		Float dnp = max(sqrtf(arg), 1e-7f);
-		Float nK = (neta * costheta) - dnp;
+		float dnp = max(sqrtf(arg), 1e-7f);
+		float nK = (neta * costheta) - dnp;
 		T = -(neta * V) + (nK * Nn);
 	}
 
-	Float costhetaI{ costheta };
-	Float sin2thetaI{ 1.0f - costhetaI * costhetaI };
-	Float sin2thetaT{ sin2thetaI / (neta * neta) };
-	Float cos2thetaT = sqrtf(1.0f - sin2thetaT);
-	Float rp{ (costhetaI - neta * cos2thetaT) / (costhetaI + neta * cos2thetaT) };
-	Float rs{ (neta * costhetaI - cos2thetaT) / (neta * costhetaI + cos2thetaT) };
+	float costhetaI{ costheta };
+	float sin2thetaI{ 1.0f - costhetaI * costhetaI };
+	float sin2thetaT{ sin2thetaI / (neta * neta) };
+	float cos2thetaT = sqrtf(1.0f - sin2thetaT);
+	float rp{ (costhetaI - neta * cos2thetaT) / (costhetaI + neta * cos2thetaT) };
+	float rs{ (neta * costhetaI - cos2thetaT) / (neta * costhetaI + cos2thetaT) };
 
 	return 0.5f * (rp * rp + rs * rs);
 }
@@ -115,17 +115,17 @@ PT_DEVICE_INLINE Float dielectricFresnel(Float ior, Float3 V, Float3 N, Float3 &
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  SMITH SHADOWING TERM
 
-PT_DEVICE_INLINE Float lambda(Float absTanTheta, Float alpha)
+PT_DEVICE_INLINE float lambda(float absTanTheta, float alpha)
 {
-	Float absTanThetaH{ absTanTheta };
+	float absTanThetaH{ absTanTheta };
 	if (isinf(absTanThetaH))
 		return 0.0f;
-	Float alpha2Tan2Theta{ alpha * absTanThetaH };
+	float alpha2Tan2Theta{ alpha * absTanThetaH };
 	alpha2Tan2Theta *= alpha2Tan2Theta;
 	return (-1.0f + sqrtf(1.0f + alpha2Tan2Theta)) / 2.0f;
 }
 
-PT_DEVICE_INLINE Float smithG(Float absTanTheta, Float alpha)
+PT_DEVICE_INLINE float smithG(float absTanTheta, float alpha)
 {
 	return 1.0f / (1.0f + lambda(absTanTheta, alpha));
 }
@@ -133,33 +133,33 @@ PT_DEVICE_INLINE Float smithG(Float absTanTheta, Float alpha)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  GENERALIZED TROWBRIDGE-REITZ DISTRIBUTION
 
-PT_DEVICE_INLINE Float roughnessToAlpha(Float roughness)
+PT_DEVICE_INLINE float roughnessToAlpha(float roughness)
 {
 	return max(MIN_ALPHA, roughness * roughness);
 }
 
-PT_DEVICE_INLINE Float gtr1(Float cosTheta, Float alpha)
+PT_DEVICE_INLINE float gtr1(float cosTheta, float alpha)
 {
 	if (alpha >= 1.0f) return 1.0f / PI;
-	Float alpha2{ alpha * alpha };
-	Float t{ 1.0f + (alpha2 - 1.0f) * cosTheta * cosTheta };
+	float alpha2{ alpha * alpha };
+	float t{ 1.0f + (alpha2 - 1.0f) * cosTheta * cosTheta };
 	return (alpha2 - 1.0f) / (PI * logf(alpha2) * t);
 }
 
-PT_DEVICE_INLINE Float gtr2(Float cosTheta, Float alpha)
+PT_DEVICE_INLINE float gtr2(float cosTheta, float alpha)
 {
-	Float alpha2{ alpha * alpha };
-	Float t{ 1.0f + (alpha2 - 1.0f) * cosTheta * cosTheta };
+	float alpha2{ alpha * alpha };
+	float t{ 1.0f + (alpha2 - 1.0f) * cosTheta * cosTheta };
 	return alpha2 / (PI * t * t);
 }
 
-PT_DEVICE_INLINE Float3 sampleGtr2(Float3 const& V, Float alpha, Float2 u)
+PT_DEVICE_INLINE Float3 sampleGtr2(Float3 const& V, float alpha, Float2 u)
 {
 	// Disney Keynotes eq. (2) and (9) 
-	Float alpha2{ alpha * alpha };
-	Float phi{ (2 * PI) * u[0] };
-	Float cosTheta{ sqrtf((1.0f - u[1]) / (1.0f + (alpha2 - 1.0f) * u[1])) };
-	Float sinTheta{ sqrtf(max(0.0f, 1.0f - cosTheta * cosTheta)) };
+	float alpha2{ alpha * alpha };
+	float phi{ (2 * PI) * u[0] };
+	float cosTheta{ sqrtf((1.0f - u[1]) / (1.0f + (alpha2 - 1.0f) * u[1])) };
+	float sinTheta{ sqrtf(max(0.0f, 1.0f - cosTheta * cosTheta)) };
 
 	Float3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
 	if (!sameHemisphere(V, H)) H = -H;
@@ -167,7 +167,7 @@ PT_DEVICE_INLINE Float3 sampleGtr2(Float3 const& V, Float alpha, Float2 u)
 	return H;
 }
 
-PT_DEVICE_INLINE Float3 sampleGtr2VNDF(Float3 const& V, Float alpha, Float2 u)
+PT_DEVICE_INLINE Float3 sampleGtr2VNDF(Float3 const& V, float alpha, Float2 u)
 {
 	Float3 Vh = normalize(Float3(alpha * V.x, alpha * V.y, V.z));
 
@@ -187,10 +187,10 @@ PT_DEVICE_INLINE Float3 sampleGtr2VNDF(Float3 const& V, Float alpha, Float2 u)
 	return normalize(Float3(alpha * Nh.x, alpha * Nh.y, max(0.0f, Nh.z)));
 }
 
-PT_DEVICE_INLINE Float pdfGtr2(Float3 const& V, Float3 const& H, Float alpha)
+PT_DEVICE_INLINE float pdfGtr2(Float3 const& V, Float3 const& H, float alpha)
 {
-	Float Dr{ gtr2(cosTheta(H), alpha)};
-	Float Gr{ smithG(abs(tanTheta(V)), alpha)};
+	float Dr{ gtr2(cosTheta(H), alpha)};
+	float Gr{ smithG(abs(tanTheta(V)), alpha)};
 	return Dr * Gr * absCosTheta(H) / (4.0f * absCosTheta(V));
 }
 
