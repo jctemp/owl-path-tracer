@@ -1,7 +1,4 @@
-﻿#define GLM_FORCE_CUDA
-#define PMEVENT( x ) asm volatile("pmevent " #x ";")
-
-#include "device.hpp"
+﻿#include "device.hpp"
 #include "core/core.hpp"
 
 __constant__ launch_params_data optixLaunchParams;

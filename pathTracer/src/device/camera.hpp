@@ -6,18 +6,18 @@
 
 struct camera
 {
-    owl::vec3f const look_from;
-    owl::vec3f const look_at;
-    owl::vec3f const look_up;
+    vec3 const look_from;
+    vec3 const look_at;
+    vec3 const look_up;
     float const vertical_fov;
 };
 
 struct camera_data
 {
-    owl::vec3f origin;
-    owl::vec3f llc;
-    owl::vec3f horizontal;
-    owl::vec3f vertical;
+    vec3 origin;
+    vec3 llc;
+    vec3 horizontal;
+    vec3 vertical;
 };
 
 extern camera_data to_camera_data(camera const& c, ivec2 const& buffer_size);

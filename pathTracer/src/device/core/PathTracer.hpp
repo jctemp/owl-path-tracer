@@ -22,7 +22,7 @@ PT_DEVICE vec2 uvOnSphere(vec3 n)
 
 PT_DEVICE vec3 sampleEnvironment(vec3 dir)
 {
-	vec2f tc{ uvOnSphere(dir) };
+	vec2 tc{ uvOnSphere(dir) };
 	owl::vec4f const texColor{
 		tex2D<float4>(optixLaunchParams.environment_map, tc.x, tc.y) };
 	return vec3f{ texColor };
@@ -42,7 +42,7 @@ PT_DEVICE vec3 tracePath(owl::Ray& ray, Random& random)
 	InterfaceStruct is;
 	material_data ms;
 
-	PerRayData prd{ random, ScatterEvent::NONE, &is, &ms };
+	per_ray_data prd{ random, ScatterEvent::NONE, &is, &ms };
 
 
 	for (int32_t depth{ 0 }; depth < LP.max_path_depth; ++depth)

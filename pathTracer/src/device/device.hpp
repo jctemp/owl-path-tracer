@@ -60,7 +60,7 @@ struct InterfaceStruct
 	int32_t lightId;
 };
 
-struct PerRayData
+struct per_ray_data
 {
 	Random& random;
 	ScatterEvent scatterEvent;

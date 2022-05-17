@@ -13,7 +13,7 @@ using namespace owl;
 
 OPTIX_MISS_PROGRAM(miss)()
 {
-	PerRayData& prd{ getPRD<PerRayData>() };
+	per_ray_data& prd{ getPRD<per_ray_data>() };
 	prd.scatterEvent = ScatterEvent::MISS;
 }
 

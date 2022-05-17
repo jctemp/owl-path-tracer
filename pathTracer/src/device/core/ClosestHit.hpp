@@ -11,14 +11,9 @@
 
 using namespace owl;
 
-PT_DEVICE vec3 makeFloat3(float3 f)
-{
-	return vec3{ f.x, f.y, f.z };
-}
-
 OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 {
-	PerRayData& prd{ getPRD<PerRayData>() };
+	per_ray_data& prd{ getPRD<per_ray_data>() };
 
 	prd.is->t = optixGetRayTmax();
 
@@ -30,7 +25,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
 	prd.is->UV = { b1, b2 };
 
 	// get direction
-	vec3 const direction{ makeFloat3(optixGetWorldRayDirection()) };
+	auto ray_dir{ optixGetWorldRayDirection() };
+	vec3 const direction{
+		ray_dir.x,
+		ray_dir.y,
+		ray_dir.z
+	};
 
 	prd.is->V = -direction;
 

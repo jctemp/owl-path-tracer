@@ -9,14 +9,14 @@ camera_data to_camera_data(camera const& c, ivec2 const& buffer_size)
 	float const viewport_height{ 2.0f * h };
 	float const viewport_width{ aspect * viewport_height };
 
-	owl::vec3f const origin{ c.look_from };
-	owl::vec3f const w{ normalize(c.look_from - c.look_at) };
-	owl::vec3f const u{ normalize(cross(c.look_up, w)) };
-	owl::vec3f const v{ normalize(cross(w, u)) };
+	vec3 const origin{ c.look_from };
+	vec3 const w{ normalize(c.look_from - c.look_at) };
+	vec3 const u{ normalize(cross(c.look_up, w)) };
+	vec3 const v{ normalize(cross(w, u)) };
 
-	owl::vec3f const horizontal{ viewport_width * u };
-	owl::vec3f const vertical{ viewport_height * v };
-	owl::vec3f const llc{ origin - horizontal / 2.0f - vertical / 2.0f - w };
+	vec3 const horizontal{ viewport_width * u };
+	vec3 const vertical{ viewport_height * v };
+	vec3 const llc{ origin - horizontal / 2.0f - vertical / 2.0f - w };
 
 	return camera_data{ origin, llc, horizontal, vertical };
 }
