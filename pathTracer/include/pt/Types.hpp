@@ -26,29 +26,28 @@ struct optix_data
     OWLModule module;
 
     // launchParams static accessible mem.
-    OWLLaunchParams launchParams;
-    uint32_t maxDepth;
-    uint32_t samplesPerPixel;
+    OWLLaunchParams launch_params;
+    uint32_t max_path_depth;
+    uint32_t max_samples;
 
     // Programs
-    OWLRayGen rayGenenration;
-    OWLMissProg missProg;
+    OWLRayGen ray_gen_program;
+    OWLMissProg miss_program;
 
     // link between host and device
     glm::ivec2 buffer_size{ 1024 };
-    OWLBuffer frameBuffer;
+    OWLBuffer frame_buffer;
 
     // Geometry and mesh
-    OWLGeomType trianglesGeomType;
+    OWLGeomType triangle_geom;
     std::vector<OWLGeom> geoms;
-    bool requireBuild;
 
     // Group to handle geometry
     OWLGroup world;
 
     // Texture holding env. information
-    OWLTexture environmentMap;
-    bool useEnvironmentMap;
+    OWLTexture environment_map;
+    bool use_environment_map;
 };
 
 static optix_data od{};
