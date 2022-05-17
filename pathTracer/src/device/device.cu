@@ -20,8 +20,8 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 
 		// determine initial ray form the camera
 		owl::Ray ray{
-			make_owl_type<vec3f>(self.camera.origin),
-			make_owl_type<vec3f>(glm::normalize(
+			make_owl_type(self.camera.origin),
+			make_owl_type(glm::normalize(
 				self.camera.llc + screen.u * self.camera.horizontal + screen.v * self.camera.vertical - self.camera.origin)),
 			T_MIN, T_MAX };
 
