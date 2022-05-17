@@ -11,16 +11,43 @@ using namespace owl;
 
 extern "C" char device_ptx[];
 
-/// <summary>
-/// Initialises the renderer with all necessary values to be ready.
-/// Renderer is ready to receive data and render it after success.
-/// </summary>
-/// <returns>0 in case of success otherwise different</returns>
-void init(void)
+void optix_init()
 {
 	od.context = owlContextCreate(nullptr, 1);
 	od.module = owlModuleCreate(od.context, device_ptx);
+}
 
+void optix_raygen_program()
+{
+	OWLVarDecl rayGenVars[]
+	{
+		{ "fbPtr",             OWL_BUFPTR, OWL_OFFSETOF(RayGenData, fbPtr)},
+		{ "fbSize",            OWL_INT2,   OWL_OFFSETOF(RayGenData, fbSize)},
+		{ "camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.origin)},
+		{ "camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.llc)},
+		{ "camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.horizontal)},
+		{ "camera.vertical",   OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.vertical)},
+		{ nullptr }
+	};
+
+	od.rayGenenration =
+		owlRayGenCreate(od.context, od.module, "rayGenenration", sizeof(RayGenData), rayGenVars, -1);
+}
+
+void optix_miss_program()
+{
+
+	OWLVarDecl missProgVars[]
+	{
+		{ nullptr }
+	};
+
+	od.missProg =
+		owlMissProgCreate(od.context, od.module, "miss", sizeof(MissProgData), missProgVars, -1);
+}
+
+void optix_launch_params()
+{
 	OWLVarDecl launchParamsVars[]
 	{
 		{ "maxDepth",          OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth) },
@@ -35,29 +62,10 @@ void init(void)
 
 	od.launchParams =
 		owlParamsCreate(od.context, sizeof(LaunchParams), launchParamsVars, -1);
+}
 
-	OWLVarDecl missProgVars[]
-	{
-		{ nullptr }
-	};
-
-	od.missProg =
-		owlMissProgCreate(od.context, od.module, "miss", sizeof(MissProgData), missProgVars, -1);
-
-	OWLVarDecl rayGenVars[]
-	{
-		{ "fbPtr",             OWL_BUFPTR, OWL_OFFSETOF(RayGenData, fbPtr)},
-		{ "fbSize",            OWL_INT2,   OWL_OFFSETOF(RayGenData, fbSize)},
-		{ "camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.origin)},
-		{ "camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.llc)},
-		{ "camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.horizontal)},
-		{ "camera.vertical",   OWL_FLOAT3, OWL_OFFSETOF(RayGenData, camera.vertical)},
-		{ nullptr }
-	};
-
-	od.rayGenenration =
-		owlRayGenCreate(od.context, od.module, "rayGenenration", sizeof(RayGenData), rayGenVars, -1);
-
+void optix_triangle_geom()
+{
 	OWLVarDecl trianglesGeomVars[]
 	{
 		{ "matId",   OWL_INT,   OWL_OFFSETOF(TrianglesGeomData, matId) },
@@ -72,25 +80,15 @@ void init(void)
 		sizeof(TrianglesGeomData), trianglesGeomVars, -1);
 
 	owlGeomTypeSetClosestHit(od.trianglesGeomType, 0, od.module, "TriangleMesh");
-
-	owlBuildPrograms(od.context);
 }
 
 
-/// <summary>
-/// Releases all resources of the renderer which are currently in
-/// use.
-/// </summary>
-/// <returns>0 in case of success otherwise different</returns>
-void release(void)
+void optix_destroy(void)
 {
 	owlContextDestroy(od.context);
 }
 
 
-/// <summary>
-/// </summary>
-/// <returns></returns>
 void setEnvironmentTexture(image_buffer const& texture)
 {
 	if (od.environmentMap != nullptr)
@@ -107,12 +105,6 @@ void setEnvironmentTexture(image_buffer const& texture)
 }
 
 
-/// <summary>
-/// Takes an intermediate form of a mesh and makes it ready for the
-/// od. After loading successful the mesh can be rendered.
-/// </summary>
-/// <param name="m">An object of the type Mesh</param>
-/// <returns>0 in case of success otherwise different</returns>
 void add(mesh* m, entity e)
 {
 	mesh& mesh{ *m };
@@ -154,10 +146,7 @@ void add(mesh* m, entity e)
 }
 
 
-/// <summary>
-/// Renderes the Meshes with the specifed render settings
-/// </summary>
-/// <returns>0 in case of success otherwise different</returns>
+
 void render(Camera const& cam, std::vector<material_data> const& materials, std::vector<light_data> const& lights)
 {
 	// 1) set mesh data into buffers
@@ -183,7 +172,7 @@ void render(Camera const& cam, std::vector<material_data> const& materials, std:
 
 	// 3) calculate camera data
 	// degrees * PI / 180.0f;
-	Float aspect{ cam.fbSize.x / Float(cam.fbSize.y) };
+	Float aspect{ od.buffer_size.x / Float(od.buffer_size.y) };
 
 	Float const theta{ cam.vfov * Float(M_PI) / 180.0f };
 	Float const h{ tanf(theta / 2) };
@@ -201,7 +190,7 @@ void render(Camera const& cam, std::vector<material_data> const& materials, std:
 
 	// 4) set ray gen data
 	owlRayGenSetBuffer(od.rayGenenration, "fbPtr", od.frameBuffer);
-	owlRayGenSet2i(od.rayGenenration, "fbSize", (const owl2i&)cam.fbSize);
+	owlRayGenSet2i(od.rayGenenration, "fbSize", (const owl2i&)od.buffer_size);
 	owlRayGenSet3f(od.rayGenenration, "camera.origin", (const owl3f&)origin);
 	owlRayGenSet3f(od.rayGenenration, "camera.llc", (const owl3f&)llc);
 	owlRayGenSet3f(od.rayGenenration, "camera.horizontal", (const owl3f&)horizontal);
@@ -231,7 +220,7 @@ void render(Camera const& cam, std::vector<material_data> const& materials, std:
 
 	// 7) compute image
 	SL_WARN("LAUNCHING TRACER");
-	owlLaunch2D(od.rayGenenration, cam.fbSize.x, cam.fbSize.y, od.launchParams);
+	owlLaunch2D(od.rayGenenration, od.buffer_size.x, od.buffer_size.y, od.launchParams);
 }
 
 
@@ -241,7 +230,6 @@ int main(void)
 	auto const meshes{ load_obj(prefix_path + "scenes/dragon.obj") };
 
 	Camera cam{
-	{ 1024 },		  // image size
 	{3.0f,0.5f,0.0f}, // look from
 	{0.0f,0.5f,0.0f}, // look at
 	{0.0f,1.0f,0.0f}, // look up
@@ -344,7 +332,12 @@ int main(void)
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-	init();
+
+	optix_init();
+	optix_raygen_program();
+	optix_miss_program();
+	optix_launch_params();
+	optix_triangle_geom();
 
 	/* SCENE SELECT */
 
@@ -385,5 +378,5 @@ int main(void)
 		(Uint*)owlBufferGetPointer(od.frameBuffer, 0), image_buffer::tag::referenced };
 	write_image(result, fmt::format("{}{}.png", prefix_path, "image"));
 
-	release();
+	optix_destroy();
 }

@@ -12,7 +12,6 @@ struct entity
 
 struct Camera
 {
-    Int2 const fbSize;
     Float3 const lookFrom;
     Float3 const lookAt;
     Float3 const lookUp;
@@ -36,6 +35,7 @@ struct optix_data
     OWLMissProg missProg;
 
     // link between host and device
+    glm::ivec2 buffer_size{ 1024 };
     OWLBuffer frameBuffer;
 
     // Geometry and mesh

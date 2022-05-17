@@ -7,8 +7,6 @@ SET(HOST_SOURCES
 	"src/utils/image_buffer.cpp"
 	"src/utils/mesh_loader.hpp"
 	"src/utils/mesh_loader.cpp"
-
-	"src/host/Renderer.cpp"	
 )
 
 SET(SHARED_SOURCES
