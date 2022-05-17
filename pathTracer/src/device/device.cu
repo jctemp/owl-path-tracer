@@ -3,7 +3,7 @@
 #include "core/core.hpp"
 #include <glm/geometric.hpp>
 
-PT_DEVICE_CONSTANT LaunchParams optixLaunchParams;
+PT_DEVICE_CONSTANT launch_params_data optixLaunchParams;
 
 OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 {

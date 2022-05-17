@@ -51,18 +51,18 @@ void optix_launch_params()
 {
 	OWLVarDecl launchParamsVars[]
 	{
-		{ "maxDepth",          OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, maxDepth) },
-		{ "samplesPerPixel",   OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(LaunchParams, samplesPerPixel) },
-		{ "materials",         OWL_BUFFER,              OWL_OFFSETOF(LaunchParams, materials)},
-		{ "lights",            OWL_BUFFER,              OWL_OFFSETOF(LaunchParams, lights)},
-		{ "world",             OWL_GROUP,               OWL_OFFSETOF(LaunchParams, world) },
-		{ "environmentMap",    OWL_TEXTURE,             OWL_OFFSETOF(LaunchParams, environmentMap) },
-		{ "useEnvironmentMap", OWL_BOOL,                OWL_OFFSETOF(LaunchParams, useEnvironmentMap)},
+		{ "maxDepth",          OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, maxDepth) },
+		{ "samplesPerPixel",   OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, samplesPerPixel) },
+		{ "materials",         OWL_BUFFER,              OWL_OFFSETOF(launch_params_data, materials)},
+		{ "lights",            OWL_BUFFER,              OWL_OFFSETOF(launch_params_data, lights)},
+		{ "world",             OWL_GROUP,               OWL_OFFSETOF(launch_params_data, world) },
+		{ "environmentMap",    OWL_TEXTURE,             OWL_OFFSETOF(launch_params_data, environmentMap) },
+		{ "useEnvironmentMap", OWL_BOOL,                OWL_OFFSETOF(launch_params_data, useEnvironmentMap)},
 		{ nullptr }
 	};
 
 	od.launch_params =
-		owlParamsCreate(od.context, sizeof(LaunchParams), launchParamsVars, -1);
+		owlParamsCreate(od.context, sizeof(launch_params_data), launchParamsVars, -1);
 }
 
 void optix_triangle_geom()

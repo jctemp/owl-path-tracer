@@ -51,7 +51,7 @@ struct light_data
 	bool use_surface_area = false;
 };
 
-struct LaunchParams
+struct launch_params_data
 {
 	Int maxDepth;
 	Int samplesPerPixel;

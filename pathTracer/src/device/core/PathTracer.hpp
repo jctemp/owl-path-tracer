@@ -12,7 +12,7 @@
 
 using namespace owl;
 
-extern LaunchParams optixLaunchParams;
+extern launch_params_data optixLaunchParams;
 
 PT_DEVICE Float2 uvOnSphere(Float3 n)
 {
