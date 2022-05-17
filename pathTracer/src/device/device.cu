@@ -1,6 +1,7 @@
 ﻿
 #include "device.hpp"
 #include "core/core.hpp"
+#include <glm/geometric.hpp>
 
 PT_DEVICE_CONSTANT LaunchParams optixLaunchParams;
 
@@ -18,10 +19,11 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 		Float2 const screen{ (Float2{pixelId} + rand) / Float2{self.fbSize} };
 
 		// determine initial ray form the camera
-		owl::Ray ray{ self.camera.origin, owl::normalize(self.camera.llc
-			+ screen.u * self.camera.horizontal
-			+ screen.v * self.camera.vertical
-			- self.camera.origin), T_MIN, T_MAX };
+		owl::Ray ray{
+			make_owl_type<vec3f>(self.camera.origin),
+			make_owl_type<vec3f>(glm::normalize(
+				self.camera.llc + screen.u * self.camera.horizontal + screen.v * self.camera.vertical - self.camera.origin)),
+			T_MIN, T_MAX };
 
 		color += tracePath(ray, pxRand);
 	}

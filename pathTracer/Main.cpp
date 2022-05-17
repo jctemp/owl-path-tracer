@@ -3,6 +3,7 @@
 #include <SimpleLogger.hpp>
 #include <device/device.hpp>
 
+#include "device/camera.hpp"
 #include "utils/image_buffer.hpp"
 #include "utils/mesh_loader.hpp"
 
@@ -82,14 +83,12 @@ void optix_triangle_geom()
 	owlGeomTypeSetClosestHit(od.triangle_geom, 0, od.module, "TriangleMesh");
 }
 
-
 void optix_destroy(void)
 {
 	owlContextDestroy(od.context);
 }
 
-
-void setEnvironmentTexture(image_buffer const& texture)
+void optix_set_environment_map(image_buffer const& texture)
 {
 	if (od.environment_map != nullptr)
 		owlTexture2DDestroy(od.environment_map);
@@ -103,7 +102,6 @@ void setEnvironmentTexture(image_buffer const& texture)
 		OWL_TEXTURE_CLAMP
 	);
 }
-
 
 void add(mesh* m, entity e)
 {
@@ -144,9 +142,7 @@ void add(mesh* m, entity e)
 	od.geoms.push_back(geom);
 }
 
-
-
-void render(Camera const& cam, std::vector<material_data> const& materials, std::vector<light_data> const& lights)
+void render(camera_data const& camera, std::vector<material_data> const& materials, std::vector<light_data> const& lights)
 {
 	// 1) set mesh data into buffers
 	if (od.geoms.size() > 0)
@@ -169,31 +165,14 @@ void render(Camera const& cam, std::vector<material_data> const& materials, std:
 	// 2) set miss program data
 	//owlMissProgSet3f(od.missProg, "name", value);
 
-	// 3) calculate camera data
-	// degrees * PI / 180.0f;
-	Float aspect{ od.buffer_size.x / Float(od.buffer_size.y) };
-
-	Float const theta{ cam.vfov * Float(M_PI) / 180.0f };
-	Float const h{ tanf(theta / 2) };
-	Float const viewportHeight{ 2.0f * h };
-	Float const viewportWidth{ aspect * viewportHeight };
-
-	Float3 const origin{ cam.lookFrom };
-	Float3 const w{ normalize(cam.lookFrom - cam.lookAt) };
-	Float3 const u{ normalize(cross(cam.lookUp, w)) };
-	Float3 const v{ normalize(cross(w, u)) };
-
-	Float3 const horizontal{ viewportWidth * u };
-	Float3 const vertical{ viewportHeight * v };
-	Float3 const llc{ origin - horizontal / 2.0f - vertical / 2.0f - w };
 
 	// 4) set ray gen data
 	owlRayGenSetBuffer(od.ray_gen_program, "fbPtr", od.frame_buffer);
 	owlRayGenSet2i(od.ray_gen_program, "fbSize", (const owl2i&)od.buffer_size);
-	owlRayGenSet3f(od.ray_gen_program, "camera.origin", (const owl3f&)origin);
-	owlRayGenSet3f(od.ray_gen_program, "camera.llc", (const owl3f&)llc);
-	owlRayGenSet3f(od.ray_gen_program, "camera.horizontal", (const owl3f&)horizontal);
-	owlRayGenSet3f(od.ray_gen_program, "camera.vertical", (const owl3f&)vertical);
+	owlRayGenSet3f(od.ray_gen_program, "camera.origin", (const owl3f&)camera.origin);
+	owlRayGenSet3f(od.ray_gen_program, "camera.llc", (const owl3f&)camera.llc);
+	owlRayGenSet3f(od.ray_gen_program, "camera.horizontal", (const owl3f&)camera.horizontal);
+	owlRayGenSet3f(od.ray_gen_program, "camera.vertical", (const owl3f&)camera.vertical);
 
 	// 5) set launch params
 	auto materialBuffer{
@@ -227,7 +206,7 @@ int main(void)
 	auto const prefix_path{ std::string{"../../../../"} };
 	auto const meshes{ load_obj(prefix_path + "scenes/dragon.obj") };
 
-	Camera cam{
+	camera cam{
 	{3.0f,0.5f,0.0f}, // look from
 	{0.0f,0.5f,0.0f}, // look at
 	{0.0f,1.0f,0.0f}, // look up
@@ -368,7 +347,7 @@ int main(void)
 		lights.push_back(std::get<light_data>(e));
 
 
-	render(cam, materials, lights);
+	render(to_camera_data(cam, od.buffer_size), materials, lights);
 
 	// copy image buffer
 

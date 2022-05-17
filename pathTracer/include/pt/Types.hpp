@@ -10,15 +10,6 @@ struct entity
     Int lightId{ -1 };
 };
 
-struct Camera
-{
-    Float3 const lookFrom;
-    Float3 const lookAt;
-    Float3 const lookUp;
-    float const vfov;
-};
-
-
 struct optix_data
 {
     // make context and shader

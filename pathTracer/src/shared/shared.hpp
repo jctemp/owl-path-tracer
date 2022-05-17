@@ -8,6 +8,8 @@
 #include <owl/owl.h>
 #include <cuda_runtime.h>
 
+#include <device/camera.hpp>
+
 struct material_data
 {
 	enum class type
@@ -31,12 +33,6 @@ struct material_data
 	Float    clearcoat{ 0.0f };
 	Float    clearcoatGloss{ 0.03f };
 	Float    ior{ 1.45f };
-};
-
-enum class Light
-{
-	NONE = 0 << 0,
-	MESH = 1 << 0
 };
 
 struct light_data
@@ -79,14 +75,7 @@ struct RayGenData
 {
 	Uint* fbPtr;
 	Int2 fbSize;
-
-	struct
-	{
-		Float3 origin;
-		Float3 llc;
-		Float3 horizontal;
-		Float3 vertical;
-	} camera;
+	camera_data camera;
 };
 
 struct MissProgData
