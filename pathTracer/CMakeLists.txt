@@ -23,8 +23,6 @@ SET(FILES
         # ------------------------------
 
         "src/device/device.hpp"
-        "src/device/ClosestHit.hpp"
-        "src/device/Miss.hpp"
         "src/device/PathTracer.hpp"
 
         "src/device/Math.hpp"
