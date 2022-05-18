@@ -15,10 +15,9 @@ SET(HEADER_FILES
         # ------------------------------
 
         "src/device/device.hpp"
-        "src/device/core/core.hpp"
-        "src/device/core/closestHit.hpp"
-        "src/device/core/miss.hpp"
-        "src/device/core/pathTracer.hpp"
+        "src/device/ClosestHit.hpp"
+        "src/device/Miss.hpp"
+        "src/device/PathTracer.hpp"
 
         "src/device/Math.hpp"
         "src/device/Sampling.hpp"
@@ -30,13 +29,13 @@ SET(HEADER_FILES
         "src/shared/types.hpp"
         "src/shared/random.hpp"
         "src/shared/macros.hpp"
-        src/utils/math.cpp src/utils/math.hpp)
+        )
 
 SET(SRC_FILES
         "src/device/camera.cpp"
 
         "src/utils/image_buffer.cpp"
-        "src/utils/mesh_loader.cpp" src/utils/math.cpp src/utils/math.hpp)
+        "src/utils/mesh_loader.cpp")
 
 SET(INCLUDE_DIRS "include" "src")
 ADD_LIBRARY(lib${PROJECT_NAME} ${HEADER_FILES} ${SRC_FILES})

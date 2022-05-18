@@ -1,5 +1,8 @@
 ﻿#include "device.hpp"
-#include "core/core.hpp"
+#include "PathTracer.hpp"
+#include "Miss.hpp"
+#include "ClosestHit.hpp"
+
 
 __constant__ launch_params_data optixLaunchParams;
 

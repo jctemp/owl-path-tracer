@@ -6,7 +6,7 @@
 #include "materials/Lambert.hpp"
 #include "materials/Disney.hpp"
 
-#include <owl/owl_device.h>
+#include "owl/include/owl/owl_device.h"
 #include <optix_device.h>
 
 using namespace owl;
