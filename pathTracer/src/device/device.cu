@@ -1,4 +1,5 @@
-﻿#include "device.hpp"
+﻿#include "types.hpp"
+#include "device.hpp"
 #include "PathTracer.hpp"
 #include "Miss.hpp"
 #include "ClosestHit.hpp"
@@ -24,7 +25,7 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 			self.camera.origin,
 			normalize(
 				self.camera.llc + screen.u * self.camera.horizontal + screen.v * self.camera.vertical - self.camera.origin),
-			T_MIN, T_MAX };
+            t_min, t_max };
 
 		color += tracePath(ray, pxRand);
 	}

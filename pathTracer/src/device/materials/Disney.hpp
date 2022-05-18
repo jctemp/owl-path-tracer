@@ -4,6 +4,7 @@
 
 #include "../Sampling.hpp"
 #include "BrdfUtils.hpp"
+#include "../../types.hpp"
 
 // REFECRENCES:
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
@@ -15,7 +16,7 @@
 
 #pragma region DIFFUSE
 
-PT_DEVICE vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	float NdotV{ absCosTheta(V) };
 	float NdotL{ absCosTheta(L) };
@@ -24,11 +25,11 @@ PT_DEVICE vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 cons
 	float FV{ schlickFresnel(NdotV, mat.ior) };
 
 	// Burley 2015, eq (4).
-	return mat.baseColor * INV_PI * (1.0f - FL / 2.0f) * (1.0f - FV / 2.0f);
+	return mat.baseColor * inv_pi * (1.0f - FL / 2.0f) * (1.0f - FV / 2.0f);
 }
 
 
-PT_DEVICE float pdfDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdfDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -36,7 +37,7 @@ PT_DEVICE float pdfDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 c
 }
 
 
-PT_DEVICE void sampleDisneyDiffuse(material_data const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneyDiffuse(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -50,7 +51,7 @@ PT_DEVICE void sampleDisneyDiffuse(material_data const& mat, vec3 const& V, vec3
 
 #pragma region "FAKE SUBSURFACE"
 
-PT_DEVICE vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
 // Hanrahan - Krueger BRDF approximation of the BSSRDF
 {
 	vec3 H{ L + V };
@@ -70,11 +71,11 @@ PT_DEVICE vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, ve
 	// 1.25 scale is used to (roughly) preserve albedo
 	float Fs{ 1.25f * (Fss * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f) };
 
-	return mat.subsurfaceColor * INV_PI * Fs;
+	return mat.subsurfaceColor * inv_pi * Fs;
 }
 
 
-PT_DEVICE float pdfDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdfDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -82,7 +83,7 @@ PT_DEVICE float pdfDisneyFakeSubsurface(material_data const& mat, vec3 const& V,
 }
 
 
-PT_DEVICE void sampleDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -96,7 +97,7 @@ PT_DEVICE void sampleDisneyFakeSubsurface(material_data const& mat, vec3 const& 
 
 #pragma region RETRO
 
-PT_DEVICE vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	vec3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return vec3{ 0.0f };
@@ -111,11 +112,11 @@ PT_DEVICE vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const&
 	float Rr{ 2 * mat.roughness * cosThetaD * cosThetaD };
 
 	// Burley 2015, eq (4).
-	return mat.baseColor * INV_PI * Rr * (FL + FV + FL * FV * (Rr - 1));
+	return mat.baseColor * inv_pi * Rr * (FL + FV + FL * FV * (Rr - 1));
 }
 
 
-PT_DEVICE float pdfDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdfDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -123,7 +124,7 @@ PT_DEVICE float pdfDisneyRetro(material_data const& mat, vec3 const& V, vec3 con
 }
 
 
-PT_DEVICE void sampleDisneyRetro(material_data const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneyRetro(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -137,7 +138,7 @@ PT_DEVICE void sampleDisneyRetro(material_data const& mat, vec3 const& V, vec3& 
 
 #pragma region SHEEN
 
-PT_DEVICE vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	vec3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return vec3{ 0.0f };
@@ -151,7 +152,7 @@ PT_DEVICE vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const&
 }
 
 
-PT_DEVICE float pdfDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdfDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	float pdf{ 0.0f };
 	pdfCosineHemisphere(V, L, pdf);
@@ -159,7 +160,7 @@ PT_DEVICE float pdfDisneySheen(material_data const& mat, vec3 const& V, vec3 con
 }
 
 
-PT_DEVICE void sampleDisneySheen(material_data const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneySheen(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
 	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
@@ -173,7 +174,7 @@ PT_DEVICE void sampleDisneySheen(material_data const& mat, vec3 const& V, vec3& 
 
 #pragma region CLEARCOAT
 
-PT_DEVICE vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	vec3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return vec3{ 0.0f };
@@ -193,7 +194,7 @@ PT_DEVICE vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 co
 }
 
 
-PT_DEVICE float pdfDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdfDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	vec3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
@@ -210,7 +211,7 @@ PT_DEVICE float pdfDisneyClearcoat(material_data const& mat, vec3 const& V, vec3
 }
 
 
-PT_DEVICE void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 	// there is no visible normal sampling for BRDF because the Clearcoat has no
 	// physical meaning
@@ -221,7 +222,7 @@ PT_DEVICE void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, ve
 	float alpha2{ alphaG * alphaG };
 	float cosTheta{ sqrtf(fmax(0.0f, (1 - powf(alpha2, 1 - rand.random())) / (1 - alpha2))) };
 	float sinTheta{ sqrtf(fmax(0.0f, 1 - cosTheta * cosTheta)) };
-	float phi{ TWO_PI * rand.random() };
+	float phi{ two_pi * rand.random() };
 
 	vec3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
 
@@ -243,7 +244,7 @@ PT_DEVICE void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, ve
 
 #pragma region MICROFACETS
 
-PT_DEVICE vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	if (!sameHemisphere(V, L)) return vec3{ 0.0f };
 	float NdotV{ absCosTheta(V) };
@@ -261,7 +262,7 @@ PT_DEVICE vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 c
 }
 
 
-PT_DEVICE float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	if (!sameHemisphere(V, L)) return 0.0f;
 
@@ -274,7 +275,7 @@ PT_DEVICE float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, vec
 }
 
 
-PT_DEVICE void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
 	float alpha{ roughnessToAlpha(mat.roughness) };
@@ -298,7 +299,7 @@ PT_DEVICE void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, v
 
 #pragma region TRANSMISSION
 
-PT_DEVICE vec3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3 const& L)
 {
 	float ior = mat.ior;
 	bool entering = cosTheta(L) > 0;
@@ -321,7 +322,7 @@ PT_DEVICE vec3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 con
 }
 
 
-PT_DEVICE float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3 const& L)
 {
 	float ior = mat.ior;
 	bool entering = cosTheta(L) > 0;
@@ -360,7 +361,7 @@ PT_DEVICE float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 
 //	return;
 //}*/
 
-PT_DEVICE void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
 	if (mat.roughness < .2f) // check smoothness
@@ -416,7 +417,7 @@ PT_DEVICE void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, vec
 //  + Subsurface
 //
 
-PT_DEVICE void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& L,
+__device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
 	bsdf = vec3{ 0.0f };

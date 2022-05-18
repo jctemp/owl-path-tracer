@@ -4,23 +4,18 @@
 
 #include <owl/common/math/vec.h>
 #include <owl/owl_device_buffer.h>
-
 #include <fmt/color.h>
 
-
-
-#define PI            3.14159265358979323f // pi
-#define TWO_PI        6.28318530717958648f // 2pi
-#define PI_OVER_TWO   1.57079632679489661f // pi / 2
-#define PI_OVER_FOUR  0.78539816339744830f // pi / 4
-#define INV_PI        0.31830988618379067f // 1 / pi
-#define INV_TWO_PI    0.15915494309189533f // 1 / (2pi)
-#define INV_FOUR_PI   0.07957747154594766f // 1 / (4pi)
-#define EPSILON       1E-5f
-#define T_MIN         1E-3f
-#define T_MAX         1E10f
-#define MIN_ROUGHNESS 0.01f
-#define MIN_ALPHA     0.001f
+__constant__ auto constexpr pi{3.14159265358979323f};
+__constant__ auto constexpr two_pi{6.28318530717958648f};
+__constant__ auto constexpr pi_over_two{1.57079632679489661f};
+__constant__ auto constexpr pi_over_four{0.78539816339744830f};
+__constant__ auto constexpr inv_pi{0.31830988618379067f};
+__constant__ auto constexpr inv_two_pi{0.15915494309189533f};
+__constant__ auto constexpr inv_four_pi{0.07957747154594766f};
+__constant__ auto constexpr t_min{1E-3f};
+__constant__ auto constexpr t_max{1E10f};
+__constant__ auto constexpr alpha_min{0.001f};
 
 namespace color
 {

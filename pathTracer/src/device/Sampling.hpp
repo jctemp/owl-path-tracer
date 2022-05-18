@@ -14,9 +14,9 @@
 
 #pragma region "GENERIC SAMPLING"
 
-PT_DEVICE void sampleUniformDisk(vec2& rand)
+__device__ void sampleUniformDisk(vec2& rand)
 {
-	float phi{ TWO_PI * rand.y };
+	float phi{ two_pi * rand.y };
 	float r{ owl::sqrt(rand.x) };
 
 	rand.x = r * owl::cos(phi);
@@ -24,7 +24,7 @@ PT_DEVICE void sampleUniformDisk(vec2& rand)
 }
 
 
-PT_DEVICE void sampleConcentricDisk(vec2& rand)
+__device__ void sampleConcentricDisk(vec2& rand)
 {
 	// re-scale rand to be between [-1,1]
 	float dx{ 2.0f * rand.x - 1 };
@@ -43,12 +43,12 @@ PT_DEVICE void sampleConcentricDisk(vec2& rand)
 	if (std::abs(dx) > std::abs(dy))
 	{
 		r = dx;
-		phi = PI_OVER_FOUR * (dy / dx);
+		phi = pi_over_four * (dy / dx);
 	}
 	else
 	{
 		r = dy;
-		phi = PI_OVER_TWO - PI_OVER_FOUR * (dx / dy);
+		phi = pi_over_two - pi_over_four * (dx / dy);
 	}
 
 	rand.x = r * owl::cos(phi);
@@ -56,11 +56,11 @@ PT_DEVICE void sampleConcentricDisk(vec2& rand)
 }
 
 
-PT_DEVICE vec3 sampleUniformSphere(vec2& rand)
+__device__ vec3 sampleUniformSphere(vec2& rand)
 {
 	float z{ 1.0f - 2.0f * rand.x };
 	float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
-	float phi{ TWO_PI * rand.y };
+	float phi{ two_pi * rand.y };
 	float x = r * owl::cos(phi);
 	float y = r * owl::sin(phi);
 
@@ -73,7 +73,7 @@ PT_DEVICE vec3 sampleUniformSphere(vec2& rand)
 
 #pragma region "COSINE HEMISPHERE SAMPLING"
 
-PT_DEVICE void sampleCosineHemisphere(vec2 rand, vec3& L)
+__device__ void sampleCosineHemisphere(vec2 rand, vec3& L)
 {
 	// 1. sample unit circle and save position into randu, randv
 	sampleConcentricDisk(rand);
@@ -85,9 +85,9 @@ PT_DEVICE void sampleCosineHemisphere(vec2 rand, vec3& L)
 }
 
 
-PT_DEVICE void pdfCosineHemisphere(vec3 const& V, vec3 const& L, float& pdf)
+__device__ void pdfCosineHemisphere(vec3 const& V, vec3 const& L, float& pdf)
 {
-	pdf = absCosTheta(L) * INV_PI;
+	pdf = absCosTheta(L) * inv_pi;
 }
 
 #pragma endregion
@@ -96,11 +96,11 @@ PT_DEVICE void pdfCosineHemisphere(vec3 const& V, vec3 const& L, float& pdf)
 
 #pragma region "UNIFORM HEMISPHERE SAMPLING"
 
-PT_DEVICE void sampleUniformHemisphere(vec2 rand, vec3& L)
+__device__ void sampleUniformHemisphere(vec2 rand, vec3& L)
 {
 	float z{ rand.x };
 	float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
-	float phi = TWO_PI * rand.y;
+	float phi = two_pi * rand.y;
 
 	float x = r * owl::cos(phi);
 	float y = r * owl::sin(phi);
@@ -109,9 +109,9 @@ PT_DEVICE void sampleUniformHemisphere(vec2 rand, vec3& L)
 }
 
 
-PT_DEVICE void pdfUniformHemisphere(vec3 const& V, vec3 const& L, float& pdf)
+__device__ void pdfUniformHemisphere(vec3 const& V, vec3 const& L, float& pdf)
 {
-	pdf = 0.5f * INV_PI;
+	pdf = 0.5f * inv_pi;
 }
 
 #pragma endregion
@@ -120,18 +120,18 @@ PT_DEVICE void pdfUniformHemisphere(vec3 const& V, vec3 const& L, float& pdf)
 
 #pragma region "CONE SAMPLING"
 
-PT_DEVICE void sampleUniformCone(vec2 rand, float cosThetaMax, vec3& w)
+__device__ void sampleUniformCone(vec2 rand, float cosThetaMax, vec3& w)
 {
 	float cosTheta{ (1.0f - rand.u) + rand.u * cosThetaMax };
 	float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
-	float phi{ rand.v * 2.0f * PI };
+	float phi{ rand.v * 2.0f * pi };
 	w = vec3(cosf(phi) * sinTheta, sinf(phi) * sinTheta, cosTheta);
 }
 
 
-PT_DEVICE void pdfUniformCone(float cosThetaMax, float& pdf)
+__device__ void pdfUniformCone(float cosThetaMax, float& pdf)
 {
-	pdf = 1.0f / (2.0f * PI * (1.0f - cosThetaMax));
+	pdf = 1.0f / (2.0f * pi * (1.0f - cosThetaMax));
 }
 
 #pragma endregion
@@ -140,20 +140,20 @@ PT_DEVICE void pdfUniformCone(float cosThetaMax, float& pdf)
 
 #pragma region "TRIANGLE SAMPLING"
 
-PT_DEVICE void sampleUniformTriangle(vec2 rand, vec2& p)
+__device__ void sampleUniformTriangle(vec2 rand, vec2& p)
 {
 	float su0{ sqrtf(rand.u) };
 	p = vec2{ 1 - su0, rand.v * su0 };
 }
 
-PT_DEVICE void sampleTriangle(InterfaceStruct const& i, Random& rand)
+__device__ void sampleTriangle(InterfaceStruct const& i, Random& rand)
 {
 	vec2 b{};
 	sampleUniformTriangle({ rand.random(), rand.random() }, b);
 
 }
 
-PT_DEVICE float triangleArea(vec3 const& A, vec3 const& B, vec3 const& C)
+__device__ float triangleArea(vec3 const& A, vec3 const& B, vec3 const& C)
 {
 	float a{ owl::length((B - A)) };
 	float b{ owl::length((C - A)) };

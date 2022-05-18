@@ -12,15 +12,15 @@ using namespace owl;
 
 extern __constant__ launch_params_data optixLaunchParams;
 
-PT_DEVICE vec2 uvOnSphere(vec3 n)
+__device__ vec2 uvOnSphere(vec3 n)
 {
-	float const u{ 0.5f + atan2(n.x, n.z) / (2.0f * PI) };
-	float const v{ 0.5f + asin(n.y) / PI };
+	float const u{ 0.5f + atan2(n.x, n.z) / (2.0f * pi) };
+	float const v{ 0.5f + asin(n.y) / pi };
 	return vec2{ u,v };
 }
 
 
-PT_DEVICE vec3 sampleEnvironment(vec3 dir)
+__device__ vec3 sampleEnvironment(vec3 dir)
 {
 	vec2 tc{ uvOnSphere(dir) };
 	owl::vec4f const texColor{
@@ -28,7 +28,7 @@ PT_DEVICE vec3 sampleEnvironment(vec3 dir)
 	return vec3f{ texColor };
 }
 
-PT_DEVICE vec3 tracePath(owl::Ray& ray, Random& random)
+__device__ vec3 tracePath(owl::Ray& ray, Random& random)
 {
 	auto& LP{ optixLaunchParams };
 
@@ -128,7 +128,7 @@ PT_DEVICE vec3 tracePath(owl::Ray& ray, Random& random)
 			ASSERT(isinf(beta.y), "Russian Roulette caused beta to have inf. component");
 		}
 
-		ray = owl::Ray{ P,L,T_MIN, T_MAX };
+		ray = owl::Ray{ P,L,t_min, t_max };
 	}
 
 	return L;

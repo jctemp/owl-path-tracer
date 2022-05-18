@@ -2,10 +2,8 @@
 #define SHARED_HPP
 #pragma once
 
-#include "macros.hpp"
 #include "random.hpp"
 #include "types.hpp"
-#include <owl/owl.h>
 #include <cuda_runtime.h>
 
 #include "camera.hpp"
