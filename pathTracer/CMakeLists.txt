@@ -34,7 +34,6 @@ SET(FILES
         "src/device/materials/BrdfUtils.hpp"
 
         "src/shared/shared.hpp"
-        "src/shared/types.hpp"
         "src/shared/macros.hpp"
         )
 

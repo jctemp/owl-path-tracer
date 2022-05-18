@@ -29,7 +29,7 @@
 #ifndef SHARED_RANDOM_HPP
 #define SHARED_RANDOM_HPP
 
-#include "shared/types.hpp"
+#include "types.hpp"
 
 struct Random
 {
