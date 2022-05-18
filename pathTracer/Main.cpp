@@ -20,7 +20,7 @@ void optix_init()
 	od.module = owlModuleCreate(od.context, device_ptx);
 }
 
-void optix_raygen_program()
+void optix_ray_gen_program()
 {
 	OWLVarDecl rayGenVars[]
 	{
@@ -206,7 +206,7 @@ void render(camera_data const& camera, std::vector<material_data> const& materia
 
 int main()
 {
-	auto const prefix_path{ std::string{"../../../.."} };
+	auto const prefix_path{ std::string{"../.."} };
 	auto const meshes{
 		load_obj(fmt::format("{}/{}", prefix_path, "scenes/dragon.obj")) };
 
@@ -316,7 +316,7 @@ int main()
 
 
 	optix_init();
-	optix_raygen_program();
+    optix_ray_gen_program();
 	optix_miss_program();
 	optix_launch_params();
 	optix_triangle_geom();

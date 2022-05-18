@@ -35,15 +35,15 @@
 
 struct Random
 {
-	PT_SHARED_INLINE Random() { /* REQUIRED FOR DEVICE VARS */ }
+	inline __both__ Random() { /* REQUIRED FOR DEVICE VARS */ }
 
-	PT_SHARED_INLINE Random(int32_t seedu, int32_t seedv) { init((uint32_t)seedu, (uint32_t)seedv); }
-	PT_SHARED_INLINE Random(uvec2 seed) { init((uint32_t)seed.u, (uint32_t)seed.v); }
+	inline __both__ Random(int32_t seedu, int32_t seedv) { init((uint32_t)seedu, (uint32_t)seedv); }
+	inline __both__ Random(uvec2 seed) { init((uint32_t)seed.u, (uint32_t)seed.v); }
 
-	PT_SHARED_INLINE Random(uint32_t seedu, uint32_t seedv) { init(seedu, seedv); }
-	PT_SHARED_INLINE Random(ivec2 seed) { init(seed.u, seed.v); }
+	inline __both__ Random(uint32_t seedu, uint32_t seedv) { init(seedu, seedv); }
+	inline __both__ Random(ivec2 seed) { init(seed.u, seed.v); }
 
-	PT_SHARED_INLINE void init(uint32_t seedu, uint32_t seedv)
+	inline __both__ void init(uint32_t seedu, uint32_t seedv)
 	{
 		uint32_t s{ 0 };
 		for (int32_t n = 0; n < N; n++) {
@@ -55,10 +55,10 @@ struct Random
 	}
 
 	template<typename T = float>
-	PT_SHARED_INLINE T random();
+	inline __both__ T random();
 
 	template<>
-	PT_SHARED_INLINE float random()
+	inline __both__ float random()
 	{
 		uint32_t constexpr A{ 16807 };
 		uint32_t constexpr C{ 1013904223 };
@@ -68,13 +68,13 @@ struct Random
 	}
 
 	template<>
-	PT_SHARED_INLINE vec2 random()
+	inline __both__ vec2 random()
 	{
 		return { this->random(), this->random() };
 	}
 
 	template<typename T = float>
-	PT_SHARED_INLINE float operator()()
+	inline __both__ float operator()()
 	{
 		return this->random<T>();
 	}

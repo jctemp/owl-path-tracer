@@ -17,7 +17,7 @@ struct image_buffer
 	{
 	}
 
-	image_buffer(int32_t x, int32_t y, uint32_t* ptr, image_buffer::tag t)
+	image_buffer(int32_t x, int32_t y, uint32_t const* ptr, image_buffer::tag t)
 		: width{ x }, height{ y }, buffer{ ptr }, ptr_tag{ t }
 	{
 	}
@@ -30,7 +30,7 @@ struct image_buffer
 
 	int32_t width;
 	int32_t height;
-	uint32_t* buffer;
+	uint32_t const* buffer;
 	tag ptr_tag;
 };
 

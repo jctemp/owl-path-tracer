@@ -9,6 +9,8 @@ SET(HEADER_FILES
 	"src/utils/image_buffer.hpp"
 	"src/utils/mesh_loader.hpp"
 
+	"src/owl.hpp"
+
 	# ------------------------------
 
 	"src/device/device.hpp"

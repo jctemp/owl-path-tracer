@@ -5,6 +5,21 @@
 
 #include <fmt/color.h>
 
+namespace constants
+{
+    constexpr auto pi{3.14159265358979323f};
+    constexpr auto t_min{1E-3f};
+    constexpr auto t_max{1E10f};
+    constexpr auto alpha_min{1E-3f};
+
+    [[maybe_unused]] constexpr inline auto two_pi() { return 2.0f * pi; }
+    [[maybe_unused]] constexpr inline auto pi_div_two() {return pi/ 2.0f; }
+    [[maybe_unused]] constexpr inline auto pi_div_four() {return pi/ 4.0f; }
+    [[maybe_unused]] constexpr inline auto inverse_pi() {return 1.0f / pi; }
+    [[maybe_unused]] constexpr inline auto inverse_two_pi() {return 1.0f / (2.0f * pi); }
+    [[maybe_unused]] constexpr inline auto inverse_four_pi() {return 1.0f / (4.0f * pi); }
+}
+
 #define PI            3.14159265358979323f // pi
 #define TWO_PI        6.28318530717958648f // 2pi
 #define PI_OVER_TWO   1.57079632679489661f // pi / 2
@@ -20,12 +35,12 @@
 
 namespace color
 {
-	static fmt::terminal_color constexpr log{ fmt::terminal_color::bright_cyan };
-	static fmt::terminal_color constexpr warn{ fmt::terminal_color::yellow };
-	static fmt::terminal_color constexpr error{ fmt::terminal_color::red };
-	static fmt::terminal_color constexpr ok{ fmt::terminal_color::green };
-	static fmt::terminal_color constexpr start{ fmt::terminal_color::bright_magenta };
-	static fmt::terminal_color constexpr stop{ fmt::terminal_color::magenta };
+    static fmt::terminal_color constexpr log{fmt::terminal_color::bright_cyan};
+    static fmt::terminal_color constexpr warn{fmt::terminal_color::yellow};
+    static fmt::terminal_color constexpr error{fmt::terminal_color::red};
+    static fmt::terminal_color constexpr ok{fmt::terminal_color::green};
+    static fmt::terminal_color constexpr start{fmt::terminal_color::bright_magenta};
+    static fmt::terminal_color constexpr stop{fmt::terminal_color::magenta};
 }
 
 using vec2 = owl::vec2f;

@@ -3,7 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-.png
+Folder.DotSettings.user
+*.png
+.idea
+.vscode
+cmake-build-debug-visual-studio
 
 # User-specific files
 *.rsuser
@@ -363,3 +367,4 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/cmake-build-debug-visual-studio/

@@ -23,18 +23,17 @@ image_buffer load_image(std::string const& name, std::string const& path)
     if (!std::filesystem::exists(file_path))
         throw std::runtime_error{ file_path + " does not exists at the location.\n" };
 
-    image_buffer image{};
+    int32_t width, height, comp;
+    uint32_t* buffer = reinterpret_cast<uint32_t*>(stbi_load(file_path.c_str(), &width,
+        &height, &comp, STBI_rgb_alpha));
 
-    int32_t comp;
-    image.buffer = reinterpret_cast<uint32_t*>(stbi_load(file_path.c_str(), &image.width,
-        &image.height, &comp, STBI_rgb_alpha));
-
-    for (int32_t y{ 0 }; y < image.height / 2; y++)
+    for (int32_t y{ 0 }; y < height / 2; y++)
     {
-        uint32_t* line_y{ image.buffer + y * image.width };
-        uint32_t* mirrored_y{ image.buffer + (image.height - 1 - y) * image.width };
-        for (int x = 0; x < image.width; x++) std::swap(line_y[x], mirrored_y[x]);
+        uint32_t* line_y{ buffer + y * width };
+        uint32_t* mirrored_y{ buffer + (height - 1 - y) * width };
+        for (int x = 0; x < width; x++) std::swap(line_y[x], mirrored_y[x]);
     }
 
+    image_buffer image{width, height, buffer, image_buffer::tag::allocated};
     return image;
 }

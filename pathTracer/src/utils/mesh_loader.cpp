@@ -3,6 +3,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #define	OBJ_TRIANGLE 3
 
+#include <filesystem>
+
 #include <tiny_obj_loader.h>
 
 mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attribute)
@@ -75,6 +77,8 @@ std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> load_obj(std::string
 
     tinyobj::ObjReaderConfig readerConfig{};
     readerConfig.triangulate = false;
+
+    auto path = std::filesystem::absolute(obj_file);
 
     // 2.) load obj file and checking for errors
     if (!reader.ParseFromFile(obj_file, readerConfig))
