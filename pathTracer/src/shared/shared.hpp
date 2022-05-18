@@ -8,7 +8,7 @@
 #include <owl/owl.h>
 #include <cuda_runtime.h>
 
-#include <device/camera.hpp>
+#include "camera.hpp"
 
 struct material_data
 {

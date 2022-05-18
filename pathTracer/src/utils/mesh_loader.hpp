@@ -2,8 +2,7 @@
 #ifndef PATH_TRACER_MESH_LOADER_HPP
 #define PATH_TRACER_MESH_LOADER_HPP
 
-#include <types.hpp>
-
+#include "types.hpp"
 #include <tuple>
 #include <vector>
 #include <string>

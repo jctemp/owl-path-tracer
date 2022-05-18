@@ -2,7 +2,7 @@
 #include <pt/Types.hpp>
 #include <device/device.hpp>
 
-#include <device/camera.hpp>
+#include "camera.hpp"
 #include <utils/image_buffer.hpp>
 #include <utils/mesh_loader.hpp>
 

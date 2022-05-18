@@ -5,7 +5,7 @@ camera_data to_camera_data(camera const& c, ivec2 const& buffer_size)
 	float const aspect{static_cast<float>(buffer_size.x) / static_cast<float>(buffer_size.y)};
 
 	float const theta{ c.vertical_fov * PI / 180.0f};
-	float const h{ tanf(theta / 2) };
+	float const h{ tan(theta / 2) };
 	float const viewport_height{ 2.0f * h };
 	float const viewport_width{ aspect * viewport_height };
 

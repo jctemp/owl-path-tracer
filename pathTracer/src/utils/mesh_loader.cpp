@@ -4,7 +4,6 @@
 #define	OBJ_TRIANGLE 3
 
 #include <filesystem>
-
 #include <tiny_obj_loader.h>
 
 mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attribute)

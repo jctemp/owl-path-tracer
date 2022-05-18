@@ -3,11 +3,15 @@ IF (MSVC)
     ADD_COMPILE_DEFINITIONS(_CRT_SECURE_NO_WARNINGS=1)
 ENDIF ()
 
-SET(HEADER_FILES
-        "src/device/camera.hpp"
+SET(FILES
+        "src/camera.hpp"
+        "src/camera.cpp"
 
         "src/utils/image_buffer.hpp"
+        "src/utils/image_buffer.cpp"
+
         "src/utils/mesh_loader.hpp"
+        "src/utils/mesh_loader.cpp"
 
         "src/owl.hpp"
         "src/types.hpp"
@@ -31,14 +35,9 @@ SET(HEADER_FILES
         "src/shared/macros.hpp"
         )
 
-SET(SRC_FILES
-        "src/device/camera.cpp"
-
-        "src/utils/image_buffer.cpp"
-        "src/utils/mesh_loader.cpp")
 
 SET(INCLUDE_DIRS "include" "src")
-ADD_LIBRARY(lib${PROJECT_NAME} ${HEADER_FILES} ${SRC_FILES})
+ADD_LIBRARY(lib${PROJECT_NAME} ${FILES})
 TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC
         owl::owl
         fmt::fmt

@@ -2,10 +2,9 @@
 #ifndef PATH_TRACER_IMAGE_BUFFER_HPP
 #define PATH_TRACER_IMAGE_BUFFER_HPP
 
-#include <types.hpp>
+#include "types.hpp"
 
 #include <string>
-#include <filesystem>
 
 struct image_buffer
 {
@@ -15,20 +14,9 @@ struct image_buffer
         referenced
     };
 
-    image_buffer() : width{ 0 }, height{ 0 }, buffer{ nullptr }, ptr_tag{ tag::allocated }
-    {
-    }
-
-    image_buffer(int32_t x, int32_t y, uint32_t const* ptr, image_buffer::tag t)
-            : width{ x }, height{ y }, buffer{ ptr }, ptr_tag{ t }
-    {
-    }
-
-    ~image_buffer()
-    {
-        if (ptr_tag == tag::allocated && buffer != nullptr)
-            delete[] buffer;
-    }
+    image_buffer();
+    image_buffer(int32_t x, int32_t y, uint32_t const* ptr, image_buffer::tag t);
+    ~image_buffer();
 
     int32_t width;
     int32_t height;
