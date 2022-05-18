@@ -30,13 +30,13 @@ SET(HEADER_FILES
         "src/shared/types.hpp"
         "src/shared/random.hpp"
         "src/shared/macros.hpp"
-        )
+        src/utils/math.cpp src/utils/math.hpp)
 
 SET(SRC_FILES
         "src/device/camera.cpp"
 
         "src/utils/image_buffer.cpp"
-        "src/utils/mesh_loader.cpp")
+        "src/utils/mesh_loader.cpp" src/utils/math.cpp src/utils/math.hpp)
 
 SET(INCLUDE_DIRS "include" "src")
 ADD_LIBRARY(lib${PROJECT_NAME} ${HEADER_FILES} ${SRC_FILES})

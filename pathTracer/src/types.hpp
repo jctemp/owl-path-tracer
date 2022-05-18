@@ -7,20 +7,7 @@
 
 #include <fmt/color.h>
 
-namespace constants
-{
-    constexpr auto pi{3.14159265358979323f};
-    constexpr auto t_min{1E-3f};
-    constexpr auto t_max{1E10f};
-    constexpr auto alpha_min{1E-3f};
 
-    [[maybe_unused]] constexpr inline auto two_pi() { return 2.0f * pi; }
-    [[maybe_unused]] constexpr inline auto pi_div_two() {return pi/ 2.0f; }
-    [[maybe_unused]] constexpr inline auto pi_div_four() {return pi/ 4.0f; }
-    [[maybe_unused]] constexpr inline auto inverse_pi() {return 1.0f / pi; }
-    [[maybe_unused]] constexpr inline auto inverse_two_pi() {return 1.0f / (2.0f * pi); }
-    [[maybe_unused]] constexpr inline auto inverse_four_pi() {return 1.0f / (4.0f * pi); }
-}
 
 #define PI            3.14159265358979323f // pi
 #define TWO_PI        6.28318530717958648f // 2pi
