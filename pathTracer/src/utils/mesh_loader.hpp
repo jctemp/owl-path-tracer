@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef PATH_TRACER_MESH_LOADER_HPP
+#define PATH_TRACER_MESH_LOADER_HPP
 
 #include <types.hpp>
 
@@ -15,3 +17,5 @@ struct mesh
 };
 
 extern std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> load_obj(std::string const& obj_file);
+
+#endif //PATH_TRACER_MESH_LOADER_HPP

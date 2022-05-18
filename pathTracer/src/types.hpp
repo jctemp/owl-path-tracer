@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef PATH_TRACER_TYPES_HPP
+#define PATH_TRACER_TYPES_HPP
 
 #include <owl/common/math/vec.h>
 #include <owl/owl_device_buffer.h>
@@ -52,3 +54,4 @@ using uvec3 = owl::vec3ui;
 
 using Buffer = owl::device::Buffer;
 
+#endif //PATH_TRACER_TYPES_HPP

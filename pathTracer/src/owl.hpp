@@ -1,4 +1,6 @@
-#pragma once
+
+#ifndef PATH_TRACER_OWL_HPP
+#define PATH_TRACER_OWL_HPP
 
 #include <types.hpp>
 #include <owl/owl.h>
@@ -230,3 +232,5 @@ inline texture create_texture(context const ctx, ivec2 const dims, uint32_t cons
 inline void destroy_texture(texture tex) {
     owlTexture2DDestroy(tex);
 }
+
+#endif //PATH_TRACER_OWL_HPP
