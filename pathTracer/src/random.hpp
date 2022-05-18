@@ -28,59 +28,60 @@
 
 #ifndef SHARED_RANDOM_HPP
 #define SHARED_RANDOM_HPP
-#pragma once
 
-#include "types.hpp"
-#include "macros.hpp"
+#include "shared/types.hpp"
 
 struct Random
 {
-	inline __both__ Random() { /* REQUIRED FOR DEVICE VARS */ }
+    inline __both__ Random() : state{0} { /* REQUIRED FOR DEVICE VARS */ }
 
-	inline __both__ Random(int32_t seedu, int32_t seedv) { init((uint32_t)seedu, (uint32_t)seedv); }
-	inline __both__ Random(uvec2 seed) { init((uint32_t)seed.u, (uint32_t)seed.v); }
+    inline __both__ Random(int32_t seed_u, int32_t seed_v) : state{0} { init((uint32_t) seed_u, (uint32_t) seed_v); }
 
-	inline __both__ Random(uint32_t seedu, uint32_t seedv) { init(seedu, seedv); }
-	inline __both__ Random(ivec2 seed) { init(seed.u, seed.v); }
+    inline __both__ explicit Random(uvec2 seed) : state{0} { init((uint32_t) seed.u, (uint32_t) seed.v); }
 
-	inline __both__ void init(uint32_t seedu, uint32_t seedv)
-	{
-		uint32_t s{ 0 };
-		for (int32_t n = 0; n < N; n++) {
-			s += 0x9e3779b9;
-			seedu += ((seedv << 4) + 0xa341316c) ^ (seedv + s) ^ ((seedv >> 5) + 0xc8013ea4);
-			seedv += ((seedu << 4) + 0xad90777d) ^ (seedu + s) ^ ((seedu >> 5) + 0x7e95761e);
-		}
-		state = seedu;
-	}
+    inline __both__ Random(uint32_t seed_u, uint32_t seed_v) : state{0} { init(seed_u, seed_v); }
 
-	template<typename T = float>
-	inline __both__ T random();
+    inline __both__ explicit Random(ivec2 seed) : state{0} { init(seed.u, seed.v); }
 
-	template<>
-	inline __both__ float random()
-	{
-		uint32_t constexpr A{ 16807 };
-		uint32_t constexpr C{ 1013904223 };
-		state = A * state + C;
-		return ldexpf((float)state, -32);
+    inline __both__ void init(uint32_t seed_u, uint32_t seed_v)
+    {
+        uint32_t s{0};
+        for (int32_t n = 0; n < N; n++)
+        {
+            s += 0x9e3779b9;
+            seed_u += ((seed_v << 4) + 0xa341316c) ^ (seed_v + s) ^ ((seed_v >> 5) + 0xc8013ea4);
+            seed_v += ((seed_u << 4) + 0xad90777d) ^ (seed_u + s) ^ ((seed_u >> 5) + 0x7e95761e);
+        }
+        state = seed_u;
+    }
 
-	}
+    template<typename T = float>
+    inline __both__ T random();
 
-	template<>
-	inline __both__ vec2 random()
-	{
-		return { this->random(), this->random() };
-	}
+    template<>
+    inline __both__ float random()
+    {
+        uint32_t constexpr A{16807};
+        uint32_t constexpr C{1013904223};
+        state = A * state + C;
+        return ldexpf((float) state, -32);
 
-	template<typename T = float>
-	inline __both__ float operator()()
-	{
-		return this->random<T>();
-	}
+    }
 
-	int32_t N{4};
-	uint32_t state;
+    template<>
+    inline __both__ vec2 random()
+    {
+        return {this->random(), this->random()};
+    }
+
+    template<typename T = float>
+    inline __both__ float operator()()
+    {
+        return this->random<T>();
+    }
+
+    int32_t N{4};
+    uint32_t state;
 };
 
 #endif // ! SHARED_RANDOM_HPP

@@ -4,17 +4,21 @@ IF (MSVC)
 ENDIF ()
 
 SET(FILES
+        # SRC
+        "src/owl.hpp"
+        "src/types.hpp"
+        "src/random.hpp"
+
         "src/camera.hpp"
         "src/camera.cpp"
+
+        # SRC/UTILS
 
         "src/utils/image_buffer.hpp"
         "src/utils/image_buffer.cpp"
 
         "src/utils/mesh_loader.hpp"
         "src/utils/mesh_loader.cpp"
-
-        "src/owl.hpp"
-        "src/types.hpp"
 
         # ------------------------------
 
@@ -31,7 +35,6 @@ SET(FILES
 
         "src/shared/shared.hpp"
         "src/shared/types.hpp"
-        "src/shared/random.hpp"
         "src/shared/macros.hpp"
         )
 
