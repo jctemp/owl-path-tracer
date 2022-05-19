@@ -1,5 +1,5 @@
-#ifndef CAMERA_HPP
-#define CAMERA_HPP
+#ifndef PATH_TRACER_CAMERA_HPP
+#define PATH_TRACER_CAMERA_HPP
 #pragma once
 
 #include "types.hpp"
@@ -22,4 +22,4 @@ struct camera_data
 
 extern camera_data to_camera_data(camera const& c, ivec2 const& buffer_size);
 
-#endif // !CAMERA_HPP
+#endif // !PATH_TRACER_CAMERA_HPP
