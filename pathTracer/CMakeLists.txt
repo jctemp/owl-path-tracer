@@ -1,9 +1,9 @@
-IF (MSVC)
-    # not receiving errors due to msvc safe functions
-    ADD_COMPILE_DEFINITIONS(_CRT_SECURE_NO_WARNINGS=1)
-ENDIF ()
+ADD_LIBRARY(lib${PROJECT_NAME})
 
-SET(FILES
+TARGET_SOURCES(lib${PROJECT_NAME} PRIVATE
+
+        "src/device/disney.hpp"
+
         # SRC
         "src/owl.hpp"
         "src/types.hpp"
@@ -32,17 +32,15 @@ SET(FILES
         "src/device/materials/Disney.hpp"
         "src/device/materials/BrdfUtils.hpp"
 
-        src/device/path_tracer.hpp src/device/device_global.hpp)
+        src/device/path_tracer.hpp src/device/device_global.hpp )
 
-
-SET(INCLUDE_DIRS "include" "src")
-ADD_LIBRARY(lib${PROJECT_NAME} ${FILES})
 TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC
         owl::owl
         fmt::fmt
         tinyobjloader)
 
-TARGET_INCLUDE_DIRECTORIES(lib${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
+TARGET_INCLUDE_DIRECTORIES(lib${PROJECT_NAME} PUBLIC
+        "src")
 
 EMBED_PTX(
         OUTPUT_TARGET device-ptx
@@ -50,9 +48,7 @@ EMBED_PTX(
         SOURCES "src/device/device.cu"
 )
 
-
 ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp")
-TARGET_INCLUDE_DIRECTORIES(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
         lib${PROJECT_NAME}
         device-ptx)
