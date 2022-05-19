@@ -1,6 +1,6 @@
 ﻿#include "types.hpp"
 #include "device.hpp"
-#include "PathTracer.hpp"
+#include "path_tracer.hpp"
 
 __constant__ launch_params_data optixLaunchParams;
 
