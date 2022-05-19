@@ -40,7 +40,7 @@ inline __both__ float sin_phi(vec3 const& w)
 inline __both__ vec3 to_sphere_coordinates(float theta, float phi)
 {
 	float x = owl::sin(theta) * owl::cos(phi);
-	float y = owl::sin(theta) * owl::sin(phi);;
+	float y = owl::sin(theta) * owl::sin(phi);
 	float z = owl::cos(theta);
 	return vec3{ x, y, z };
 }
@@ -48,7 +48,7 @@ inline __both__ vec3 to_sphere_coordinates(float theta, float phi)
 inline __both__ vec3 to_sphere_coordinates(float sin_theta, float cos_theta, float phi)
 {
 	float x = sin_theta * owl::cos(phi);
-	float y = sin_theta * owl::sin(phi);;
+	float y = sin_theta * owl::sin(phi);
 	float z = cos_theta;
 	return vec3{ x, y, z };
 }
@@ -88,8 +88,4 @@ inline __both__ void to_world(vec3 const& t, vec3 const& b, vec3 const& n, vec3&
     w = owl::normalize(vec3{w.x * t + w.y * b + w.z * n });
 }
 
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
-#endif // !MATH_HPP
+#endif // !PATH_TRACER_MATH_HPP
