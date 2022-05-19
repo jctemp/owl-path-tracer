@@ -161,8 +161,8 @@ inline __device__ vec3 sampleGtr2(vec3 const& V, float alpha, vec2 u)
 	float cosTheta{ sqrtf((1.0f - u[1]) / (1.0f + (alpha2 - 1.0f) * u[1])) };
 	float sinTheta{ sqrtf(fmax(0.0f, 1.0f - cosTheta * cosTheta)) };
 
-	vec3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
-	if (!sameHemisphere(V, H)) H = -H;
+	vec3 H{to_sphere_coordinates(sinTheta, cosTheta, phi) };
+	if (!same_hemisphere(V, H)) H = -H;
 
 	return H;
 }

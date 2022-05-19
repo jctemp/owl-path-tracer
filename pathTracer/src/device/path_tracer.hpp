@@ -87,7 +87,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
 
         /* SAMPLE BRDF OR PHASE FUNCTION */
         vec3 L{ 0.0f };
-        toLocal(T, B, N, V);
+        to_local(T, B, N, V);
 
         {
             material_data material{};
@@ -106,7 +106,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
             beta *= bsdf / pdf;
         }
 
-        toWorld(T, B, N, L);
+        to_world(T, B, N, L);
 
         /* SAMPLE DIRECT LIGHTS */
         if (LP.light_buffer.count != 0)

@@ -216,15 +216,15 @@ __device__ void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, v
 	float sinTheta{ sqrtf(fmax(0.0f, 1 - cosTheta * cosTheta)) };
 	float phi{ two_pi * rand.random() };
 
-	vec3 H{ toSphereCoordinates(sinTheta, cosTheta, phi) };
+	vec3 H{to_sphere_coordinates(sinTheta, cosTheta, phi) };
 
-	if (!sameHemisphere(V, H)) H = -H;
+	if (!same_hemisphere(V, H)) H = -H;
 
 	bsdf = vec3{ 0.0f };
 	pdf = 0.0f;
 
 	L = reflect(V, H);
-	if (!sameHemisphere(V, L)) return;
+	if (!same_hemisphere(V, L)) return;
 
 	pdf = pdfDisneyClearcoat(mat, V, L);
 	bsdf = fDisneyClearcoat(mat, V, L);
@@ -238,7 +238,7 @@ __device__ void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, v
 
 __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	if (!sameHemisphere(V, L)) return vec3{ 0.0f };
+	if (!same_hemisphere(V, L)) return vec3{0.0f };
 	float NdotV{ owl::abs(cos_theta(V)) };
 	if (NdotV == 0) return vec3{ 0.0f };
 
@@ -256,7 +256,7 @@ __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 
 
 __device__ float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	if (!sameHemisphere(V, L)) return 0.0f;
+	if (!same_hemisphere(V, L)) return 0.0f;
 
 	vec3 H{ L + V };
 	if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
@@ -278,7 +278,7 @@ __device__ void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, 
 	bsdf = vec3{ 0.0f };
 	pdf = 0.0f;
 
-	if (!sameHemisphere(V, L)) return;
+	if (!same_hemisphere(V, L)) return;
 
 	bsdf = fDisneyMicrofacet(mat, V, L);
 	pdf = pdfDisneyMicrofacet(mat, V, L);
@@ -465,7 +465,7 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
 
 		L = normalize(reflect(V, H));
 
-		if (!sameHemisphere(V, L)) return;
+		if (!same_hemisphere(V, L)) return;
 
 		bsdf = fDisneyMicrofacet(mat, V, L);
 		pdf = pdfDisneyMicrofacet(mat, V, L);

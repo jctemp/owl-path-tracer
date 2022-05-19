@@ -7,13 +7,13 @@
 
 __device__ vec3 fLambert(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	if (!sameHemisphere(V, L)) return vec3{ 0.0f };
+	if (!same_hemisphere(V, L)) return vec3{0.0f };
 	return mat.baseColor * inv_pi;
 }
 
 __device__ float pdfLambert(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	if (!sameHemisphere(V, L)) return 0.0f;
+	if (!same_hemisphere(V, L)) return 0.0f;
 	float pdf{ 0.0f };
     pdf_cosine_hemisphere(V, L);
 	return pdf;
