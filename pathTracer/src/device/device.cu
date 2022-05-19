@@ -4,7 +4,7 @@
 
 __constant__ launch_params_data optixLaunchParams;
 
-OPTIX_RAYGEN_PROGRAM(rayGenenration)()
+OPTIX_RAYGEN_PROGRAM(ray_gen)()
 {
 	ray_gen_data const& self{ owl::getProgramData<ray_gen_data>() };
 	ivec2 const pixelId{ owl::getLaunchIndex() };
@@ -39,9 +39,7 @@ OPTIX_RAYGEN_PROGRAM(rayGenenration)()
 		= owl::make_rgba(color);
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-OPTIX_CLOSEST_HIT_PROGRAM(TriangleMesh)()
+OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
 {
     per_ray_data& prd{ getPRD<per_ray_data>() };
 

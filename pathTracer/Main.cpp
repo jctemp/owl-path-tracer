@@ -74,7 +74,7 @@ void optix_ray_gen_program()
 	};
 
 	od.ray_gen_program =
-		create_ray_gen_program(od.context, od.module, "rayGenenration", sizeof(ray_gen_data), ray_gen_vars );
+		create_ray_gen_program(od.context, od.module, "ray_gen", sizeof(ray_gen_data), ray_gen_vars );
 }
 
 void optix_miss_program()
@@ -122,7 +122,7 @@ void optix_triangle_geom()
 	od.triangle_geom = create_geom_type(od.context, OWL_GEOM_TRIANGLES,
 		sizeof(triangle_geom_data), triangles_geom_vars);
 
-	geom_type_closest_hit_program(od.triangle_geom, od.module, "TriangleMesh", 0);
+	geom_type_closest_hit_program(od.triangle_geom, od.module, "triangle_hit", 0);
 }
 
 void optix_destroy()
