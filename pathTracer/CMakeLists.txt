@@ -31,7 +31,6 @@ SET(FILES
         "src/device/materials/Disney.hpp"
         "src/device/materials/BrdfUtils.hpp"
 
-        "src/shared/shared.hpp"
         src/device/path_tracer.hpp )
 
 
