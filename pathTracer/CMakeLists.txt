@@ -26,7 +26,7 @@ SET(FILES
 
         "src/device/device.hpp"
 
-        "src/device/Math.hpp"
+        "src/math.hpp"
         "src/device/materials/Lambert.hpp"
         "src/device/materials/Disney.hpp"
         "src/device/materials/BrdfUtils.hpp"

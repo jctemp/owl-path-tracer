@@ -1,8 +1,7 @@
-﻿#ifndef MATH_HPP
-#define MATH_HPP
-#pragma once
+﻿#ifndef PATH_TRACER_MATH_HPP
+#define PATH_TRACER_MATH_HPP
 
-#include "device.hpp"
+#include "device/device.hpp"
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 

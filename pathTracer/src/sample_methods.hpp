@@ -2,7 +2,7 @@
 #define PATH_TRACER_SAMPLE_METHODS_HPP
 
 #include "device.hpp"
-#include "Math.hpp"
+#include "math.hpp"
 
 /*
 * - http://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf.
