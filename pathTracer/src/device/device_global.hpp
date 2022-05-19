@@ -10,24 +10,24 @@ struct material_data
 {
     enum class type
     {
-        NONE = 0 << 0,
-        LAMBERT = 1 << 0,
-        DISNEY = 1 << 0,
+        none = 0 << 0,
+        lambert = 1 << 0,
+        disney = 1 << 0
     };
 
-    type type{ type::NONE };
-    vec3  baseColor{ 0.8f, 0.8f, 0.8f };
+    type type{ type::none };
+    vec3  base_color{0.8f, 0.8f, 0.8f };
     float subsurface{ 0.0f };
-    vec3  subsurfaceRadius{ 1.0f, 0.2f, 0.1f };
-    vec3  subsurfaceColor{ 0.8f, 0.8f, 0.8f };
+    vec3  subsurface_radius{1.0f, 0.2f, 0.1f };
+    vec3  subsurface_color{0.8f, 0.8f, 0.8f };
     float metallic{ 0.0f };
     float specular{ 0.5f };
-    float specularTint{ 1.0f };
+    float specular_tint{1.0f };
     float roughness{ 0.5f };
     float sheen{ 0.0f };
-    float sheenTint{ 1.0f };
+    float sheen_tint{1.0f };
     float clearcoat{ 0.0f };
-    float clearcoatGloss{ 0.03f };
+    float clearcoat_gloss{0.03f };
     float ior{ 1.45f };
 };
 

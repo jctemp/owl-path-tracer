@@ -250,8 +250,8 @@ int main()
 	};
 
 	/* BSDF */
-	material_data mat1{
-		material_data::type::DISNEY,
+	material_data shell{
+		material_data::type::disney,
 		{.3f, .3f, .3f},	  
 		0.0f ,				  
 		{ 1.0f, 0.2f, 0.1f }, 
@@ -267,8 +267,8 @@ int main()
 		1.45f				  
 	};
 
-	material_data mat2{
-		material_data::type::DISNEY,
+	material_data ground{
+		material_data::type::disney,
 		{.8f,.4f,.1f},
 		0.0f ,
 		{ 1.0f, 0.2f, 0.1f },
@@ -284,8 +284,8 @@ int main()
 		1.45f
 	};
 
-	material_data test{
-		material_data::type::DISNEY,
+	material_data inner{
+		material_data::type::disney,
 		{.8f, .8f, .8f},
 		0.0f ,
 		{ 1.0f, 0.2f, 0.1f },
@@ -302,9 +302,9 @@ int main()
 	};
 
 	std::vector<std::tuple<std::string, material_data>> mats{
-		{"mat1", mat1},
-		{"mat2", mat2},
-		{"test", test},
+		{"shell", shell},
+		{"ground", ground},
+		{"inner", inner},
 	};
 
 	std::vector<entity> entities{};

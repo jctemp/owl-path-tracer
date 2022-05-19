@@ -3,8 +3,9 @@
 #define PATH_TRACER_PATH_TRACER_HPP
 
 #include "device.hpp"
-#include "materials/Lambert.hpp"
+// #include "materials/Lambert.hpp"
 #include "materials/Disney.hpp"
+//#include "disney.hpp"
 
 #include "owl/include/owl/owl_device.h"
 
@@ -93,7 +94,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
 
         {
             material_data material{};
-            if (is.matId >= 0) get_data(material, LP.material_buffer, is.matId, material_data);
+            if (is.matId >= 0) { get_data(material, LP.material_buffer, is.matId, material_data); }
 
 
             float pdf{ 0.0f };

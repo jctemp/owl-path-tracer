@@ -12,7 +12,7 @@
 
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           DISNEY'S COMPONENTS
+//           disney'S COMPONENTS
 
 #pragma region DIFFUSE
 
@@ -25,7 +25,7 @@ __device__ vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 con
 	float FV{ schlickFresnel(NdotV, mat.ior) };
 
 	// Burley 2015, eq (4).
-	return mat.baseColor * inv_pi * (1.0f - FL / 2.0f) * (1.0f - FV / 2.0f);
+	return mat.base_color * inv_pi * (1.0f - FL / 2.0f) * (1.0f - FV / 2.0f);
 }
 
 
@@ -69,7 +69,7 @@ __device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, v
 	// 1.25 scale is used to (roughly) preserve albedo
 	float Fs{ 1.25f * (Fss * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f) };
 
-	return mat.subsurfaceColor * inv_pi * Fs;
+	return mat.subsurface_color * inv_pi * Fs;
 }
 
 
@@ -108,7 +108,7 @@ __device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const
 	float Rr{ 2 * mat.roughness * cosThetaD * cosThetaD };
 
 	// Burley 2015, eq (4).
-	return mat.baseColor * inv_pi * Rr * (FL + FV + FL * FV * (Rr - 1));
+	return mat.base_color * inv_pi * Rr * (FL + FV + FL * FV * (Rr - 1));
 }
 
 
@@ -141,8 +141,8 @@ __device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const
 	H = normalize(H);
 	float cosThetaD{ dot(L, H) };
 
-	vec3 tint{ calculateTint(mat.baseColor) };
-	return mat.sheen * lerp(vec3{ 1.0f }, tint, vec3{ mat.sheenTint }) * schlickFresnel(cosThetaD, mat.ior);
+	vec3 tint{ calculateTint(mat.base_color) };
+	return mat.sheen * lerp(vec3{ 1.0f }, tint, vec3{ mat.sheen_tint }) * schlickFresnel(cosThetaD, mat.ior);
 }
 
 
@@ -176,7 +176,7 @@ __device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 c
 	// GTR1 distribution, which has even fatter tails than Trowbridge-Reitz
 	// (which is GTR2). The geometric term always based on alpha = 0.25
 	// - pbrt book v3
-	float alphaG{ (1 - mat.clearcoatGloss) * 0.1f + mat.clearcoatGloss * 0.001f };
+	float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f };
 	float Dr{ gtr1(owl::abs(cos_theta(H)), alphaG) };
 	float F{ schlickFresnel(owl::abs(cos_theta(H)), 1.5f) };
 	float Fr{ lerp(.04f, 1.0f, F) };
@@ -197,7 +197,7 @@ __device__ float pdfDisneyClearcoat(material_data const& mat, vec3 const& V, vec
 	// distribution for H converted to a measure with respect to the
 	// surface normal.
 	// - pbrt book v3
-	float alphaG{ (1 - mat.clearcoatGloss) * 0.1f + mat.clearcoatGloss * 0.001f };
+	float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f };
 	float Dr{ gtr1(owl::abs(cos_theta(H)), alphaG) };
 	return Dr * owl::abs(cos_theta(H)) / (4.0f * owl::abs(cos_theta(V)));
 }
@@ -210,7 +210,7 @@ __device__ void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, v
 	// Apply importance sampling to D * dot(N * H) / (4 * dot(H, V)) by choosing normal
 	// proportional to D and reflect it at H
 {
-	float alphaG{ (1 - mat.clearcoatGloss) * 0.1f + mat.clearcoatGloss * 0.001f };
+	float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f };
 	float alpha2{ alphaG * alphaG };
 	float cosTheta{ sqrtf(fmax(0.0f, (1 - powf(alpha2, 1 - rand.random())) / (1 - alpha2))) };
 	float sinTheta{ sqrtf(fmax(0.0f, 1 - cosTheta * cosTheta)) };
@@ -246,7 +246,7 @@ __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 
 
 	float alpha{ roughnessToAlpha(mat.roughness) };
 	float Dr{ gtr2(cos_theta(H), alpha) };
-	vec3 Fr{ lerp(mat.baseColor, 1.0f - mat.baseColor, {schlickFresnel(dot(H, V), mat.ior)}) };
+	vec3 Fr{ lerp(mat.base_color, 1.0f - mat.base_color, {schlickFresnel(dot(H, V), mat.ior)}) };
 	float Gr{smithG(abs(tan_theta(V)), alpha) *
              smithG(abs(tan_theta(L)), alpha) };
 
@@ -401,11 +401,11 @@ __device__ void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, ve
 #endif // TRANSMISSION_MATERIAL
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           DISNEY'S PRINCIPLED BSDF
+//           disney'S PRINCIPLED BSDF
 //
 //  Specular BSDF ───────┐ Metallic BRDF ┐
 //                       │               │
-//  Dielectric BRDF ─── lerp ─────────── lerp ─── DISNEY BSDF  
+//  Dielectric BRDF ─── lerp ─────────── lerp ─── disney BSDF
 //  + Subsurface
 //
 

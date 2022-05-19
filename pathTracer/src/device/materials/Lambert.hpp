@@ -8,7 +8,7 @@
 __device__ vec3 fLambert(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	if (!same_hemisphere(V, L)) return vec3{0.0f };
-	return mat.baseColor * inv_pi;
+	return mat.base_color * inv_pi;
 }
 
 __device__ float pdfLambert(material_data const& mat, vec3 const& V, vec3 const& L)
