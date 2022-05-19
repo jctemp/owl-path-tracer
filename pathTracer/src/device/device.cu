@@ -30,7 +30,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 	// take the average of all samples per pixel and apply gamma correction
 	color *= 1.0f / static_cast<float>(optixLaunchParams.max_samples);
 	color = owl::sqrt(color);
-	color = saturate<vec3>(color);
+	color = o_saturate(color);
 
 
 	// save result into the buffer

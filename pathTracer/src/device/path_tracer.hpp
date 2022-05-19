@@ -60,8 +60,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
             else if (optixLaunchParams.environment_map)
                 li = sampleEnvironment(ray.direction);
             else
-                li = mix(vec3{ 1.0f }, vec3{ 0.5f, 0.7f, 1.0f }, { 0.5f *
-                                                                   (ray.direction.y + 1.0f) });
+                li = lerp(vec3{ 1.0f }, vec3{ 0.5f, 0.7f, 1.0f },  0.5f * (ray.direction.y + 1.0f) );
 
             L += li * beta;
             break;

@@ -64,7 +64,7 @@ __device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, v
 	float Fss90{ cosThetaD * cosThetaD * mat.roughness };
 	float FL{ schlickFresnel(NdotL, mat.ior) };
 	float FV{ schlickFresnel(NdotV, mat.ior) };
-	float Fss{ mix(1.0f, Fss90, FL) * mix(1.0f, Fss90, FV) };
+	float Fss{ lerp(1.0f, Fss90, FL) * lerp(1.0f, Fss90, FV) };
 
 	// 1.25 scale is used to (roughly) preserve albedo
 	float Fs{ 1.25f * (Fss * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f) };
@@ -142,7 +142,7 @@ __device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const
 	float cosThetaD{ dot(L, H) };
 
 	vec3 tint{ calculateTint(mat.baseColor) };
-	return mat.sheen * mix(vec3{ 1.0f }, tint, vec3{ mat.sheenTint }) * schlickFresnel(cosThetaD, mat.ior);
+	return mat.sheen * lerp(vec3{ 1.0f }, tint, vec3{ mat.sheenTint }) * schlickFresnel(cosThetaD, mat.ior);
 }
 
 
@@ -179,7 +179,7 @@ __device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 c
 	float alphaG{ (1 - mat.clearcoatGloss) * 0.1f + mat.clearcoatGloss * 0.001f };
 	float Dr{ gtr1(absCosTheta(H), alphaG) };
 	float F{ schlickFresnel(absCosTheta(H), 1.5f) };
-	float Fr{ mix(.04f, 1.0f, F) };
+	float Fr{ lerp(.04f, 1.0f, F) };
 	float Gr{ smithG(absCosTheta(V), .25f) * smithG(absCosTheta(L), .25f) };
 
 	return mat.clearcoat * Gr * Fr * Dr / (4.0f * absCosTheta(H));
@@ -246,7 +246,7 @@ __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 
 
 	float alpha{ roughnessToAlpha(mat.roughness) };
 	float Dr{ gtr2(cosTheta(H), alpha) };
-	vec3 Fr{ mix(mat.baseColor, 1.0f - mat.baseColor, {schlickFresnel(dot(H, V), mat.ior)}) };
+	vec3 Fr{ lerp(mat.baseColor, 1.0f - mat.baseColor, {schlickFresnel(dot(H, V), mat.ior)}) };
 	float Gr{ smithG(abs(tanTheta(V)), alpha) *
 		smithG(abs(tanTheta(L)), alpha) };
 
@@ -405,7 +405,7 @@ __device__ void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, ve
 //
 //  Specular BSDF ───────┐ Metallic BRDF ┐
 //                       │               │
-//  Dielectric BRDF ─── MIX ─────────── MIX ─── DISNEY BSDF  
+//  Dielectric BRDF ─── lerp ─────────── lerp ─── DISNEY BSDF  
 //  + Subsurface
 //
 
@@ -419,7 +419,7 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
 
 	float specularWeight = mat.metallic;
 	float diffuseWeight = 1 - mat.metallic;
-	float clearcoatWeight = 1.0f * saturate<float>(mat.clearcoat);
+	float clearcoatWeight = 1.0f * o_saturate(mat.clearcoat);
 
 	float norm = 1.0f / (clearcoatWeight + diffuseWeight + specularWeight);
 
