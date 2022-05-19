@@ -18,8 +18,8 @@
 
 __device__ vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	float NdotV{ absCosTheta(V) };
-	float NdotL{ absCosTheta(L) };
+	float NdotV{ owl::abs(cos_theta(V)) };
+	float NdotL{ owl::abs(cos_theta(L)) };
 
 	float FL{ schlickFresnel(NdotL, mat.ior) };
 	float FV{ schlickFresnel(NdotV, mat.ior) };
@@ -40,7 +40,7 @@ __device__ void sampleDisneyDiffuse(material_data const& mat, vec3 const& V, vec
 {
     L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneyDiffuse(mat, V, L);
-	bsdf = fDisneyDiffuse(mat, V, L) * absCosTheta(L);
+	bsdf = fDisneyDiffuse(mat, V, L) * owl::abs(cos_theta(L));
 }
 
 #pragma endregion
@@ -57,8 +57,8 @@ __device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, v
 
 	H = normalize(H);
 	float cosThetaD{ dot(L, H) };
-	float NdotV{ absCosTheta(V) };
-	float NdotL{ absCosTheta(L) };
+	float NdotV{ owl::abs(cos_theta(V)) };
+	float NdotL{ owl::abs(cos_theta(L)) };
 
 	// Fss90 used to "flatten" retroreflection based on roughness
 	float Fss90{ cosThetaD * cosThetaD * mat.roughness };
@@ -84,7 +84,7 @@ __device__ void sampleDisneyFakeSubsurface(material_data const& mat, vec3 const&
 {
     L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneyFakeSubsurface(mat, V, L);
-	bsdf = fDisneyFakeSubsurface(mat, V, L) * absCosTheta(L);
+	bsdf = fDisneyFakeSubsurface(mat, V, L) * owl::abs(cos_theta(L));
 }
 
 #pragma endregion
@@ -100,8 +100,8 @@ __device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const
 
 	H = normalize(H);
 	float cosThetaD{ dot(L, H) };
-	float NdotV{ absCosTheta(V) };
-	float NdotL{ absCosTheta(L) };
+	float NdotV{ owl::abs(cos_theta(V)) };
+	float NdotL{ owl::abs(cos_theta(L)) };
 
 	float FL{ schlickFresnel(NdotL, mat.ior) };
 	float FV{ schlickFresnel(NdotV, mat.ior) };
@@ -123,7 +123,7 @@ __device__ void sampleDisneyRetro(material_data const& mat, vec3 const& V, vec3&
 {
     L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneyRetro(mat, V, L);
-	bsdf = fDisneyRetro(mat, V, L) * absCosTheta(L);
+	bsdf = fDisneyRetro(mat, V, L) * owl::abs(cos_theta(L));
 }
 
 #pragma endregion
@@ -157,7 +157,7 @@ __device__ void sampleDisneySheen(material_data const& mat, vec3 const& V, vec3&
 {
     L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneySheen(mat, V, L);
-	bsdf = fDisneySheen(mat, V, L) * absCosTheta(L);
+	bsdf = fDisneySheen(mat, V, L) * owl::abs(cos_theta(L));
 }
 
 #pragma endregion
@@ -177,12 +177,12 @@ __device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 c
 	// (which is GTR2). The geometric term always based on alpha = 0.25
 	// - pbrt book v3
 	float alphaG{ (1 - mat.clearcoatGloss) * 0.1f + mat.clearcoatGloss * 0.001f };
-	float Dr{ gtr1(absCosTheta(H), alphaG) };
-	float F{ schlickFresnel(absCosTheta(H), 1.5f) };
+	float Dr{ gtr1(owl::abs(cos_theta(H)), alphaG) };
+	float F{ schlickFresnel(owl::abs(cos_theta(H)), 1.5f) };
 	float Fr{ lerp(.04f, 1.0f, F) };
-	float Gr{ smithG(absCosTheta(V), .25f) * smithG(absCosTheta(L), .25f) };
+	float Gr{ smithG(owl::abs(cos_theta(V)), .25f) * smithG(owl::abs(cos_theta(L)), .25f) };
 
-	return mat.clearcoat * Gr * Fr * Dr / (4.0f * absCosTheta(H));
+	return mat.clearcoat * Gr * Fr * Dr / (4.0f * owl::abs(cos_theta(H)));
 }
 
 
@@ -198,8 +198,8 @@ __device__ float pdfDisneyClearcoat(material_data const& mat, vec3 const& V, vec
 	// surface normal.
 	// - pbrt book v3
 	float alphaG{ (1 - mat.clearcoatGloss) * 0.1f + mat.clearcoatGloss * 0.001f };
-	float Dr{ gtr1(absCosTheta(H), alphaG) };
-	return Dr * absCosTheta(H) / (4.0f * absCosTheta(V));
+	float Dr{ gtr1(owl::abs(cos_theta(H)), alphaG) };
+	return Dr * owl::abs(cos_theta(H)) / (4.0f * owl::abs(cos_theta(V)));
 }
 
 
@@ -239,18 +239,18 @@ __device__ void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, v
 __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	if (!sameHemisphere(V, L)) return vec3{ 0.0f };
-	float NdotV{ absCosTheta(V) };
+	float NdotV{ owl::abs(cos_theta(V)) };
 	if (NdotV == 0) return vec3{ 0.0f };
 
 	vec3 H{ normalize(V + L) };
 
 	float alpha{ roughnessToAlpha(mat.roughness) };
-	float Dr{ gtr2(cosTheta(H), alpha) };
+	float Dr{ gtr2(cos_theta(H), alpha) };
 	vec3 Fr{ lerp(mat.baseColor, 1.0f - mat.baseColor, {schlickFresnel(dot(H, V), mat.ior)}) };
-	float Gr{ smithG(abs(tanTheta(V)), alpha) *
-		smithG(abs(tanTheta(L)), alpha) };
+	float Gr{smithG(abs(tan_theta(V)), alpha) *
+             smithG(abs(tan_theta(L)), alpha) };
 
-	return Dr * Fr * Gr / (4.0f * absCosTheta(L));
+	return Dr * Fr * Gr / (4.0f * owl::abs(cos_theta(L)));
 }
 
 
@@ -328,7 +328,7 @@ __device__ float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3
 	H = normalize(H);
 
 	float alpha{ roughnessToAlpha(mat.roughness) };
-	float costhetaH = absCosTheta(H);
+	float costhetaH = owl::abs(cos_theta(H);
 	float D = gtr2(costhetaH, alpha);
 	return D;
 }
@@ -342,7 +342,7 @@ __device__ float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3
 //	float etaT = entering ? 1 : ior;
 //	Float3 N{ cosTheta(V) > 0 ? Float3{ 0,0,1 } : Float3{ 0, 0, -1 } };
 //	bool refracted = refract(V, N, etaI / etaT, L);
-//	float fresnel = 1 - dielectricFresnel(absCosTheta(L), etaI / etaT);
+//	float fresnel = 1 - dielectricFresnel(owl::abs(cos_theta(L), etaI / etaT);
 //	if (!refracted || rand.random() > fresnel)
 //	{
 //		L = reflect(V, N);
@@ -366,7 +366,7 @@ __device__ void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, ve
 		// Sample perfectly specular dielectric BSDF
 		float R{ schlickFresnel(cosTheta(V), etaI / etaT) };
 
-		vec3 N{ cosTheta(V) > 0 ? vec3{0,0,1} : vec3{0,0,-1} };
+		vec3 N{ cos_theta(V) > 0 ? vec3{0,0,1} : vec3{0,0,-1} };
 		bsdf = vec3{ 0.0f };
 		pdf = 0.0f;
 
@@ -454,7 +454,7 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
 		bsdf += (diffuse + retro) * diffuseWeight;
 		bsdf += ss * ssWeight;
 		bsdf += sheen;
-		bsdf *= absCosTheta(L);
+		bsdf *= owl::abs(cos_theta(L));
 	}
 
 	// specular reflective

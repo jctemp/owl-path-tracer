@@ -3,94 +3,36 @@
 
 #include "device/device.hpp"
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
 inline __both__ float lerp(float a, float b, float t) { return a + (b - a) * t; }
 inline __both__ vec3 lerp(vec3 a, vec3 b, vec3 t) { return a + (b - a) * t; }
 inline __both__ vec3 lerp(vec3 a, vec3 b, float t) { return a + (b - a) * t; }
 
 inline __both__ float o_saturate(float a) { return owl::clamp(a, 0.0f, 1.0f); }
 inline __both__ vec3 o_saturate(vec3 a) { return owl::clamp(a, vec3{0.0f}, vec3{1.0f}); }
-inline __both__ float sqr(float v) { return v * v; }
 
+inline __both__ float sqr(float v) { return v * v; }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-inline __both__ float cosTheta(vec3 const& w)
+inline __both__ float cos_theta(vec3 const& w){	return w.z; }
+
+inline __both__ float sin_theta(vec3 const& w){	return owl::sqrt(owl::max(0.0f, 1.0f - sqr(cos_theta(w)))); }
+
+inline __both__ float tan_theta(vec3 const& w){	return sin_theta(w) / cos_theta(w); }
+
+inline __both__ float cos_phi(vec3 const& w)
 {
-	return w.z;
-}
-
-
-inline __both__ float cos2Theta(vec3 const& w)
-{
-	return w.z * w.z;
-}
-
-
-inline __both__ float absCosTheta(vec3 const& w)
-{
-	return abs(w.z);
-}
-
-
-inline __both__ float sin2Theta(vec3 const& w)
-{
-	return fmaxf(0.0f, 1.0f - cos2Theta(w));
-}
-
-
-inline __both__ float sinTheta(vec3 const& w)
-{
-	return sqrtf(sin2Theta(w));
-}
-
-
-inline __both__ float tanTheta(vec3 const& w)
-{
-	return sinTheta(w) / cosTheta(w);
-}
-
-
-inline __both__ float tan2Theta(vec3 const& w)
-{
-	return sin2Theta(w) / cos2Theta(w);
-}
-
-
-inline __both__ float cosPhi(vec3 const& w)
-{
-	float theta{ sinTheta(w) };
+	float theta{ sin_theta(w) };
 	return (theta == 0) ? 1.0f : owl::clamp(w.x / theta, -1.0f, 1.0f);
 }
 
-
-inline __both__ float sinPhi(vec3 const& w)
+inline __both__ float sin_phi(vec3 const& w)
 {
-	float theta{ sinTheta(w) };
+	float theta{ sin_theta(w) };
 	return (theta == 0) ? 1.0f : owl::clamp(w.y / theta, -1.0f, 1.0f);
 }
 
-
-inline __both__ float cos2Phi(vec3 const& w)
-{
-	return cosPhi(w) * cosPhi(w);
-}
-
-
-inline __both__ float sin2Phi(vec3 const& w)
-{
-	return sinPhi(w) * sinPhi(w);
-}
-
-
-inline __both__ float cosDPhi(vec3 const& wa, vec3 const& wb) {
-	return owl::clamp((wa.x * wb.x + wa.y * wb.y) /
-		sqrtf((wa.x * wa.x + wa.y * wa.y) *
-			(wb.x * wb.x + wb.y * wb.y)), -1.0f, 1.0f);
-}
-
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 inline __both__ vec3 toSphereCoordinates(float theta, float phi)
 {

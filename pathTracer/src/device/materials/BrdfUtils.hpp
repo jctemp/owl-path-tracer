@@ -24,7 +24,7 @@ inline __device__ vec3 calculateTint(vec3 baseColor)
 
 inline __device__ float calculateEta(vec3 V, float ior)
 {
-	if (cosTheta(V) > 0.0f)
+	if (cos_theta(V) > 0.0f)
 		return 1.0f / ior;
 	return ior;
 }
@@ -68,7 +68,7 @@ inline __device__ float dielectricFresnel(float costheta, float ior)
 
 inline __device__ float dielectricFresnel(float ior, vec3 V, vec3 N, vec3 & R, vec3& T, bool& inside)
 {
-	float costheta{ cosTheta(V) }, neta{};
+	float costheta{cos_theta(V) }, neta{};
 	vec3 Nn;
 
 	if (costheta > 0)
@@ -88,7 +88,7 @@ inline __device__ float dielectricFresnel(float ior, vec3 V, vec3 N, vec3 & R, v
 	R = (2 * costheta) * Nn - V;
 
 	float arg = 1 - (neta * neta * (1 - (costheta * costheta)));
-	if (arg < 0) 
+	if (arg < 0)
 	{
 		T = float{0.0f};
 		return 1;
@@ -155,7 +155,7 @@ inline __device__ float gtr2(float cosTheta, float alpha)
 
 inline __device__ vec3 sampleGtr2(vec3 const& V, float alpha, vec2 u)
 {
-	// Disney Keynotes eq. (2) and (9) 
+	// Disney Keynotes eq. (2) and (9)
 	float alpha2{ alpha * alpha };
 	float phi{ (2 * pi) * u[0] };
 	float cosTheta{ sqrtf((1.0f - u[1]) / (1.0f + (alpha2 - 1.0f) * u[1])) };
@@ -189,9 +189,9 @@ inline __device__ vec3 sampleGtr2VNDF(vec3 const& V, float alpha, vec2 u)
 
 inline __device__ float pdfGtr2(vec3 const& V, vec3 const& H, float alpha)
 {
-	float Dr{ gtr2(cosTheta(H), alpha)};
-	float Gr{ smithG(abs(tanTheta(V)), alpha)};
-	return Dr * Gr * absCosTheta(H) / (4.0f * absCosTheta(V));
+	float Dr{ gtr2(cos_theta(H), alpha)};
+	float Gr{ smithG(abs(tan_theta(V)), alpha)};
+	return Dr * Gr * owl::abs(cos_theta(H)) / (4.0f * owl::abs(cos_theta(V)));
 }
 
 

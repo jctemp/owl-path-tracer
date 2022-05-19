@@ -55,14 +55,14 @@ __both__ vec3 sample_cosine_hemisphere(vec2 const& rand)
 {
     // 1. sample unit circle and save position into rand.u, rand.v
     vec2 circle_points{sample_concentric_disk(rand)};
-    // 2. calculate cosTheta => 1 = rand.u^2 + rand.v^2 => cos = 1 - (rand.u^2 + rand.v^2)
+    // 2. calculate cos_theta => 1 = rand.u^2 + rand.v^2 => cos = 1 - (rand.u^2 + rand.v^2)
     float cos_theta{ owl::sqrt(owl::max(0.0f, 1.0f - sqr(circle_points.x) - sqr(circle_points.y))) };
     return vec3{ circle_points.x, circle_points.y, cos_theta };
 }
 
 __both__ float pdf_cosine_hemisphere(vec3 const& w_o, vec3 const& w_i)
 {
-    return absCosTheta(w_i) * inv_pi;
+    return owl::abs(cos_theta(w_i)) * inv_pi;
 }
 
 __both__ vec3 sample_uniform_hemisphere(vec2 const& rand)
