@@ -25,13 +25,12 @@ SET(FILES
         "src/device/device.hpp"
 
         "src/device/Math.hpp"
-        "src/device/Sampling.hpp"
         "src/device/materials/Lambert.hpp"
         "src/device/materials/Disney.hpp"
         "src/device/materials/BrdfUtils.hpp"
 
         "src/shared/shared.hpp"
-        src/device/path_tracer.hpp)
+        src/device/path_tracer.hpp src/sample_methods.hpp)
 
 
 SET(INCLUDE_DIRS "include" "src")

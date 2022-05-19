@@ -2,7 +2,7 @@
 #define DISNEY_BRDF_HPP
 #pragma once
 
-#include "../Sampling.hpp"
+#include "../../sample_methods.hpp"
 #include "BrdfUtils.hpp"
 #include "../../types.hpp"
 

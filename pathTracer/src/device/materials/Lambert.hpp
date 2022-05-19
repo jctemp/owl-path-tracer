@@ -3,7 +3,7 @@
 #pragma once
 
 #include "types.hpp"
-#include "../Sampling.hpp"
+#include "../../sample_methods.hpp"
 
 __device__ vec3 fLambert(material_data const& mat, vec3 const& V, vec3 const& L)
 {
