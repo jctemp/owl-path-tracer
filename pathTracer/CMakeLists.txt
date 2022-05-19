@@ -12,6 +12,8 @@ SET(FILES
         "src/camera.hpp"
         "src/camera.cpp"
 
+        src/sample_methods.hpp
+
         # SRC/UTILS
 
         "src/utils/image_buffer.hpp"
@@ -30,7 +32,7 @@ SET(FILES
         "src/device/materials/BrdfUtils.hpp"
 
         "src/shared/shared.hpp"
-        src/device/path_tracer.hpp src/sample_methods.hpp)
+        src/device/path_tracer.hpp )
 
 
 SET(INCLUDE_DIRS "include" "src")
