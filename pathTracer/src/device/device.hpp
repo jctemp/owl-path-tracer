@@ -6,22 +6,6 @@
 #include "camera.hpp"
 #include "random.hpp"
 
-#define GET(RETURN, TYPE, BUFFER, ADDRESS)\
-{\
-if (BUFFER.data == nullptr) {\
-	::printf("Device Error (%d, %s): buffer was nullptr.\n", __LINE__, __FILE__); asm("trap;");}\
-if (ADDRESS >= BUFFER.count) {\
-	::printf("Device Error (%d): out of bounds access (address: %d, size %d).\n",\
-	__LINE__, ADDRESS, uint32_t(BUFFER.count)); asm("trap;");} \
-RETURN = ((TYPE*)BUFFER.data)[ADDRESS];\
-}
-
-#define ASSERT(check, msg) \
-if (check) {::printf("Device Error (%d, %s): %s\n", __LINE__, __FILE__, msg); asm("trap;"); }
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-
 struct material_data
 {
     enum class type

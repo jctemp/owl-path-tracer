@@ -8,6 +8,8 @@
 
 #include "owl/include/owl/owl_device.h"
 
+#include "macros.hpp"
+
 using namespace owl;
 
 extern __constant__ launch_params_data optixLaunchParams;
@@ -78,7 +80,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
         {
             // TODO: SAMPLE MESH LIGHTx
             light_data light{};
-            GET(light, light_data, LP.light_buffer, is.lightId);
+            get_data(light, LP.light_buffer, is.lightId, light_data);
             vec3 emission{ light.color * light.intensity };
             L += emission * beta;
             break;
@@ -91,7 +93,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
 
         {
             material_data material{};
-            if (is.matId >= 0) GET(material, material_data, LP.material_buffer, is.matId);
+            if (is.matId >= 0) get_data(material, LP.material_buffer, is.matId, material_data);
 
 
             float pdf{ 0.0f };
@@ -123,8 +125,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
             float q{ max(.05f, 1 - betaMax) };
             if (prd.random() < q) break;
             beta /= 1 - q;
-
-            ASSERT(isinf(beta.y), "Russian Roulette caused beta to have inf. component");
+            assert_condition(isinf(beta.y), "Russian Roulette caused beta to have inf. component");
         }
 
         ray = owl::Ray{ P,L,t_min, t_max };

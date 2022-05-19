@@ -8,11 +8,12 @@ SET(FILES
         "src/owl.hpp"
         "src/types.hpp"
         "src/random.hpp"
+        "src/macros.hpp"
+        "src/sample_methods.hpp"
 
         "src/camera.hpp"
         "src/camera.cpp"
 
-        src/sample_methods.hpp
 
         # SRC/UTILS
 
