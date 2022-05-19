@@ -2,8 +2,8 @@
 #ifndef PATH_TRACER_OWL_HPP
 #define PATH_TRACER_OWL_HPP
 
-#include <types.hpp>
 #include <owl/owl.h>
+#include "types.hpp"
 
 using context = OWLContext;
 using module = OWLModule;

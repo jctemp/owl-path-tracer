@@ -32,7 +32,7 @@ SET(FILES
         "src/device/materials/Disney.hpp"
         "src/device/materials/BrdfUtils.hpp"
 
-        src/device/path_tracer.hpp )
+        src/device/path_tracer.hpp src/device/device_global.hpp)
 
 
 SET(INCLUDE_DIRS "include" "src")

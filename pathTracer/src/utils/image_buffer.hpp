@@ -2,9 +2,8 @@
 #ifndef PATH_TRACER_IMAGE_BUFFER_HPP
 #define PATH_TRACER_IMAGE_BUFFER_HPP
 
-#include "types.hpp"
-
 #include <string>
+#include "types.hpp"
 
 struct image_buffer
 {

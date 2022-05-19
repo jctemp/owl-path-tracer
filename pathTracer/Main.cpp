@@ -1,14 +1,12 @@
 ﻿
-#include <device/device.hpp>
-
+#include "utils/image_buffer.hpp"
+#include "utils/mesh_loader.hpp"
+#include "owl.hpp"
 #include "camera.hpp"
-#include <utils/image_buffer.hpp>
-#include <utils/mesh_loader.hpp>
+#include "device/device_global.hpp"
 
 #include <fmt/core.h>
 #include <fmt/color.h>
-
-#include <owl.hpp>
 
 using namespace owl;
 

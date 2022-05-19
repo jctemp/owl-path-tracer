@@ -1,6 +1,5 @@
 #ifndef PATH_TRACER_CAMERA_HPP
 #define PATH_TRACER_CAMERA_HPP
-#pragma once
 
 #include "types.hpp"
 
