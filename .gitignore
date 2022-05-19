@@ -7,7 +7,7 @@ Folder.DotSettings.user
 *.png
 .idea
 .vscode
-cmake-build-debug-visual-studio
+cmake-build-*-visual-studio
 
 # User-specific files
 *.rsuser

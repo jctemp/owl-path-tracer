@@ -9,11 +9,11 @@ TARGET_SOURCES(lib${PROJECT_NAME} PRIVATE
         "src/types.hpp"
         "src/random.hpp"
         "src/macros.hpp"
+        "settings.hpp"
         "src/sample_methods.hpp"
 
         "src/camera.hpp"
         "src/camera.cpp"
-
 
         # SRC/UTILS
 
@@ -48,7 +48,7 @@ EMBED_PTX(
         SOURCES "src/device/device.cu"
 )
 
-ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp")
+ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp" )
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
         lib${PROJECT_NAME}
         device-ptx)
