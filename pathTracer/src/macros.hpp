@@ -13,5 +13,8 @@
 #define assert_condition(check, msg) \
 	if (check) {::printf("Device Error (%d, %s): %s\n", __LINE__, __FILE__, msg); asm("trap;"); }
 
+#define all_zero(vec) \
+    (vec.x == 0.0f && vec.y == 0.0f && vec.z == 0.0f)
+
 #endif //PATH_TRACER_MACROS_HPP
 
