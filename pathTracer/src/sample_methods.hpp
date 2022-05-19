@@ -29,7 +29,7 @@ __device__ vec2 sample_concentric_disk(const vec2& rand)
 
     // handle mapping unit square to unit disk
     float phi, r;
-    if (std::abs(dx) > std::abs(dy))
+    if (owl::abs(dx) > owl::abs(dy))
     {
         r = dx;
         phi = pi_over_four * (dy / dx);
@@ -45,7 +45,7 @@ __device__ vec2 sample_concentric_disk(const vec2& rand)
 __device__ vec3 sample_uniform_sphere(const vec2& rand)
 {
     float z{ 1.0f - 2.0f * rand.x };
-    float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
+    float r{ owl::sqrt(owl::max(0.0f, 1.0f - z * z)) };
     float phi{ two_pi * rand.y };
     float x = r * owl::cos(phi);
     float y = r * owl::sin(phi);
@@ -69,7 +69,7 @@ __device__ float pdf_cosine_hemisphere(vec3 const& w_o, vec3 const& w_i)
 __device__ vec3 sample_uniform_hemisphere(vec2 const& rand)
 {
     float z{ rand.x };
-    float r{ sqrtf(fmaxf(0.0f, 1.0f - z * z)) };
+    float r{ owl::sqrt(owl::max(0.0f, 1.0f - z * z)) };
     float phi = two_pi * rand.y;
     float x = r * owl::cos(phi);
     float y = r * owl::sin(phi);
