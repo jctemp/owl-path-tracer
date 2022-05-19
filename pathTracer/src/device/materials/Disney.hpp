@@ -31,16 +31,14 @@ __device__ vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 con
 
 __device__ float pdfDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	float pdf{ 0.0f };
-	pdfCosineHemisphere(V, L, pdf);
-	return pdf;
+	return pdf_cosine_hemisphere(V, L);
 }
 
 
 __device__ void sampleDisneyDiffuse(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
-	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
+    L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneyDiffuse(mat, V, L);
 	bsdf = fDisneyDiffuse(mat, V, L) * absCosTheta(L);
 }
@@ -77,16 +75,14 @@ __device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, v
 
 __device__ float pdfDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	float pdf{ 0.0f };
-	pdfCosineHemisphere(V, L, pdf);
-	return pdf;
+	return pdf_cosine_hemisphere(V, L);
 }
 
 
 __device__ void sampleDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
-	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
+    L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneyFakeSubsurface(mat, V, L);
 	bsdf = fDisneyFakeSubsurface(mat, V, L) * absCosTheta(L);
 }
@@ -118,16 +114,14 @@ __device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const
 
 __device__ float pdfDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	float pdf{ 0.0f };
-	pdfCosineHemisphere(V, L, pdf);
-	return pdf;
+	return pdf_cosine_hemisphere(V, L);
 }
 
 
 __device__ void sampleDisneyRetro(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
-	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
+    L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneyRetro(mat, V, L);
 	bsdf = fDisneyRetro(mat, V, L) * absCosTheta(L);
 }
@@ -154,16 +148,14 @@ __device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const
 
 __device__ float pdfDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
 {
-	float pdf{ 0.0f };
-	pdfCosineHemisphere(V, L, pdf);
-	return pdf;
+	return pdf_cosine_hemisphere(V, L);
 }
 
 
 __device__ void sampleDisneySheen(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
-	sampleCosineHemisphere({ rand.random() ,rand.random() }, L);
+    L = sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfDisneySheen(mat, V, L);
 	bsdf = fDisneySheen(mat, V, L) * absCosTheta(L);
 }
@@ -448,8 +440,8 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
 
 		if (H.z < 0.0f) H = -H;
 
-		sampleCosineHemisphere({ rand.random(), rand.random() }, L);
-		pdfCosineHemisphere(V, L, pdf);
+        L = sample_cosine_hemisphere({rand.random(), rand.random()});
+        pdf = pdf_cosine_hemisphere(V, L);
 
 		auto diffuse = fDisneyDiffuse(mat, V, L);
 		auto ss = fDisneyFakeSubsurface(mat, V, L);

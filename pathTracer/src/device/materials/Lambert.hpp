@@ -15,14 +15,14 @@ __device__ float pdfLambert(material_data const& mat, vec3 const& V, vec3 const&
 {
 	if (!sameHemisphere(V, L)) return 0.0f;
 	float pdf{ 0.0f };
-	pdfCosineHemisphere(V, L, pdf);
+    pdf_cosine_hemisphere(V, L);
 	return pdf;
 }
 
 __device__ void sampleLambert(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
-	sampleCosineHemisphere({ rand.random() , rand.random()}, L);
+    sample_cosine_hemisphere({rand.random(), rand.random()});
 	pdf = pdfLambert(mat, V, L);
 	bsdf = fLambert(mat, V ,L);
 }

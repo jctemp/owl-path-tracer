@@ -6,6 +6,8 @@
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+inline __device__ float sqr(float v) { return v * v; }
+
 #pragma region UTILITY
 
 template<class T>
