@@ -255,6 +255,38 @@ sample_disney_microfacet(material_data const& m, vec3 const& wo, Random& rand, v
     pdf = pdf_disney_microfacet(m, wo, wi);
 }
 
+#ifdef TRANSMISSION
+__device__ vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat) {
+    auto cos_theta = owl::min(owl::dot(uv, n), 1.0f);
+    vec3 r_out_perp =  etai_over_etat * (-uv + cos_theta*n);
+    vec3 r_out_parallel = -sqrt(fabs(1.0f - owl::dot(r_out_perp,r_out_perp))) * -n;
+    return r_out_perp + r_out_parallel;
+}
+__device__ void sample_disney_transmission(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
+{
+    auto const eta = (cos_theta(wo) > 0) ? 1 / m.ior : m.ior;
+    auto const cos_theta_h = owl::min(cos_theta(wo), 1.0f);
+    auto const sin_theta_h = owl::sqrt(1 - sqr(cos_theta_h));
+
+    //auto const wh = to_sphere_coordinates(sin_theta_h, cos_theta_h, two_pi * rand());
+    auto const wh = sample_gtr2_vndf(wo, to_alpha(m.transmission_roughness), rand.random<vec2>());
+
+    auto const cannot_refract = (eta * sin_theta_h > 1.0f);
+    auto const fr = schlick_fresnel(cos_theta_h, eta);
+    if (cannot_refract || fr > rand()) {
+        // reflect
+        wi = reflect(wo, wh);
+        f = vec3{1.0f};
+        pdf = 1.0f;
+    } else {
+        // refract
+        wi = refract(wo, wh, eta);
+        f = vec3{1.0f};
+        pdf = 1.0f;
+    }
+}
+#endif
+
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //           disney'S PRINCIPLED BSDF
@@ -272,10 +304,11 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, Random& rand, vec3&
     pdf = 0.0f;
 
     auto const r1 = rand();
-    auto const specular_weight  {mat.metallic};
-    auto const diffuse_weight   {1 - mat.metallic};
+    auto const diffuse_weight   {1.0f - mat.metallic};
+    auto const specular_weight  {mat.metallic + (1.0f - mat.metallic)};
     auto const clearcoat_weight {1.0f * o_saturate(mat.clearcoat)};
-    auto const weighted_sum     {1.0f / (clearcoat_weight + diffuse_weight + specular_weight)};
+
+    auto const weighted_sum     {1.0f / (clearcoat_weight + diffuse_weight + specular_weight )};
 
     auto const p_specular  {specular_weight * weighted_sum};
     auto const p_diffuse   {diffuse_weight * weighted_sum};
@@ -306,7 +339,7 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, Random& rand, vec3&
         f *= owl::abs(cos_theta(wi));
     }
 
-        // specular reflective
+    // specular reflective
     else if (r1 < cdf[1])
     {
         auto const alpha{to_alpha(mat.roughness)};
@@ -319,11 +352,12 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, Random& rand, vec3&
         pdf = pdf_disney_microfacet(mat, wo, wi);
     }
 
-        // clearcoat
+    // clearcoat
     else
     {
         sample_disney_clearcoat(mat, wo, rand, wi, f, pdf);
     }
+
 
 }
 

@@ -304,20 +304,27 @@ int main()
     diseny_microfacet_rough.roughness = 1.0f;
     diseny_microfacet_rough.ior = 1.45f;
 
-    material_data diffuse_brdf{material_data::type::disney};
-    diffuse_bright.base_color = vec3{0.8f};
-    diffuse_bright.roughness = 0.5f;
-    diffuse_bright.metallic = 0.5f;
-    diffuse_bright.specular = 0.5f;
-    diffuse_bright.sheen = 0.5f;
-    diffuse_bright.clearcoat = 0.5f;
-    diffuse_bright.ior = 1.45f;
+    material_data diseny_brdf{material_data::type::disney};
+    diseny_brdf.base_color = vec3{0.8f};
+    diseny_brdf.roughness = 0.5f;
+    diseny_brdf.metallic = 0.5f;
+    diseny_brdf.specular = 0.5f;
+    diseny_brdf.sheen = 0.5f;
+    diseny_brdf.clearcoat = 0.5f;
+    diseny_brdf.ior = 1.45f;
 
+    material_data diseny_bsdf{material_data::type::disney};
+    diseny_bsdf.base_color = vec3{0.8f};
+    diseny_bsdf.metallic = 0.1f;
+    diseny_bsdf.roughness = 0.0f;
+    diseny_bsdf.specular = 1.0f;
+    diseny_bsdf.clearcoat = 0.5f;
+    diseny_bsdf.ior = 1.45f;
 /* LIGHTS */
     light_data simple_light{
             light_data::type::MESH,
             vec3{1.0f, 1.0f, 1.0f},
-            1.0f
+            10.0f
     };
 
     camera scene_camera_1{
@@ -356,7 +363,9 @@ int main()
             {"dragon", &scene_camera_2},
             {"mitsuba", &scene_camera_3},
             {"suzanne", &scene_camera_4},
-            {"three-sphere-test", &scene_camera_5}
+            {"three-sphere-test", &scene_camera_5}      ,
+            {"sphere-test", &scene_camera_3}
+
     };
 
 
@@ -373,7 +382,7 @@ int main()
             {"diseny_clearcoat_rough", diseny_clearcoat_rough},
             {"diseny_microfacet_glossy", diseny_microfacet_glossy},
             {"diseny_microfacet_rough", diseny_microfacet_rough},
-            {"diffuse_brdf",       diffuse_brdf}
+            {"diseny_brdf",       diseny_brdf}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},
@@ -448,7 +457,7 @@ int main()
     od.buffer_size = ivec2{1024};
     od.frame_buffer = create_pinned_host_buffer(
             od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
-    od.use_environment_map = true;
+    od.use_environment_map = false;
     od.max_samples = 1024;
     od.max_path_depth = 64;
 

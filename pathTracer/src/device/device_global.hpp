@@ -18,7 +18,8 @@ struct material_data
         disney_retro = 1 << 5,
         disney_sheen = 1 << 6,
         disney_clearcoat = 1 << 7,
-        disney_microfacet = 1 << 8
+        disney_microfacet = 1 << 8,
+        disney_transmission = 1 << 9
     };
 
     type type{ type::none };
@@ -35,6 +36,8 @@ struct material_data
     float clearcoat{ 0.0f };
     float clearcoat_gloss{0.03f };
     float ior{ 1.45f };
+    float transmission{ 0.0f };
+    float transmission_roughness{ 0.0f };
 };
 
 struct light_data
