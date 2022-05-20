@@ -96,11 +96,25 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
             material_data material{};
             if (is.matId >= 0) { get_data(material, LP.material_buffer, is.matId, material_data); }
 
-
             float pdf{ 0.0f };
             vec3 bsdf{ 0.0f };
 
-            sampleDisneyBSDF(material, V, L, prd.random, bsdf, pdf);
+            switch (material.type)
+            {
+                case material_data::type::disney:
+                    sampleDisneyBSDF(material, V, L, prd.random, bsdf, pdf);
+                    break;
+                case material_data::type::lambert:
+                    sample_lambert(material, V,  prd.random, L, bsdf, pdf);
+                    break;
+                case material_data::type::disney_diffuse:
+                    sample_disney_diffuse(material, V,  prd.random, L, bsdf, pdf);
+                    break;
+                case material_data::type::disney_subsurface:
+                    sample_disney_subsurface(material, V,  prd.random, L, bsdf, pdf);
+                    break;
+            }
+            
 
             // end path if impossible
             if (pdf <= 0.0f)

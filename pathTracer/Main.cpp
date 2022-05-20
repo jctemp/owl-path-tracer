@@ -4,7 +4,6 @@
 #include "owl.hpp"
 #include "camera.hpp"
 #include "device/device_global.hpp"
-#include "settings.hpp"
 
 #include <fmt/core.h>
 #include <fmt/color.h>
@@ -239,131 +238,43 @@ render(camera_data const& camera, std::vector<material_data> const& materials, s
 
 int main()
 {
-    // auto const prefix_path{ std::string{"../.."} };
-    auto const prefix_path{std::string{"../../../.."}};
+    auto const prefix_path{ std::string{"../.."} };
+    // auto const prefix_path{std::string{"../../../.."}};
 
 #pragma region data
 
     /* BSDF */
-    material_data diffuse_dark{material_data::type::disney,
-                               vec3{0.2f},
-                               0.0f,
-                               vec3{1.0f, 0.2f, 0.1f},
-                               vec3{0.8f, 0.8f, 0.8f},
-                               0.0f,
-                               0.0f,
-                               1.0f,
-                               0.5f,
-                               0.0f,
-                               1.0f,
-                               0.0f,
-                               0.03f,
-                               1.45f   };
+    material_data diffuse_dark{material_data::type::disney};
+    diffuse_dark.base_color = vec3{0.2f};
+    diffuse_dark.roughness = 0.0f;
+    diffuse_dark.subsurface = 0.0f;
+    diffuse_dark.metallic = 0.0f;
+    diffuse_dark.specular = 0.0f;
+    diffuse_dark.roughness = 0.5f;
+    diffuse_dark.sheen = 0.5f;
+    diffuse_dark.clearcoat = 0.0f;
+    diffuse_dark.ior = 1.45f;
 
-    material_data diffuse{material_data::type::disney,
-                          vec3{0.8f},
-                          0.0f,
-                          vec3{1.0f, 0.2f, 0.1f},
-                          vec3{0.8f, 0.8f, 0.8f},
-                          0.0f,
-                          0.0f,
-                          1.0f,
-                          0.5f,
-                          0.0f,
-                          1.0f,
-                          0.0f,
-                          0.03f,
-                          1.45f   };
+    material_data diffuse_bright{material_data::type::disney};
+    diffuse_bright.base_color = vec3{0.8f};
+    diffuse_bright.roughness = 0.0f;
+    diffuse_bright.subsurface = 0.0f;
+    diffuse_bright.metallic = 0.0f;
+    diffuse_bright.specular = 0.0f;
+    diffuse_bright.roughness = 0.5f;
+    diffuse_bright.sheen = 0.5f;
+    diffuse_bright.clearcoat = 0.0f;
+    diffuse_bright.ior = 1.45f;
 
-    material_data diffuse_with_sheen{material_data::type::disney,
-                                     vec3{0.8f},
-                                     0.0f,
-                                     vec3{1.0f, 0.2f, 0.1f},
-                                     vec3{0.8f, 0.8f, 0.8f},
-                                     0.0f,
-                                     0.0f,
-                                     1.0f,
-                                     0.5f,
-                                     0.8f,
-                                     1.0f,
-                                     0.0f,
-                                     0.03f,
-                                     1.45f   };
+    auto const base_color_example{vec3{0.93725f, 0.57647f, 0.41961f}};
 
-    material_data subsurface{material_data::type::disney,
-                             vec3{0.8f},
-                             0.8f,
-                             vec3{1.0f, 0.2f, 0.1f},
-                             vec3{0.8f, 0.8f, 0.8f},
-                             0.0f,
-                             0.0f,
-                             1.0f,
-                             0.5f,
-                             0.0f,
-                             1.0f,
-                             0.0f,
-                             0.03f,
-                             1.45f   };
+    material_data disney_diffuse{material_data::type::disney_diffuse};
+    disney_diffuse.base_color = base_color_example;
+    disney_diffuse.ior = 1.45f;
 
-    material_data metal{material_data::type::disney,
-                        vec3{0.8f},
-                        0.0f,
-                        vec3{1.0f, 0.2f, 0.1f},
-                        vec3{0.8f, 0.8f, 0.8f},
-                        0.8f,
-                        0.0f,
-                        1.0f,
-                        0.0f,
-                        0.0f,
-                        1.0f,
-                        0.0f,
-                        0.03f,
-                        1.45f };
-
-    material_data rough_metal{material_data::type::disney,
-                              vec3{0.8f},
-                              0.0f,
-                              vec3{1.0f, 0.2f, 0.1f},
-                              vec3{0.8f, 0.8f, 0.8f},
-                              0.8f,
-                              0.0f,
-                              1.0f,
-                              0.8f,
-                              0.0f,
-                              1.0f,
-                              0.0f,
-                              0.03f,
-                              1.45f};
-
-    material_data clearcoat{material_data::type::disney,
-                          vec3{0.8f},
-                          0.0f,
-                          vec3{1.0f, 0.2f, 0.1f},
-                          vec3{0.8f, 0.8f, 0.8f},
-                          0.0f,
-                          0.0f,
-                          1.0f,
-                          0.0f,
-                          0.0f,
-                          1.0f,
-                          1.0f,
-                          0.0f,
-                          1.45f};
-
-    material_data rough_clearcoat{material_data::type::disney,
-                                vec3{0.8f},
-                                0.0f,
-                                vec3{1.0f, 0.2f, 0.1f},
-                                vec3{0.8f, 0.8f, 0.8f},
-                                0.0f,
-                                0.0f,
-                                1.0f,
-                                0.0f,
-                                0.0f,
-                                1.0f,
-                                1.0f,
-                                1.0f,
-                                1.45f};
+    material_data disney_subsurface{material_data::type::disney_subsurface};
+    disney_subsurface.subsurface_color = base_color_example;
+    disney_subsurface.ior = 1.45f;
 
 /* LIGHTS */
     light_data simple_light{
@@ -416,13 +327,9 @@ int main()
 
     std::vector<std::tuple<std::string, material_data>> mats{
             {"diffuse_dark",       diffuse_dark},
-            {"diffuse",            diffuse},
-            {"diffuse_with_sheen", diffuse_with_sheen},
-            {"subsurface",         subsurface},
-            {"metal",              metal},
-            {"rough_metal",        rough_metal},
-            {"clearcoat",          clearcoat},
-            {"rough_clearcoat",    rough_clearcoat}
+            {"diffuse_bright",     diffuse_bright},
+            {"disney_diffuse",     disney_diffuse},
+            {"disney_subsurface",  disney_subsurface}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},

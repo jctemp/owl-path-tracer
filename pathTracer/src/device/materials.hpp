@@ -10,11 +10,6 @@
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
 // https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf
 
-inline __both__ vec3 wh_flip(vec3 const& wo, vec3 const& wh)
-{
-    return same_hemisphere(wo, wh) ? wh : -wh;
-}
-
 __device__ vec3 f_lambert(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return m.base_color * inv_pi;
@@ -32,6 +27,7 @@ __device__ void sample_lambert(material_data const& m, vec3 const& wo, Random& r
     f = f_lambert(m, wo, wi);
 }
 
+
 __device__ vec3 f_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     // Burley 2015, eq (4).
@@ -44,58 +40,53 @@ __device__ vec3 f_disney_diffuse(material_data const& m, vec3 const& wo, vec3 co
     return m.base_color * inv_pi * (1.0f - fresnel_wi / 2.0f) * (1.0f - fresnel_wo / 2.0f);
 }
 
-
 __device__ float pdf_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-
-__device__ void
-sample_disney_diffuse(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
+__device__ void sample_disney_diffuse(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.random(), rand.random()});
     pdf = pdf_disney_diffuse(m, wo, wi);
     f = f_disney_diffuse(m, wo, wi) * owl::abs(cos_theta(wi));
 }
 
-__device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
-// Hanrahan - Krueger BRDF approximation of the BSSRDF
+
+__device__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    vec3 H{L + V};
-    if (H.x == 0 && H.y == 0 && H.z == 0) return vec3{0.0f};
+    auto wh{wi + wo};
+    if (all_zero(wh)) return vec3{0.0f};
+    wh = owl::normalize(wh);
 
-    H = normalize(H);
-    float cosThetaD{dot(L, H)};
-    float NdotV{owl::abs(cos_theta(V))};
-    float NdotL{owl::abs(cos_theta(L))};
-
-    // Fss90 used to "flatten" retroreflection based on roughness
-    float Fss90{cosThetaD * cosThetaD * mat.roughness};
-    float FL{schlick_fresnel(NdotL, mat.ior)};
-    float FV{schlick_fresnel(NdotV, mat.ior)};
-    float Fss{lerp(1.0f, Fss90, FL) * lerp(1.0f, Fss90, FV)};
-
+    // Hanrahan - Krueger BRDF approximation of the BSSRDF
+    // fss90 used to "flatten" retro-reflection based on roughness
     // 1.25 scale is used to (roughly) preserve albedo
-    float Fs{1.25f * (Fss * (1.0f / (NdotV + NdotL) - 0.5f) + 0.5f)};
 
-    return mat.subsurface_color * inv_pi * Fs;
+    auto const cos_theta_d{owl::dot(wi, wh)};
+    auto const n_dot_wo{owl::abs(cos_theta(wo))};
+    auto const n_dot_wi{owl::abs(cos_theta(wi))};
+    auto const fresnel_wo{schlick_fresnel(n_dot_wo, m.ior)};
+    auto const fresnel_wi{schlick_fresnel(n_dot_wi, m.ior)};
+    auto const fss90{sqr(cos_theta_d) * m.roughness};
+    auto const fss{lerp(1.0f, fss90, fresnel_wo) * lerp(1.0f, fss90, fresnel_wi)};
+    auto const fs{1.25f * (fss * (1.0f / (n_dot_wo + n_dot_wi) - 0.5f) + 0.5f)};
+
+    return m.subsurface_color * inv_pi * fs;
 }
 
-
-__device__ float pdfDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdf_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    return pdf_cosine_hemisphere(V, L);
+    return pdf_cosine_hemisphere(wo, wi);
 }
 
-
-__device__ void sampleDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3& L,
-                                           Random& rand, vec3& bsdf, float& pdf)
+__device__ void sample_disney_subsurface(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
-    L = sample_cosine_hemisphere({rand.random(), rand.random()});
-    pdf = pdfDisneyFakeSubsurface(mat, V, L);
-    bsdf = fDisneyFakeSubsurface(mat, V, L) * owl::abs(cos_theta(L));
+    wi = sample_cosine_hemisphere({rand.random(), rand.random()});
+    pdf = pdf_disney_subsurface(m, wo, wi);
+    f = f_disney_subsurface(m, wo, wi) * owl::abs(cos_theta(wi));
 }
+
 
 __device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
 {
@@ -314,7 +305,7 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
         pdf = pdf_cosine_hemisphere(V, L);
 
         auto diffuse = f_disney_diffuse(mat, V, L);
-        auto ss = fDisneyFakeSubsurface(mat, V, L);
+        auto ss = f_disney_subsurface(mat, V, L);
         auto retro = fDisneyRetro(mat, V, L);
         auto sheen = fDisneySheen(mat, V, L);
 

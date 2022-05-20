@@ -12,7 +12,13 @@ struct material_data
     {
         none = 0 << 0,
         lambert = 1 << 1,
-        disney = 1 << 2
+        disney = 1 << 2,
+        disney_diffuse = 1 << 3,
+        disney_subsurface = 1 << 4,
+        disney_retro = 1 << 5,
+        disney_sheen = 1 << 6,
+        disney_clearcoat = 1 << 7,
+        disney_microfacet = 1 << 8
     };
 
     type type{ type::none };
