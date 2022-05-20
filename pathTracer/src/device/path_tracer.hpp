@@ -116,8 +116,11 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
                 case material_data::type::disney_retro:
                     sample_disney_retro(material, V,  prd.random, L, bsdf, pdf);
                     break;
+                case material_data::type::disney_sheen:
+                    sample_disney_sheen(material, V,  prd.random, L, bsdf, pdf);
+                    break;
             }
-            
+
 
             // end path if impossible
             if (pdf <= 0.0f)

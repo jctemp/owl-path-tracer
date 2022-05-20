@@ -119,33 +119,32 @@ __device__ void sample_disney_retro(material_data const& m, vec3 const& wo, Rand
 }
 
 
-__device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 f_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    vec3 H{L + V};
-    if (H.x == 0 && H.y == 0 && H.z == 0) return vec3{0.0f};
-    if (mat.sheen <= 0.0f) return vec3{0.0f};
+    if (m.sheen <= 0.0f) return vec3{0.0f};
 
-    H = normalize(H);
-    float cosThetaD{dot(L, H)};
+    auto wh{wi + wo};
+    if (all_zero(wh)) return vec3{0.0f};
+    wh = owl::normalize(wh);
 
-    vec3 tint{calculate_tint(mat.base_color)};
-    return mat.sheen * lerp(vec3{1.0f}, tint, vec3{mat.sheen_tint}) * schlick_fresnel(cosThetaD, mat.ior);
+    auto const cos_theta_d{owl::dot(wi, wh)};
+    auto const tint{calculate_tint(m.base_color)};
+
+    return m.sheen * lerp(vec3{1.0f}, tint, vec3{m.sheen_tint}) * schlick_fresnel(cos_theta_d, m.ior);
 }
 
-
-__device__ float pdfDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdf_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    return pdf_cosine_hemisphere(V, L);
+    return pdf_cosine_hemisphere(wo, wi);
 }
 
-
-__device__ void sampleDisneySheen(material_data const& mat, vec3 const& V, vec3& L,
-                                  Random& rand, vec3& bsdf, float& pdf)
+__device__ void sample_disney_sheen(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
-    L = sample_cosine_hemisphere({rand.random(), rand.random()});
-    pdf = pdfDisneySheen(mat, V, L);
-    bsdf = fDisneySheen(mat, V, L) * owl::abs(cos_theta(L));
+    wi = sample_cosine_hemisphere({rand.random(), rand.random()});
+    pdf = pdf_disney_sheen(m, wo, wi);
+    f = f_disney_sheen(m, wo, wi) * owl::abs(cos_theta(wi));
 }
+
 
 __device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
 {
@@ -305,7 +304,7 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
         auto diffuse = f_disney_diffuse(mat, V, L);
         auto ss = f_disney_subsurface(mat, V, L);
         auto retro = f_disney_retro(mat, V, L);
-        auto sheen = fDisneySheen(mat, V, L);
+        auto sheen = f_disney_sheen(mat, V, L);
 
         auto diffuseWeight = 1 - mat.subsurface;
         auto ssWeight = mat.subsurface;

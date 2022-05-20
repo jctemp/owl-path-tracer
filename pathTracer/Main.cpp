@@ -281,6 +281,11 @@ int main()
     diseny_retro.roughness = 0.5f;
     diseny_retro.ior = 1.45f;
 
+    material_data diseny_sheen{material_data::type::disney_sheen};
+    diseny_sheen.base_color = base_color_example;
+    diseny_sheen.ior = 1.45f;
+    diseny_sheen.sheen = 0.3f;
+
 
 /* LIGHTS */
     light_data simple_light{
@@ -336,7 +341,8 @@ int main()
             {"diffuse_bright",     diffuse_bright},
             {"disney_diffuse",     disney_diffuse},
             {"disney_subsurface",  disney_subsurface},
-            {"diseny_retro",       diseny_retro}
+            {"diseny_retro",       diseny_retro},
+            {"diseny_sheen",       diseny_sheen}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},
@@ -436,7 +442,4 @@ int main()
     image_buffer result{od.buffer_size.x, od.buffer_size.y,
                         (uint32_t*) buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced};
     write_image(result, fmt::format("{}/{}.png", prefix_path, filename));
-
-
-    optix_destroy();
 }

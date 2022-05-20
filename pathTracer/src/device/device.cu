@@ -32,6 +32,8 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 	color = owl::sqrt(color);
 	color = o_saturate(color);
 
+    assert_condition(isinf(color.x) || isinf(color.y) || isinf(color.z), "inf detected\n")
+    assert_condition(isnan(color.x) || isnan(color.y) || isnan(color.z), "nan detected\n")
 
 	// save result into the buffer
 	const int fbOfs = pixelId.x + self.fbSize.x * (self.fbSize.y - 1 - pixelId.y);
