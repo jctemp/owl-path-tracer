@@ -266,7 +266,7 @@ int main()
     diffuse_bright.clearcoat = 0.0f;
     diffuse_bright.ior = 1.45f;
 
-    auto const base_color_example{vec3{0.93725f, 0.57647f, 0.41961f}};
+    auto const base_color_example{vec3{0.8f}};
 
     material_data disney_diffuse{material_data::type::disney_diffuse};
     disney_diffuse.base_color = base_color_example;
@@ -275,6 +275,12 @@ int main()
     material_data disney_subsurface{material_data::type::disney_subsurface};
     disney_subsurface.subsurface_color = base_color_example;
     disney_subsurface.ior = 1.45f;
+
+    material_data diseny_retro{material_data::type::disney_retro};
+    diseny_retro.base_color = base_color_example;
+    diseny_retro.roughness = 0.5f;
+    diseny_retro.ior = 1.45f;
+
 
 /* LIGHTS */
     light_data simple_light{
@@ -329,7 +335,8 @@ int main()
             {"diffuse_dark",       diffuse_dark},
             {"diffuse_bright",     diffuse_bright},
             {"disney_diffuse",     disney_diffuse},
-            {"disney_subsurface",  disney_subsurface}
+            {"disney_subsurface",  disney_subsurface},
+            {"diseny_retro",       diseny_retro}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},

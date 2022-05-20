@@ -88,38 +88,36 @@ __device__ void sample_disney_subsurface(material_data const& m, vec3 const& wo,
 }
 
 
-__device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 f_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    vec3 H{L + V};
-    if (H.x == 0 && H.y == 0 && H.z == 0) return vec3{0.0f};
-
-    H = normalize(H);
-    float cosThetaD{dot(L, H)};
-    float NdotV{owl::abs(cos_theta(V))};
-    float NdotL{owl::abs(cos_theta(L))};
-
-    float FL{schlick_fresnel(NdotL, mat.ior)};
-    float FV{schlick_fresnel(NdotV, mat.ior)};
-    float Rr{2 * mat.roughness * cosThetaD * cosThetaD};
+    auto wh{wi + wo};
+    if (all_zero(wh)) return vec3{0.0f};
+    wh = owl::normalize(wh);
 
     // Burley 2015, eq (4).
-    return mat.base_color * inv_pi * Rr * (FL + FV + FL * FV * (Rr - 1));
+
+    auto const cos_theta_d{owl::dot(wi, wh)};
+    auto const n_dot_wo{owl::abs(cos_theta(wo))};
+    auto const n_dot_wi{owl::abs(cos_theta(wi))};
+    auto const fresnel_wo{schlick_fresnel(n_dot_wo, m.ior)};
+    auto const fresnel_wi{schlick_fresnel(n_dot_wi, m.ior)};
+    auto const rr{2 * m.roughness * sqr(cos_theta_d)};
+
+    return m.base_color * inv_pi * rr * (fresnel_wo + fresnel_wi + fresnel_wo * fresnel_wi * (rr - 1));
 }
 
-
-__device__ float pdfDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdf_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    return pdf_cosine_hemisphere(V, L);
+    return pdf_cosine_hemisphere(wo, wi);
 }
 
-
-__device__ void sampleDisneyRetro(material_data const& mat, vec3 const& V, vec3& L,
-                                  Random& rand, vec3& bsdf, float& pdf)
+__device__ void sample_disney_retro(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
-    L = sample_cosine_hemisphere({rand.random(), rand.random()});
-    pdf = pdfDisneyRetro(mat, V, L);
-    bsdf = fDisneyRetro(mat, V, L) * owl::abs(cos_theta(L));
+    wi = sample_cosine_hemisphere(rand.random<vec2>());
+    pdf = pdf_disney_retro(m, wo, wi);
+    f = f_disney_retro(m, wo, wi) * owl::abs(cos_theta(wi));
 }
+
 
 __device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
 {
@@ -306,7 +304,7 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
 
         auto diffuse = f_disney_diffuse(mat, V, L);
         auto ss = f_disney_subsurface(mat, V, L);
-        auto retro = fDisneyRetro(mat, V, L);
+        auto retro = f_disney_retro(mat, V, L);
         auto sheen = fDisneySheen(mat, V, L);
 
         auto diffuseWeight = 1 - mat.subsurface;

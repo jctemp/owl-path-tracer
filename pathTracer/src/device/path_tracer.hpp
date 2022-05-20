@@ -113,6 +113,9 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
                 case material_data::type::disney_subsurface:
                     sample_disney_subsurface(material, V,  prd.random, L, bsdf, pdf);
                     break;
+                case material_data::type::disney_retro:
+                    sample_disney_retro(material, V,  prd.random, L, bsdf, pdf);
+                    break;
             }
             
 
