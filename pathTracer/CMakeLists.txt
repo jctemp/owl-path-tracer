@@ -1,15 +1,12 @@
-ADD_LIBRARY(lib${PROJECT_NAME})
 
-TARGET_SOURCES(lib${PROJECT_NAME} PRIVATE
-
-        "disney.hpp"
+ADD_LIBRARY(lib${PROJECT_NAME}
 
         # SRC
         "src/owl.hpp"
+        "src/math.hpp"
         "src/types.hpp"
         "src/random.hpp"
         "src/macros.hpp"
-        "settings.hpp"
         "src/sample_methods.hpp"
 
         "src/camera.hpp"
@@ -27,12 +24,11 @@ TARGET_SOURCES(lib${PROJECT_NAME} PRIVATE
 
         "src/device/device.hpp"
 
-        "src/math.hpp"
-        "src/device/materials/Lambert.hpp"
         "src/device/materials.hpp"
         "src/device/bsdf_utils.hpp"
 
-        src/device/path_tracer.hpp src/device/device_global.hpp )
+        "src/device/path_tracer.hpp" 
+        "src/device/device_global.hpp")
 
 TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC
         owl::owl

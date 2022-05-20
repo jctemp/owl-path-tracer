@@ -239,20 +239,190 @@ render(camera_data const& camera, std::vector<material_data> const& materials, s
 
 int main()
 {
-    auto const prefix_path{std::string{"../.."}};
+    // auto const prefix_path{ std::string{"../.."} };
+    auto const prefix_path{std::string{"../../../.."}};
 
-    prepare();
+#pragma region data
+
+    /* BSDF */
+    material_data diffuse_dark{material_data::type::disney,
+                               vec3{0.2f},
+                               0.0f,
+                               vec3{1.0f, 0.2f, 0.1f},
+                               vec3{0.8f, 0.8f, 0.8f},
+                               0.0f,
+                               0.0f,
+                               1.0f,
+                               0.5f,
+                               0.0f,
+                               1.0f,
+                               0.0f,
+                               0.03f,
+                               1.45f   };
+
+    material_data diffuse{material_data::type::disney,
+                          vec3{0.8f},
+                          0.0f,
+                          vec3{1.0f, 0.2f, 0.1f},
+                          vec3{0.8f, 0.8f, 0.8f},
+                          0.0f,
+                          0.0f,
+                          1.0f,
+                          0.5f,
+                          0.0f,
+                          1.0f,
+                          0.0f,
+                          0.03f,
+                          1.45f   };
+
+    material_data diffuse_with_sheen{material_data::type::disney,
+                                     vec3{0.8f},
+                                     0.0f,
+                                     vec3{1.0f, 0.2f, 0.1f},
+                                     vec3{0.8f, 0.8f, 0.8f},
+                                     0.0f,
+                                     0.0f,
+                                     1.0f,
+                                     0.5f,
+                                     0.8f,
+                                     1.0f,
+                                     0.0f,
+                                     0.03f,
+                                     1.45f   };
+
+    material_data subsurface{material_data::type::disney,
+                             vec3{0.8f},
+                             0.8f,
+                             vec3{1.0f, 0.2f, 0.1f},
+                             vec3{0.8f, 0.8f, 0.8f},
+                             0.0f,
+                             0.0f,
+                             1.0f,
+                             0.5f,
+                             0.0f,
+                             1.0f,
+                             0.0f,
+                             0.03f,
+                             1.45f   };
+
+    material_data metal{material_data::type::disney,
+                        vec3{0.8f},
+                        0.0f,
+                        vec3{1.0f, 0.2f, 0.1f},
+                        vec3{0.8f, 0.8f, 0.8f},
+                        0.8f,
+                        0.0f,
+                        1.0f,
+                        0.0f,
+                        0.0f,
+                        1.0f,
+                        0.0f,
+                        0.03f,
+                        1.45f };
+
+    material_data rough_metal{material_data::type::disney,
+                              vec3{0.8f},
+                              0.0f,
+                              vec3{1.0f, 0.2f, 0.1f},
+                              vec3{0.8f, 0.8f, 0.8f},
+                              0.8f,
+                              0.0f,
+                              1.0f,
+                              0.8f,
+                              0.0f,
+                              1.0f,
+                              0.0f,
+                              0.03f,
+                              1.45f};
+
+    material_data clearcoat{material_data::type::disney,
+                          vec3{0.8f},
+                          0.0f,
+                          vec3{1.0f, 0.2f, 0.1f},
+                          vec3{0.8f, 0.8f, 0.8f},
+                          0.0f,
+                          0.0f,
+                          1.0f,
+                          0.0f,
+                          0.0f,
+                          1.0f,
+                          1.0f,
+                          0.0f,
+                          1.45f};
+
+    material_data rough_clearcoat{material_data::type::disney,
+                                vec3{0.8f},
+                                0.0f,
+                                vec3{1.0f, 0.2f, 0.1f},
+                                vec3{0.8f, 0.8f, 0.8f},
+                                0.0f,
+                                0.0f,
+                                1.0f,
+                                0.0f,
+                                0.0f,
+                                1.0f,
+                                1.0f,
+                                1.0f,
+                                1.45f};
+
+/* LIGHTS */
+    light_data simple_light{
+            light_data::type::MESH,
+            vec3{1.0f, 1.0f, 1.0f},
+            1.0f
+    };
+
+    camera scene_camera_1{
+            vec3{3.3f, 1.0f, 0.0f},
+            vec3{0.0f, 1.0f, 0.0f},
+            vec3{0.0f, 1.0f, 0.0f},
+            45.0f
+    };
+    camera scene_camera_2{
+            vec3{2.0f, 1.2f, 0.0f},
+            vec3{0.0f, 0.5f, 0.0f},
+            vec3{0.0f, 1.0f, 0.0f},
+            50.0f
+    };
+    camera scene_camera_3{
+            vec3{5.0f, 3.0f, 0.0f},
+            vec3{  0.0f, 0.75f, 0.0f},
+            vec3{  0.0f, 1.0f, 0.0f},
+            30.0f
+    };
+    camera scene_camera_4{
+            vec3{5.0f, 3.0f, 0.0f},
+            vec3{  0.0f, 0.75f, 0.0f},
+            vec3{  0.0f, 1.0f, 0.0f},
+            30.0f
+    };
+    camera scene_camera_5{
+            vec3{5.0f, 3.0f, 0.0f},
+            vec3{  0.0f, 0.75f, 0.0f},
+            vec3{  0.0f, 1.0f, 0.0f},
+            30.0f
+    };
+
+    std::vector<std::tuple<std::string, camera*>> scene_meta{
+            {"cornell-box-w-boxes", &scene_camera_1},
+            {"dragon", &scene_camera_2},
+            {"mitsuba", &scene_camera_3},
+            {"suzanne", &scene_camera_4},
+            {"three-sphere-test", &scene_camera_5}
+    };
+
+
+#pragma endregion
 
     std::vector<std::tuple<std::string, material_data>> mats{
             {"diffuse_dark",       diffuse_dark},
             {"diffuse",            diffuse},
             {"diffuse_with_sheen", diffuse_with_sheen},
             {"subsurface",         subsurface},
-            {"glossy",             glossy},
             {"metal",              metal},
             {"rough_metal",        rough_metal},
-            {"plastic",            plastic},
-            {"rough_plastic",      rough_plastic},
+            {"clearcoat",          clearcoat},
+            {"rough_clearcoat",    rough_clearcoat}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},
@@ -284,82 +454,75 @@ int main()
     auto const meshes{
             load_obj(fmt::format("{}/{}{}{}", prefix_path, "scenes/", scene_name, ".obj"))};
 
-    while (true)
+    std::string filename;
+    fmt::print(fg(color::log), "ENTER IMAGE NAME: ");
+    std::getline(std::cin, filename);
+
+    fmt::print(fg(color::log), "> MATERIALS\n");
+    for (uint32_t i{0}; i < mats.size(); i++)
+        fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
+
+    for (auto& [name, mesh]: meshes)
     {
-        std::string filename;
-        fmt::print(fg(color::log), "ENTER IMAGE NAME: ");
-        std::getline(std::cin, filename);
-
-        if (filename.empty())
-        {
-            break;
-        }
-
-        fmt::print(fg(color::log), "> MATERIALS\n");
-        for (uint32_t i{0}; i < mats.size(); i++)
-            fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
-
-        for (auto& [name, mesh]: meshes)
-        {
-            fmt::print("{}", name);
-            std::string in;
-            std::getline(std::cin, in);
-            if (!in.empty())
-                entities.push_back({std::stoi(in)});
-        }
-
-
-        fmt::print(fg(color::log), "> LIGHTS\n");
-        for (uint32_t i{0}; i < li.size(); i++)
-            fmt::print("{} [{}]\n", std::get<std::string>(li[i]), i);
-
-
-        for (auto& [name, mesh]: meshes)
-        {
-            fmt::print("{}", name);
-            std::string in;
-            std::getline(std::cin, in);
-            if (!in.empty())
-                entities[entities.size() - 1].lightId = std::stoi(in);
-        }
-
-        optix_init();
-        optix_ray_gen_program();
-        optix_miss_program();
-        optix_launch_params();
-        optix_triangle_geom();
-
-        /* SCENE SELECT */
-
-        od.buffer_size = ivec2{1024};
-        od.frame_buffer = create_pinned_host_buffer(
-                od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
-        od.use_environment_map = true;
-        od.max_samples = 256;
-        od.max_path_depth = 64;
-
-        /* RENDER */
-        uint64_t i{0};
-        for (auto& [n, m]: meshes)
-            add(m.get(), entities[i++]);
-
-        std::vector<material_data> materials{};
-        for (auto& e: mats)
-            materials.push_back(std::get<material_data>(e));
-
-        std::vector<light_data> lights{};
-        for (auto& e: li)
-            lights.push_back(std::get<light_data>(e));
-
-
-        render(to_camera_data(cam, od.buffer_size), materials, lights);
-
-        // copy image buffer
-
-        image_buffer result{od.buffer_size.x, od.buffer_size.y,
-                            (uint32_t*) buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced};
-        write_image(result, fmt::format("{}/{}.png", prefix_path, filename));
+        fmt::print("{}", name);
+        std::string in;
+        std::getline(std::cin, in);
+        if (!in.empty())
+            entities.push_back({std::stoi(in)});
     }
+
+
+    fmt::print(fg(color::log), "> LIGHTS\n");
+    for (uint32_t i{0}; i < li.size(); i++)
+        fmt::print("{} [{}]\n", std::get<std::string>(li[i]), i);
+
+
+    for (auto& [name, mesh]: meshes)
+    {
+        fmt::print("{}", name);
+        std::string in;
+        std::getline(std::cin, in);
+        if (!in.empty())
+            entities[entities.size() - 1].lightId = std::stoi(in);
+    }
+
+    optix_init();
+    optix_ray_gen_program();
+    optix_miss_program();
+    optix_launch_params();
+    optix_triangle_geom();
+
+    /* SCENE SELECT */
+
+    od.buffer_size = ivec2{1024};
+    od.frame_buffer = create_pinned_host_buffer(
+            od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
+    od.use_environment_map = true;
+    od.max_samples = 1024;
+    od.max_path_depth = 64;
+
+    /* RENDER */
+    uint64_t i{0};
+    for (auto& [n, m]: meshes)
+        add(m.get(), entities[i++]);
+
+    std::vector<material_data> materials{};
+    for (auto& e: mats)
+        materials.push_back(std::get<material_data>(e));
+
+    std::vector<light_data> lights{};
+    for (auto& e: li)
+        lights.push_back(std::get<light_data>(e));
+
+
+    render(to_camera_data(cam, od.buffer_size), materials, lights);
+
+    // copy image buffer
+
+    image_buffer result{od.buffer_size.x, od.buffer_size.y,
+                        (uint32_t*) buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced};
+    write_image(result, fmt::format("{}/{}.png", prefix_path, filename));
+
 
     optix_destroy();
 }
