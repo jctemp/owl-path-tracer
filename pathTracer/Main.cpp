@@ -324,7 +324,7 @@ int main()
     light_data simple_light{
             light_data::type::MESH,
             vec3{1.0f, 1.0f, 1.0f},
-            10.0f
+            10.f
     };
 
     camera scene_camera_1{
@@ -437,13 +437,14 @@ int main()
         fmt::print("{} [{}]\n", std::get<std::string>(li[i]), i);
 
 
+    auto count{0};
     for (auto& [name, mesh]: meshes)
     {
         fmt::print("{}", name);
         std::string in;
         std::getline(std::cin, in);
         if (!in.empty())
-            entities[entities.size() - 1].lightId = std::stoi(in);
+            entities[count++].lightId = std::stoi(in);
     }
 
     optix_init();
