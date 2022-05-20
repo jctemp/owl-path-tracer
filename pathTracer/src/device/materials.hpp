@@ -159,9 +159,8 @@ __device__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 
     auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
     auto const dr{d_gtr1(owl::abs(cos_theta(wh)), alpha_g)};
     auto const fr{lerp(.04f, 1.0f, schlick_fresnel(owl::abs(cos_theta(wh)), 1.5f))};
-
-    // TODO: CHECK THIS
-    auto const gr{g_smith(owl::abs(cos_theta(wo)), .25f) * g_smith(owl::abs(cos_theta(wi)), .25f)};
+    auto const gr{g_smith(owl::abs(tan_theta(wo)), .25f) *
+                  g_smith(owl::abs(tan_theta(wi)), .25f)};
 
     return m.clearcoat * gr * fr * dr / (4.0f * owl::abs(cos_theta(wh)));
 }
