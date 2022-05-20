@@ -11,8 +11,8 @@ struct material_data
     enum class type
     {
         none = 0 << 0,
-        lambert = 1 << 0,
-        disney = 1 << 0
+        lambert = 1 << 1,
+        disney = 1 << 2
     };
 
     type type{ type::none };

@@ -49,7 +49,7 @@ inline __both__ float d_gtr1(const float& cos_theta, const float&  alpha)
 {
 	if (alpha >= 1.0f) return inv_pi;
 	auto const alpha2{ sqr(alpha) };
-	auto const t{ 1.0f + (alpha2 - 1.0f) * sqr(cos_theta) };
+	auto const t{ 1.0f + (alpha2 - 1.0f) * sqr(owl::abs(cos_theta)) };
 	return (alpha2 - 1.0f) / (pi * logf(alpha2) * t);
 }
 
