@@ -294,6 +294,15 @@ int main()
     diseny_clearcoat_rough.clearcoat = 1.0f;
     diseny_clearcoat_rough.clearcoat_gloss = 0.0f;
 
+    material_data diseny_microfacet_glossy{material_data::type::disney_microfacet};
+    diseny_microfacet_glossy.base_color = base_color_example;
+    diseny_microfacet_glossy.roughness = 0.0f;
+    diseny_microfacet_glossy.ior = 1.45f;
+
+    material_data diseny_microfacet_rough{material_data::type::disney_microfacet};
+    diseny_microfacet_rough.base_color = base_color_example;
+    diseny_microfacet_rough.roughness = 1.0f;
+    diseny_microfacet_rough.ior = 1.45f;
 
 /* LIGHTS */
     light_data simple_light{
@@ -352,7 +361,9 @@ int main()
             {"diseny_retro",       diseny_retro},
             {"diseny_sheen",       diseny_sheen},
             {"diseny_clearcoat_glossy", diseny_clearcoat_glossy},
-            {"diseny_clearcoat_rough", diseny_clearcoat_rough}
+            {"diseny_clearcoat_rough", diseny_clearcoat_rough},
+            {"diseny_microfacet_glossy", diseny_microfacet_glossy},
+            {"diseny_microfacet_rough", diseny_microfacet_rough}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},
@@ -452,4 +463,6 @@ int main()
     image_buffer result{od.buffer_size.x, od.buffer_size.y,
                         (uint32_t*) buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced};
     write_image(result, fmt::format("{}/{}.png", prefix_path, filename));
+
+    optix_destroy();
 }

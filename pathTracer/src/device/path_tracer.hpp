@@ -122,6 +122,9 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
                 case material_data::type::disney_clearcoat:
                     sample_disney_clearcoat(material, V, prd.random, L, bsdf, pdf);
                     break;
+                case material_data::type::disney_microfacet:
+                    sample_disney_microfacet(material, V, prd.random, L, bsdf, pdf);
+                    break;
             }
 
 

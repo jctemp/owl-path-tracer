@@ -45,7 +45,8 @@ __device__ float pdf_disney_diffuse(material_data const& m, vec3 const& wo, vec3
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__device__ void sample_disney_diffuse(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
+__device__ void
+sample_disney_diffuse(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.random(), rand.random()});
     pdf = pdf_disney_diffuse(m, wo, wi);
@@ -80,7 +81,8 @@ __device__ float pdf_disney_subsurface(material_data const& m, vec3 const& wo, v
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__device__ void sample_disney_subsurface(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
+__device__ void
+sample_disney_subsurface(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.random(), rand.random()});
     pdf = pdf_disney_subsurface(m, wo, wi);
@@ -181,7 +183,8 @@ __device__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, ve
     return dr * owl::abs(cos_theta(wh)) / (4.0f * owl::abs(cos_theta(wo)));
 }
 
-__device__ void sample_disney_clearcoat(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
+__device__ void
+sample_disney_clearcoat(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
     // there is no visible normal sampling for BRDF because the Clearcoat has no
     // physical meaning
@@ -208,51 +211,50 @@ __device__ void sample_disney_clearcoat(material_data const& m, vec3 const& wo, 
 }
 
 
-__device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 f_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    if (!same_hemisphere(V, L)) return vec3{0.0f};
-    float NdotV{owl::abs(cos_theta(V))};
-    if (NdotV == 0) return vec3{0.0f};
+    if (owl::abs(cos_theta(wo)) == 0) return vec3{0.0f};
 
-    vec3 H{normalize(V + L)};
+    auto wh{wi + wo};
+    if (all_zero(wh)) return vec3{0.0f};
+    wh = owl::normalize(wh);
 
-    float alpha{to_alpha(mat.roughness)};
-    float Dr{d_gtr2(cos_theta(H), alpha)};
-    vec3 Fr{lerp(mat.base_color, 1.0f - mat.base_color, {schlick_fresnel(dot(H, V), mat.ior)})};
-    float Gr{g_smith(abs(tan_theta(V)), alpha) *
-             g_smith(abs(tan_theta(L)), alpha)};
+    auto const alpha{to_alpha(m.roughness)};
+    auto const dr{d_gtr2(cos_theta(wh), alpha)};
+    auto const fr{lerp(m.base_color, 1.0f - m.base_color, schlick_fresnel(dot(wh, wo), m.ior))};
+    auto const gr{g_smith(abs(tan_theta(wo)), alpha) *
+                  g_smith(abs(tan_theta(wi)), alpha)};
 
-    return Dr * Fr * Gr / (4.0f * owl::abs(cos_theta(L)));
+    return dr * fr * gr / (4.0f * owl::abs(cos_theta(wi)));
 }
 
-__device__ float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdf_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    if (!same_hemisphere(V, L)) return 0.0f;
+    auto wh{wi + wo};
+    if (all_zero(wh)) return 0.0f;
+    wh = owl::normalize(wh);
 
-    vec3 H{L + V};
-    if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
-    H = normalize(H);
-
-    float alpha{to_alpha(mat.roughness)};
-    return pdf_gtr2(V, H, alpha);
+    auto const alpha{to_alpha(m.roughness)};
+    return pdf_gtr2(wo, wh, alpha);
 }
 
-__device__ void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3& L,
-                                       Random& rand, vec3& bsdf, float& pdf)
+__device__ void
+sample_disney_microfacet(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
-    float alpha{to_alpha(mat.roughness)};
-    vec3 H{sample_gtr2_vndf(V, alpha, {rand.random(), rand.random()})};
+    auto const alpha{to_alpha(m.roughness)};
+    auto const wh{sample_gtr2_vndf(wo, alpha, rand.random<vec2>())};
 
-    L = reflect(V, H);
+    wi = reflect(wo, wh);
 
-    bsdf = vec3{0.0f};
+    f = vec3{0.0f};
     pdf = 0.0f;
 
-    if (!same_hemisphere(V, L)) return;
+    if (!same_hemisphere(wo, wi)) return;
 
-    bsdf = fDisneyMicrofacet(mat, V, L);
-    pdf = pdfDisneyMicrofacet(mat, V, L);
+    f = f_disney_microfacet(m, wo, wi);
+    pdf = pdf_disney_microfacet(m, wo, wi);
 }
+
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //           disney'S PRINCIPLED BSDF
@@ -321,8 +323,8 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
 
         if (!same_hemisphere(V, L)) return;
 
-        bsdf = fDisneyMicrofacet(mat, V, L);
-        pdf = pdfDisneyMicrofacet(mat, V, L);
+        bsdf = f_disney_microfacet(mat, V, L);
+        pdf = pdf_disney_microfacet(mat, V, L);
     }
 
         // clearcoat
