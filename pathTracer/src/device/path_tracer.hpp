@@ -141,9 +141,7 @@ __device__ vec3 tracePath(owl::Ray& ray, Random& random)
         float betaMax{ max(beta.x, max(beta.y, beta.z)) };
         if (depth > 3) {
             float q{ max(.05f, 1 - betaMax) };
-            if (prd.random() < q) break;
-            beta /= 1 - q;
-            assert_condition(isinf(beta.y), "Russian Roulette caused beta to have inf. component");
+            if (prd.random() > q) break;
         }
 
         ray = owl::Ray{ P,L,t_min, t_max };
