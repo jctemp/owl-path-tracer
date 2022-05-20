@@ -32,11 +32,6 @@ __device__ void sampleLambert(material_data const& mat, vec3 const& V, vec3& L,
     bsdf = fLambert(mat, V ,L);
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//           disney'S COMPONENTS
-
-#pragma region DIFFUSE
-
 __device__ vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	float NdotV{ owl::abs(cos_theta(V)) };
@@ -63,12 +58,6 @@ __device__ void sampleDisneyDiffuse(material_data const& mat, vec3 const& V, vec
 	pdf = pdfDisneyDiffuse(mat, V, L);
 	bsdf = fDisneyDiffuse(mat, V, L) * owl::abs(cos_theta(L));
 }
-
-#pragma endregion
-
-// ──────────────────────────────────────────────────────────────────────────────────────
-
-#pragma region "FAKE SUBSURFACE"
 
 __device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, vec3 const& L)
 // Hanrahan - Krueger BRDF approximation of the BSSRDF
@@ -108,12 +97,6 @@ __device__ void sampleDisneyFakeSubsurface(material_data const& mat, vec3 const&
 	bsdf = fDisneyFakeSubsurface(mat, V, L) * owl::abs(cos_theta(L));
 }
 
-#pragma endregion
-
-// ──────────────────────────────────────────────────────────────────────────────────────
-
-#pragma region RETRO
-
 __device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	vec3 H{ L + V };
@@ -147,12 +130,6 @@ __device__ void sampleDisneyRetro(material_data const& mat, vec3 const& V, vec3&
 	bsdf = fDisneyRetro(mat, V, L) * owl::abs(cos_theta(L));
 }
 
-#pragma endregion
-
-// ──────────────────────────────────────────────────────────────────────────────────────
-
-#pragma region SHEEN
-
 __device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	vec3 H{ L + V };
@@ -180,12 +157,6 @@ __device__ void sampleDisneySheen(material_data const& mat, vec3 const& V, vec3&
 	pdf = pdfDisneySheen(mat, V, L);
 	bsdf = fDisneySheen(mat, V, L) * owl::abs(cos_theta(L));
 }
-
-#pragma endregion
-
-// ──────────────────────────────────────────────────────────────────────────────────────
-
-#pragma region CLEARCOAT
 
 __device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
 {
@@ -251,12 +222,6 @@ __device__ void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, v
 	bsdf = fDisneyClearcoat(mat, V, L);
 }
 
-#pragma endregion
-
-// ──────────────────────────────────────────────────────────────────────────────────────
-
-#pragma region MICROFACETS
-
 __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
 	if (!same_hemisphere(V, L)) return vec3{0.0f };
@@ -304,122 +269,6 @@ __device__ void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, 
 	bsdf = fDisneyMicrofacet(mat, V, L);
 	pdf = pdfDisneyMicrofacet(mat, V, L);
 }
-
-#pragma endregion
-
-// ──────────────────────────────────────────────────────────────────────────────────────
-#ifdef TRANSMISSION_MATERIAL
-
-#pragma region TRANSMISSION
-
-__device__ vec3 fDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3 const& L)
-{
-	float ior = mat.ior;
-	bool entering = cosTheta(L) > 0;
-	float etaI = entering ? ior : 1;
-	float etaT = entering ? 1 : ior;
-	float eta = etaI / etaT;
-
-	float alpha{ roughnessToAlpha(mat.roughness) };
-
-	// Microfacet models for refraction eq. (16)
-	vec3 H{ L + V * eta };
-	if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
-	H = normalize(H);
-
-	if (H.z < 0) H = -H;
-
-	float Dr{ gtr2(cosTheta(H), alpha) };
-
-	return Dr * mat.transmission * (1.0f - mat.metallic);
-}
-
-
-__device__ float pdfDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3 const& L)
-{
-	float ior = mat.ior;
-	bool entering = cosTheta(L) > 0;
-	float etaI = entering ? ior : 1;
-	float etaT = entering ? 1 : ior;
-	float eta = etaI / etaT;
-
-	// Microfacet models for refraction eq. (16)
-	vec3 H{ L + V * eta };
-	if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
-	H = normalize(H);
-
-	float alpha{ roughnessToAlpha(mat.roughness) };
-	float costhetaH = owl::abs(cos_theta(H);
-	float D = gtr2(costhetaH, alpha);
-	return D;
-}
-
-/*if (mat.transmission > 0.0f)
-//{
-//	return;
-//	float ior = mat.ior;
-//	bool entering = cosTheta(L) > 0;
-//	float etaI = entering ? ior : 1;
-//	float etaT = entering ? 1 : ior;
-//	Float3 N{ cosTheta(V) > 0 ? Float3{ 0,0,1 } : Float3{ 0, 0, -1 } };
-//	bool refracted = refract(V, N, etaI / etaT, L);
-//	float fresnel = 1 - dielectricFresnel(owl::abs(cos_theta(L), etaI / etaT);
-//	if (!refracted || rand.random() > fresnel)
-//	{
-//		L = reflect(V, N);
-//		return;
-//	}
-//	bsdf = Float3{ 1.0f };
-//	pdf = 1;
-//	return;
-//}*/
-
-__device__ void sampleDisneyMicrofacetTransmission(MaterialStruct const& mat, vec3 const& V, vec3& L,
-	Random& rand, vec3& bsdf, float& pdf)
-{
-	if (mat.roughness < .2f) // check smoothness
-	{
-		float ior = mat.ior;
-		bool entering = cosTheta(L) > 0;
-		float etaI = entering ? ior : 1;
-		float etaT = entering ? 1 : ior;
-
-		// Sample perfectly specular dielectric BSDF
-		float R{ schlickFresnel(cosTheta(V), etaI / etaT) };
-
-		vec3 N{ cos_theta(V) > 0 ? vec3{0,0,1} : vec3{0,0,-1} };
-		bsdf = vec3{ 0.0f };
-		pdf = 0.0f;
-
-		 //reflection => NO IDEA WHY THIS WORKS
-		if (rand.random() < R * rand.random())
-		{
-			L = reflect(V, N);
-			bsdf = vec3{ 1.0f };
-			pdf = 1.0f;
-			return;
-		}
-
-		// refraction
-		bool refracted = refract(V, N, etaI / etaT, L);
-		if (!refracted) return;
-
-
-		bsdf = vec3{ 1.0f };
-		pdf = 1.0f;
-
-		return;
-	}
-
-	bsdf = vec3{ 0.0f };
-	pdf = 0.0f;
-
-}
-
-// ──────────────────────────────────────────────────────────────────────────────────────
-#pragma endregion
-
-#endif // TRANSMISSION_MATERIAL
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //           disney'S PRINCIPLED BSDF
