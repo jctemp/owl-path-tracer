@@ -286,6 +286,14 @@ int main()
     diseny_sheen.ior = 1.45f;
     diseny_sheen.sheen = 0.3f;
 
+    material_data diseny_clearcoat_glossy{material_data::type::disney_clearcoat};
+    diseny_clearcoat_glossy.clearcoat = 1.0f;
+    diseny_clearcoat_glossy.clearcoat_gloss = 1.0f;
+
+    material_data diseny_clearcoat_rough{material_data::type::disney_clearcoat};
+    diseny_clearcoat_rough.clearcoat = 1.0f;
+    diseny_clearcoat_rough.clearcoat_gloss = 0.0f;
+
 
 /* LIGHTS */
     light_data simple_light{
@@ -342,7 +350,9 @@ int main()
             {"disney_diffuse",     disney_diffuse},
             {"disney_subsurface",  disney_subsurface},
             {"diseny_retro",       diseny_retro},
-            {"diseny_sheen",       diseny_sheen}
+            {"diseny_sheen",       diseny_sheen},
+            {"diseny_clearcoat_glossy", diseny_clearcoat_glossy},
+            {"diseny_clearcoat_rough", diseny_clearcoat_rough}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},

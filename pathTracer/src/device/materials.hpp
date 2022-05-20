@@ -146,69 +146,68 @@ __device__ void sample_disney_sheen(material_data const& m, vec3 const& wo, Rand
 }
 
 
-__device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    vec3 H{L + V};
-    if (H.x == 0 && H.y == 0 && H.z == 0) return vec3{0.0f};
-    H = normalize(H);
+    auto wh{wi + wo};
+    if (all_zero(wh)) return vec3{0.0f};
+    wh = owl::normalize(wh);
 
     // Clearcoat has ior = 1.5 hardcoded -> F0 = 0.04. It then uses the
     // GTR1 distribution, which has even fatter tails than Trowbridge-Reitz
     // (which is GTR2). The geometric term always based on alpha = 0.25
-    // - pbrt book v3
-    float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f};
-    float Dr{d_gtr1(owl::abs(cos_theta(H)), alphaG)};
-    float F{schlick_fresnel(owl::abs(cos_theta(H)), 1.5f)};
-    float Fr{lerp(.04f, 1.0f, F)};
-    float Gr{g_smith(owl::abs(cos_theta(V)), .25f) * g_smith(owl::abs(cos_theta(L)), .25f)};
 
-    return mat.clearcoat * Gr * Fr * Dr / (4.0f * owl::abs(cos_theta(H)));
+    auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
+    auto const dr{d_gtr1(owl::abs(cos_theta(wh)), alpha_g)};
+    auto const fr{lerp(.04f, 1.0f, schlick_fresnel(owl::abs(cos_theta(wh)), 1.5f))};
+
+    // TODO: CHECK THIS
+    auto const gr{g_smith(owl::abs(cos_theta(wo)), .25f) * g_smith(owl::abs(cos_theta(wi)), .25f)};
+
+    return m.clearcoat * gr * fr * dr / (4.0f * owl::abs(cos_theta(wh)));
 }
 
-
-__device__ float pdfDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 const& L)
+__device__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    vec3 H{L + V};
-    if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
-    H = normalize(H);
+    auto wh{wi + wo};
+    if (all_zero(wh)) return 0.0f;
+    wh = owl::normalize(wh);
 
-    // The sampling routine samples H exactly from the GTR1 distribution.
+    // The sampling routine samples wh exactly from the GTR1 distribution.
     // Thus, the final value of the PDF is just the value of the
-    // distribution for H converted to a measure with respect to the
+    // distribution for wh converted to a measure with respect to the
     // surface normal.
-    // - pbrt book v3
-    float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f};
-    float Dr{d_gtr1(owl::abs(cos_theta(H)), alphaG)};
-    return Dr * owl::abs(cos_theta(H)) / (4.0f * owl::abs(cos_theta(V)));
+
+    auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
+    auto const dr{d_gtr1(owl::abs(cos_theta(wh)), alpha_g)};
+    return dr * owl::abs(cos_theta(wh)) / (4.0f * owl::abs(cos_theta(wo)));
 }
 
-
-__device__ void sampleDisneyClearcoat(material_data const& mat, vec3 const& V, vec3& L,
-                                      Random& rand, vec3& bsdf, float& pdf)
-// there is no visible normal sampling for BRDF because the Clearcoat has no
-// physical meaning
-// Apply importance sampling to D * dot(N * H) / (4 * dot(H, V)) by choosing normal
-// proportional to D and reflect it at H
+__device__ void sample_disney_clearcoat(material_data const& m, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
-    float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f};
-    float alpha2{alphaG * alphaG};
-    float cosTheta{sqrtf(fmax(0.0f, (1 - powf(alpha2, 1 - rand.random())) / (1 - alpha2)))};
-    float sinTheta{sqrtf(fmax(0.0f, 1 - cosTheta * cosTheta))};
-    float phi{two_pi * rand.random()};
+    // there is no visible normal sampling for BRDF because the Clearcoat has no
+    // physical meaning
+    // Apply importance sampling to D * dot(N * H) / (4 * dot(H, V)) by choosing normal
+    // proportional to D and reflect it at H
 
-    vec3 H{to_sphere_coordinates(sinTheta, cosTheta, phi)};
+    auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
+    auto const alpha2{sqr(alpha_g)};
+    auto const cos_theta{owl::sqrt(owl::max(0.0f, (1 - powf(alpha2, 1 - rand())) / (1 - alpha2)))};
+    auto const sin_theta{owl::sqrt(owl::max(0.0f, 1 - sqr(cos_theta)))};
+    auto const phi{two_pi * rand()};
 
-    if (!same_hemisphere(V, H)) H = -H;
+    auto wh{to_sphere_coordinates(sin_theta, cos_theta, phi)};
+    if (!same_hemisphere(wo, wh)) wh = -wh;
 
-    bsdf = vec3{0.0f};
+    f = vec3{0.0f};
     pdf = 0.0f;
 
-    L = reflect(V, H);
-    if (!same_hemisphere(V, L)) return;
+    wi = reflect(wo, wh);
+    if (!same_hemisphere(wo, wi)) return;
 
-    pdf = pdfDisneyClearcoat(mat, V, L);
-    bsdf = fDisneyClearcoat(mat, V, L);
+    pdf = pdf_disney_clearcoat(m, wo, wi);
+    f = f_disney_clearcoat(m, wo, wi);
 }
+
 
 __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
@@ -227,7 +226,6 @@ __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 
     return Dr * Fr * Gr / (4.0f * owl::abs(cos_theta(L)));
 }
 
-
 __device__ float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 const& L)
 {
     if (!same_hemisphere(V, L)) return 0.0f;
@@ -239,7 +237,6 @@ __device__ float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, ve
     float alpha{to_alpha(mat.roughness)};
     return pdf_gtr2(V, H, alpha);
 }
-
 
 __device__ void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3& L,
                                        Random& rand, vec3& bsdf, float& pdf)
@@ -332,7 +329,7 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
         // clearcoat
     else
     {
-        sampleDisneyClearcoat(mat, V, L, rand, bsdf, pdf);
+        sample_disney_clearcoat(mat, V, rand, L, bsdf, pdf);
     }
 
 }
