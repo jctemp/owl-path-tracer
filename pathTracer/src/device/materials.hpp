@@ -10,6 +10,11 @@
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
 // https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf
 
+inline __both__ vec3 wh_flip(vec3 const& wo, vec3 const& wh)
+{
+    return same_hemisphere(wo, wh) ? wh : -wh;
+}
+
 __device__ vec3 fLambert(material_data const& mat, vec3 const& V, vec3 const& L)
 {
     if (!same_hemisphere(V, L)) return vec3{0.0f };
@@ -37,8 +42,8 @@ __device__ vec3 fDisneyDiffuse(material_data const& mat, vec3 const& V, vec3 con
 	float NdotV{ owl::abs(cos_theta(V)) };
 	float NdotL{ owl::abs(cos_theta(L)) };
 
-	float FL{ schlickFresnel(NdotL, mat.ior) };
-	float FV{ schlickFresnel(NdotV, mat.ior) };
+	float FL{schlick_fresnel(NdotL, mat.ior) };
+	float FV{schlick_fresnel(NdotV, mat.ior) };
 
 	// Burley 2015, eq (4).
 	return mat.base_color * inv_pi * (1.0f - FL / 2.0f) * (1.0f - FV / 2.0f);
@@ -72,8 +77,8 @@ __device__ vec3 fDisneyFakeSubsurface(material_data const& mat, vec3 const& V, v
 
 	// Fss90 used to "flatten" retroreflection based on roughness
 	float Fss90{ cosThetaD * cosThetaD * mat.roughness };
-	float FL{ schlickFresnel(NdotL, mat.ior) };
-	float FV{ schlickFresnel(NdotV, mat.ior) };
+	float FL{schlick_fresnel(NdotL, mat.ior) };
+	float FV{schlick_fresnel(NdotV, mat.ior) };
 	float Fss{ lerp(1.0f, Fss90, FL) * lerp(1.0f, Fss90, FV) };
 
 	// 1.25 scale is used to (roughly) preserve albedo
@@ -107,8 +112,8 @@ __device__ vec3 fDisneyRetro(material_data const& mat, vec3 const& V, vec3 const
 	float NdotV{ owl::abs(cos_theta(V)) };
 	float NdotL{ owl::abs(cos_theta(L)) };
 
-	float FL{ schlickFresnel(NdotL, mat.ior) };
-	float FV{ schlickFresnel(NdotV, mat.ior) };
+	float FL{schlick_fresnel(NdotL, mat.ior) };
+	float FV{schlick_fresnel(NdotV, mat.ior) };
 	float Rr{ 2 * mat.roughness * cosThetaD * cosThetaD };
 
 	// Burley 2015, eq (4).
@@ -139,8 +144,8 @@ __device__ vec3 fDisneySheen(material_data const& mat, vec3 const& V, vec3 const
 	H = normalize(H);
 	float cosThetaD{ dot(L, H) };
 
-	vec3 tint{ calculateTint(mat.base_color) };
-	return mat.sheen * lerp(vec3{ 1.0f }, tint, vec3{ mat.sheen_tint }) * schlickFresnel(cosThetaD, mat.ior);
+	vec3 tint{calculate_tint(mat.base_color) };
+	return mat.sheen * lerp(vec3{ 1.0f }, tint, vec3{ mat.sheen_tint }) * schlick_fresnel(cosThetaD, mat.ior);
 }
 
 
@@ -169,10 +174,10 @@ __device__ vec3 fDisneyClearcoat(material_data const& mat, vec3 const& V, vec3 c
 	// (which is GTR2). The geometric term always based on alpha = 0.25
 	// - pbrt book v3
 	float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f };
-	float Dr{ gtr1(owl::abs(cos_theta(H)), alphaG) };
-	float F{ schlickFresnel(owl::abs(cos_theta(H)), 1.5f) };
+	float Dr{d_gtr1(owl::abs(cos_theta(H)), alphaG) };
+	float F{schlick_fresnel(owl::abs(cos_theta(H)), 1.5f) };
 	float Fr{ lerp(.04f, 1.0f, F) };
-	float Gr{ smithG(owl::abs(cos_theta(V)), .25f) * smithG(owl::abs(cos_theta(L)), .25f) };
+	float Gr{g_smith(owl::abs(cos_theta(V)), .25f) * g_smith(owl::abs(cos_theta(L)), .25f) };
 
 	return mat.clearcoat * Gr * Fr * Dr / (4.0f * owl::abs(cos_theta(H)));
 }
@@ -190,7 +195,7 @@ __device__ float pdfDisneyClearcoat(material_data const& mat, vec3 const& V, vec
 	// surface normal.
 	// - pbrt book v3
 	float alphaG{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f };
-	float Dr{ gtr1(owl::abs(cos_theta(H)), alphaG) };
+	float Dr{d_gtr1(owl::abs(cos_theta(H)), alphaG) };
 	return Dr * owl::abs(cos_theta(H)) / (4.0f * owl::abs(cos_theta(V)));
 }
 
@@ -230,11 +235,11 @@ __device__ vec3 fDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3 
 
 	vec3 H{ normalize(V + L) };
 
-	float alpha{ roughnessToAlpha(mat.roughness) };
-	float Dr{ gtr2(cos_theta(H), alpha) };
-	vec3 Fr{ lerp(mat.base_color, 1.0f - mat.base_color, {schlickFresnel(dot(H, V), mat.ior)}) };
-	float Gr{smithG(abs(tan_theta(V)), alpha) *
-             smithG(abs(tan_theta(L)), alpha) };
+	float alpha{to_alpha(mat.roughness) };
+	float Dr{d_gtr2(cos_theta(H), alpha) };
+	vec3 Fr{ lerp(mat.base_color, 1.0f - mat.base_color, {schlick_fresnel(dot(H, V), mat.ior)}) };
+	float Gr{g_smith(abs(tan_theta(V)), alpha) *
+             g_smith(abs(tan_theta(L)), alpha) };
 
 	return Dr * Fr * Gr / (4.0f * owl::abs(cos_theta(L)));
 }
@@ -248,16 +253,16 @@ __device__ float pdfDisneyMicrofacet(material_data const& mat, vec3 const& V, ve
 	if (H.x == 0 && H.y == 0 && H.z == 0) return 0.0f;
 	H = normalize(H);
 
-	float alpha{ roughnessToAlpha(mat.roughness) };
-	return pdfGtr2(V, H, alpha);
+	float alpha{to_alpha(mat.roughness) };
+	return pdf_gtr2(V, H, alpha);
 }
 
 
 __device__ void sampleDisneyMicrofacet(material_data const& mat, vec3 const& V, vec3& L,
 	Random& rand, vec3& bsdf, float& pdf)
 {
-	float alpha{ roughnessToAlpha(mat.roughness) };
-	vec3 H{ sampleGtr2VNDF(V, alpha, {rand.random(), rand.random()}) };
+	float alpha{to_alpha(mat.roughness) };
+	vec3 H{sample_gtr2_vndf(V, alpha, {rand.random(), rand.random()}) };
 
 	L = reflect(V, H);
 
@@ -330,8 +335,8 @@ __device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& 
 	// specular reflective
 	else if (r1 < cdf[1])
 	{
-		float alpha{ roughnessToAlpha(mat.roughness) };
-		vec3 H{ sampleGtr2VNDF(V, alpha, {rand.random(), rand.random()}) };
+		float alpha{to_alpha(mat.roughness) };
+		vec3 H{sample_gtr2_vndf(V, alpha, {rand.random(), rand.random()}) };
 
 		L = normalize(reflect(V, H));
 
