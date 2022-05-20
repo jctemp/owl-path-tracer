@@ -93,11 +93,11 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
     prd.is->N = normalize(n0 * b0 + n1 * b1 + n2 * b2);
 
     // scatter event type
-    prd.scatterEvent = ScatterEvent::BOUNCED;
+    prd.scatterEvent = scatter_event::BOUNCED;
 }
 
 OPTIX_MISS_PROGRAM(miss)()
 {
     per_ray_data& prd{ getPRD<per_ray_data>() };
-    prd.scatterEvent = ScatterEvent::MISS;
+    prd.scatterEvent = scatter_event::MISS;
 }

@@ -4,7 +4,7 @@
 #include "device_global.hpp"
 #include "random.hpp"
 
-enum class ScatterEvent
+enum class scatter_event
 {
 	BOUNCED = 1 << 0,
 	CANCELLED = 1 << 1,
@@ -12,7 +12,7 @@ enum class ScatterEvent
 	NONE = 1 << 3
 };
 
-struct InterfaceStruct
+struct interface_data
 {
 	/* triangle points */
 	vec3 TRI[3];
@@ -48,8 +48,8 @@ struct InterfaceStruct
 struct per_ray_data
 {
 	Random& random;
-	ScatterEvent scatterEvent;
-	InterfaceStruct* is;
+	scatter_event scatterEvent;
+	interface_data* is;
 	material_data* ms;
 };
 
