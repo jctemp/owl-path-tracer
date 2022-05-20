@@ -3,19 +3,54 @@
 #define PATH_TRACER_SETTINGS_HPP
 
 #include "device/device_global.hpp"
+#include <string>
+#include <vector>
+#include <tuple>
 
 /* BSDF */
-material_data diffuse{material_data::type::disney};
-material_data diffuse_with_sheen{material_data::type::disney};
-material_data subsurface{material_data::type::disney};
-material_data glossy{material_data::type::disney};
-material_data metal{material_data::type::disney};
-material_data rough_metal{material_data::type::disney};
-material_data plastic{material_data::type::disney};
-material_data rough_plastic{material_data::type::disney};
+static material_data diffuse_dark{material_data::type::disney};
+static material_data diffuse{material_data::type::disney};
+static material_data diffuse_with_sheen{material_data::type::disney};
+static material_data subsurface{material_data::type::disney};
+static material_data glossy{material_data::type::disney};
+static material_data metal{material_data::type::disney};
+static material_data rough_metal{material_data::type::disney};
+static material_data plastic{material_data::type::disney};
+static material_data rough_plastic{material_data::type::disney};
+
+/* LIGHTS */
+static light_data simple_light{};
+
+static camera scene_camera_1{};
+static camera scene_camera_2{};
+static camera scene_camera_3{};
+static camera scene_camera_4{};
+static camera scene_camera_5{};
+
+static std::vector<std::tuple<std::string, camera*>> scene_meta{
+    {"cornell-box-w-boxes", &scene_camera_1},
+    {"dragon", &scene_camera_2},
+    {"mitsuba", &scene_camera_3},
+    {"suzanne", &scene_camera_4},
+    {"three-sphere-test", &scene_camera_5}
+};
 
 void prepare()
 {
+    diffuse_dark.base_color = vec3{0.2f};
+    diffuse_dark.subsurface = 0.0f;
+    diffuse_dark.subsurface_radius = vec3{1.0f, 0.2f, 0.1f};
+    diffuse_dark.subsurface_color = vec3{0.8f, 0.8f, 0.8f};
+    diffuse_dark.metallic = 0.0f;
+    diffuse_dark.specular = 0.0f;
+    diffuse_dark.specular_tint = 1.0f;
+    diffuse_dark.roughness = 0.5f;
+    diffuse_dark.sheen = 0.0f;
+    diffuse_dark.sheen_tint = 1.0f;
+    diffuse_dark.clearcoat = 0.0f;
+    diffuse_dark.clearcoat_gloss = 0.03f;
+    diffuse_dark.ior = 1.45f;
+
     diffuse.base_color = vec3{0.8f};
     diffuse.subsurface = 0.0f;
     diffuse.subsurface_radius = vec3{1.0f, 0.2f, 0.1f};
@@ -127,6 +162,34 @@ void prepare()
     rough_plastic.clearcoat = 0.8f;
     rough_plastic.clearcoat_gloss = 0.03f;
     rough_plastic.ior = 1.45f;
+
+    simple_light.intensity = 10.0f;
+
+    scene_camera_1.look_from = vec3{3.3f, 1.0f, 0.0f};
+    scene_camera_1.look_at = vec3{0.0f, 1.0f, 0.0f};
+    scene_camera_1.look_up = vec3{0.0f, 1.0f, 0.0f};
+    scene_camera_1.vertical_fov = 45.0f;
+
+    scene_camera_2.look_from = vec3{2.0f, 1.2f, 0.0f};
+    scene_camera_2.look_at = vec3{0.0f, 0.5f, 0.0f};
+    scene_camera_2.look_up = vec3{0.0f, 1.0f, 0.0f};
+    scene_camera_2.vertical_fov = 50.0f;
+
+    scene_camera_3.look_from = vec3{5.0f, 3.0f, 0.0f};
+    scene_camera_3.look_at = vec3{  0.0f, 0.75f, 0.0f};
+    scene_camera_3.look_up = vec3{  0.0f, 1.0f, 0.0f};
+    scene_camera_3.vertical_fov = 30.0f;
+
+    scene_camera_4.look_from = vec3{5.0f, 3.0f, 0.0f};
+    scene_camera_4.look_at = vec3{  0.0f, 0.75f, 0.0f};
+    scene_camera_4.look_up = vec3{  0.0f, 1.0f, 0.0f};
+    scene_camera_4.vertical_fov = 30.0f;
+
+    scene_camera_5.look_from = vec3{5.0f, 3.0f, 0.0f};
+    scene_camera_5.look_at = vec3{  0.0f, 0.75f, 0.0f};
+    scene_camera_5.look_up = vec3{  0.0f, 1.0f, 0.0f};
+    scene_camera_5.vertical_fov = 30.0f;
+
 }
 
 #endif //PATH_TRACER_SETTINGS_HPP

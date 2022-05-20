@@ -5,10 +5,10 @@
 
 struct camera
 {
-    vec3 const look_from;
-    vec3 const look_at;
-    vec3 const look_up;
-    float const vertical_fov;
+    vec3 look_from;
+    vec3 look_at;
+    vec3 look_up;
+    float vertical_fov;
 };
 
 struct camera_data
