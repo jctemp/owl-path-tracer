@@ -265,72 +265,64 @@ sample_disney_microfacet(material_data const& m, vec3 const& wo, Random& rand, v
 //  + Subsurface
 //
 
-__device__ void sampleDisneyBSDF(material_data const& mat, vec3 const& V, vec3& L,
-                                 Random& rand, vec3& bsdf, float& pdf)
+__device__ void
+sample_disney_bsdf(material_data const& mat, vec3 const& wo, Random& rand, vec3& wi, vec3& f, float& pdf)
 {
-    bsdf = vec3{0.0f};
+    f = vec3{0.0f};
     pdf = 0.0f;
 
-    float r1 = rand.random(), r2 = rand.random();
+    auto const r1 = rand();
+    auto const specular_weight  {mat.metallic};
+    auto const diffuse_weight   {1 - mat.metallic};
+    auto const clearcoat_weight {1.0f * o_saturate(mat.clearcoat)};
+    auto const weighted_sum     {1.0f / (clearcoat_weight + diffuse_weight + specular_weight)};
 
-    float specularWeight = mat.metallic;
-    float diffuseWeight = 1 - mat.metallic;
-    float clearcoatWeight = 1.0f * o_saturate(mat.clearcoat);
-
-    float norm = 1.0f / (clearcoatWeight + diffuseWeight + specularWeight);
-
-    float pSpecular = specularWeight * norm;
-    float pDiffuse = diffuseWeight * norm;
-    float pClearcoat = clearcoatWeight * norm;
+    auto const p_specular  {specular_weight * weighted_sum};
+    auto const p_diffuse   {diffuse_weight * weighted_sum};
+    auto const p_clearcoat {clearcoat_weight * weighted_sum};
 
     float cdf[3]{};
-    cdf[0] = pDiffuse;
-    cdf[1] = pSpecular + cdf[0];
-    cdf[2] = pClearcoat + cdf[1];
-
+    cdf[0] = p_diffuse;
+    cdf[1] = p_specular + cdf[0];
+    cdf[2] = p_clearcoat + cdf[1];
 
     // diffuse
     if (r1 < cdf[0])
     {
-        vec3 H{normalize(L + V)};
+        wi = sample_cosine_hemisphere(rand.random<vec2>());
+        pdf = pdf_cosine_hemisphere(wo, wi);
 
-        if (H.z < 0.0f) H = -H;
+        auto const diffuse = f_disney_diffuse(mat, wo, wi);
+        auto const ss = f_disney_subsurface(mat, wo, wi);
+        auto const retro = f_disney_retro(mat, wo, wi);
+        auto const sheen = f_disney_sheen(mat, wo, wi);
 
-        L = sample_cosine_hemisphere({rand.random(), rand.random()});
-        pdf = pdf_cosine_hemisphere(V, L);
+        auto const fd_weight = 1 - mat.subsurface;
+        auto const fs_weight = mat.subsurface;
 
-        auto diffuse = f_disney_diffuse(mat, V, L);
-        auto ss = f_disney_subsurface(mat, V, L);
-        auto retro = f_disney_retro(mat, V, L);
-        auto sheen = f_disney_sheen(mat, V, L);
-
-        auto diffuseWeight = 1 - mat.subsurface;
-        auto ssWeight = mat.subsurface;
-
-        bsdf += (diffuse + retro) * diffuseWeight;
-        bsdf += ss * ssWeight;
-        bsdf += sheen;
-        bsdf *= owl::abs(cos_theta(L));
+        f += (diffuse + retro) * fd_weight;
+        f += ss * fs_weight;
+        f += sheen;
+        f *= owl::abs(cos_theta(wi));
     }
 
         // specular reflective
     else if (r1 < cdf[1])
     {
-        float alpha{to_alpha(mat.roughness)};
-        vec3 H{sample_gtr2_vndf(V, alpha, {rand.random(), rand.random()})};
+        auto const alpha{to_alpha(mat.roughness)};
+        auto const wh{sample_gtr2_vndf(wo, alpha, rand.random<vec2>())};
 
-        L = normalize(reflect(V, H));
+        wi = normalize(reflect(wo, wh));
+        if (!same_hemisphere(wo, wi)) return;
 
-        if (!same_hemisphere(V, L)) return;
-
-        bsdf = f_disney_microfacet(mat, V, L);
-        pdf = pdf_disney_microfacet(mat, V, L);
+        f = f_disney_microfacet(mat, wo, wi);
+        pdf = pdf_disney_microfacet(mat, wo, wi);
     }
 
         // clearcoat
     else
     {
-        sample_disney_clearcoat(mat, V, rand, L, bsdf, pdf);
+        sample_disney_clearcoat(mat, wo, rand, wi, f, pdf);
     }
 
 }

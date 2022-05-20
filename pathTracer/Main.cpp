@@ -304,6 +304,15 @@ int main()
     diseny_microfacet_rough.roughness = 1.0f;
     diseny_microfacet_rough.ior = 1.45f;
 
+    material_data diffuse_brdf{material_data::type::disney};
+    diffuse_bright.base_color = vec3{0.8f};
+    diffuse_bright.roughness = 0.5f;
+    diffuse_bright.metallic = 0.5f;
+    diffuse_bright.specular = 0.5f;
+    diffuse_bright.sheen = 0.5f;
+    diffuse_bright.clearcoat = 0.5f;
+    diffuse_bright.ior = 1.45f;
+
 /* LIGHTS */
     light_data simple_light{
             light_data::type::MESH,
@@ -363,7 +372,8 @@ int main()
             {"diseny_clearcoat_glossy", diseny_clearcoat_glossy},
             {"diseny_clearcoat_rough", diseny_clearcoat_rough},
             {"diseny_microfacet_glossy", diseny_microfacet_glossy},
-            {"diseny_microfacet_rough", diseny_microfacet_rough}
+            {"diseny_microfacet_rough", diseny_microfacet_rough},
+            {"diffuse_brdf",       diffuse_brdf}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},
