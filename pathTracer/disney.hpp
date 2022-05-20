@@ -4,7 +4,7 @@
 
 #include "math.hpp"
 #include "types.hpp"
-#include "device.hpp"
+#include "device/device.hpp"
 #include "sample_methods.hpp"
 
 // * https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf

@@ -2,14 +2,35 @@
 #define DISNEY_BRDF_HPP
 #pragma once
 
-#include "../../sample_methods.hpp"
-#include "BrdfUtils.hpp"
-#include "../../types.hpp"
+#include "sample_methods.hpp"
+#include "device/bsdf_utils.hpp"
+#include "types.hpp"
 
 // REFECRENCES:
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
 // https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf
 
+__device__ vec3 fLambert(material_data const& mat, vec3 const& V, vec3 const& L)
+{
+    if (!same_hemisphere(V, L)) return vec3{0.0f };
+    return mat.base_color * inv_pi;
+}
+
+__device__ float pdfLambert(material_data const& mat, vec3 const& V, vec3 const& L)
+{
+    if (!same_hemisphere(V, L)) return 0.0f;
+    float pdf{ 0.0f };
+    pdf_cosine_hemisphere(V, L);
+    return pdf;
+}
+
+__device__ void sampleLambert(material_data const& mat, vec3 const& V, vec3& L,
+                              Random& rand, vec3& bsdf, float& pdf)
+{
+    sample_cosine_hemisphere({rand.random(), rand.random()});
+    pdf = pdfLambert(mat, V, L);
+    bsdf = fLambert(mat, V ,L);
+}
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //           disney'S COMPONENTS

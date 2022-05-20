@@ -2,7 +2,7 @@
 #define DISNEY_BRDF_UITLS_HPP
 #pragma once
 
-#include "../../sample_methods.hpp"
+#include "sample_methods.hpp"
 
 // SOURCES
 // https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf

@@ -2,7 +2,7 @@ ADD_LIBRARY(lib${PROJECT_NAME})
 
 TARGET_SOURCES(lib${PROJECT_NAME} PRIVATE
 
-        "src/device/disney.hpp"
+        "disney.hpp"
 
         # SRC
         "src/owl.hpp"
@@ -29,8 +29,8 @@ TARGET_SOURCES(lib${PROJECT_NAME} PRIVATE
 
         "src/math.hpp"
         "src/device/materials/Lambert.hpp"
-        "src/device/materials/Disney.hpp"
-        "src/device/materials/BrdfUtils.hpp"
+        "src/device/materials.hpp"
+        "src/device/bsdf_utils.hpp"
 
         src/device/path_tracer.hpp src/device/device_global.hpp )
 

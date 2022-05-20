@@ -4,7 +4,7 @@
 
 #include "device.hpp"
 // #include "materials/Lambert.hpp"
-#include "materials/Disney.hpp"
+#include "materials.hpp"
 //#include "disney.hpp"
 
 #include "owl/include/owl/owl_device.h"
