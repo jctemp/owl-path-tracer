@@ -1,12 +1,16 @@
 ﻿
 #include "utils/image_buffer.hpp"
 #include "utils/mesh_loader.hpp"
+#include "utils/parser.hpp"
+
 #include "owl.hpp"
 #include "camera.hpp"
 #include "device/device_global.hpp"
 
 #include <fmt/core.h>
 #include <fmt/color.h>
+
+#include <filesystem>
 
 using namespace owl;
 
@@ -240,133 +244,56 @@ render(camera_data const& camera, std::vector<material_data> const& materials, s
 
 int main()
 {
-    auto const prefix_path{ std::string{"../.."} };
-    // auto const prefix_path{std::string{"../../../.."}};
+    // auto const prefix_path{ std::string{"../.."} };
+    auto const prefix_path{std::string{"../../../.."}};
+    auto const config_file{ std::filesystem::absolute(prefix_path + "/config.json").string() };
 
-#pragma region data
+    auto const scenes{ parse_scenes(config_file) };
+    auto const materials{ parse_materials(config_file) };
 
-    /* BSDF */
-    material_data simple_diffuse{material_data::type::disney};
-    simple_diffuse.base_color = vec3{0.8f};
-    simple_diffuse.specular = 0.5f;
-    simple_diffuse.roughness = 0.5f;
+    std::string scene_name{};
+    camera scene_camera{};
 
+    auto counter{ 0 };
+    for (auto const& [name, camera] : scenes)
+        fmt::print(fg(color::start), "SCENE[{}]: {}\n", counter++, name);
 
-/* LIGHTS */
-    light_data simple_light{
-            light_data::type::MESH,
-            vec3{1.0f, 1.0f, 1.0f},
-            10.f
-    };
-
-    camera scene_camera_1{
-            vec3{3.3f, 1.0f, 0.0f},
-            vec3{0.0f, 1.0f, 0.0f},
-            vec3{0.0f, 1.0f, 0.0f},
-            45.0f
-    };
-    camera scene_camera_2{
-            vec3{2.0f, 1.2f, 0.0f},
-            vec3{0.0f, 0.5f, 0.0f},
-            vec3{0.0f, 1.0f, 0.0f},
-            50.0f
-    };
-    camera scene_camera_3{
-            vec3{5.0f, 3.0f, 0.0f},
-            vec3{  0.0f, 0.75f, 0.0f},
-            vec3{  0.0f, 1.0f, 0.0f},
-            30.0f
-    };
-    camera scene_camera_4{
-            vec3{5.0f, 3.0f, 0.0f},
-            vec3{  0.0f, 0.75f, 0.0f},
-            vec3{  0.0f, 1.0f, 0.0f},
-            30.0f
-    };
-    camera scene_camera_5{
-            vec3{5.0f, 3.0f, 0.0f},
-            vec3{  0.0f, 0.75f, 0.0f},
-            vec3{  0.0f, 1.0f, 0.0f},
-            30.0f
-    };
-
-    std::vector<std::tuple<std::string, camera*>> scene_meta{
-            {"cornell-box-w-boxes", &scene_camera_1},
-            {"dragon", &scene_camera_2},
-            {"mitsuba", &scene_camera_3},
-            {"suzanne", &scene_camera_4},
-            {"three-sphere-test", &scene_camera_5}      ,
-            {"sphere-test", &scene_camera_3}
-
-    };
-
-
-#pragma endregion
-
-    std::vector<std::tuple<std::string, material_data>> mats{
-            {"simple_diffuse", simple_diffuse}
-    };
-    std::vector<std::tuple<std::string, light_data>> li{
-            {"simple_light", simple_light},
-    };
-    std::vector<entity> entities{};
-
-    std::string scene_name;
-    camera cam{};
-
-    int k{0};
-    for (auto const& [name, camera]: scene_meta)
-    {
-        fmt::print(fg(color::start), "SCENE[{}]: {}\n", k++, name);
-    }
-
+    fmt::print(" > ");
     std::getline(std::cin, scene_name);
 
     if (scene_name.empty())
     {
-        scene_name = std::get<std::string>(scene_meta[1]);
-        cam = *std::get<camera*>(scene_meta[1]);
-    } else
-    {
-        int s = std::stoi(scene_name);
-        scene_name = std::get<std::string>(scene_meta[s]);
-        cam = *std::get<camera*>(scene_meta[s]);
+        scene_name = std::get<std::string>(scenes[0]);
+        scene_camera = std::get<camera>(scenes[0]);
     }
+    else
+    {
+        auto const s{ std::stoi(scene_name) };
+        scene_name = std::get<std::string>(scenes[s]);
+        scene_camera = std::get<camera>(scenes[s]);
+    }
+
+
+    light_data simple_light{ light_data::type::MESH,vec3{1.0f},10.f };
+    std::vector<std::tuple<std::string, light_data>> li{ {"simple_light", simple_light} };
+    std::vector<entity> entities{};
 
     auto const meshes{
-            load_obj(fmt::format("{}/{}{}{}", prefix_path, "scenes/", scene_name, ".obj"))};
-
-    std::string filename;
-    fmt::print(fg(color::log), "ENTER IMAGE NAME: ");
-    std::getline(std::cin, filename);
+            load_obj(fmt::format("{}/{}{}{}", prefix_path, "scenes/", scene_name, ".obj.scene")) };
 
     fmt::print(fg(color::log), "> MATERIALS\n");
-    for (uint32_t i{0}; i < mats.size(); i++)
-        fmt::print("{} [{}]\n", std::get<std::string>(mats[i]), i);
+    counter = 0;
+    for (auto& [name, material] : materials)
+        fmt::print("[{}] {}\n", counter++, name);
 
-    for (auto& [name, mesh]: meshes)
+    for (auto& [name, mesh] : meshes)
     {
-        fmt::print("{}", name);
         std::string in;
+
+        fmt::print("{}", name);
         std::getline(std::cin, in);
         if (!in.empty())
-            entities.push_back({std::stoi(in)});
-    }
-
-
-    fmt::print(fg(color::log), "> LIGHTS\n");
-    for (uint32_t i{0}; i < li.size(); i++)
-        fmt::print("{} [{}]\n", std::get<std::string>(li[i]), i);
-
-
-    auto count{0};
-    for (auto& [name, mesh]: meshes)
-    {
-        fmt::print("{}", name);
-        std::string in;
-        std::getline(std::cin, in);
-        if (!in.empty())
-            entities[count++].lightId = std::stoi(in);
+            entities.push_back({ std::stoi(in) });
     }
 
     optix_init();
@@ -377,34 +304,34 @@ int main()
 
     /* SCENE SELECT */
 
-    od.buffer_size = ivec2{1024};
+    od.buffer_size = ivec2{ 1024 };
     od.frame_buffer = create_pinned_host_buffer(
-            od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
+        od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
     od.use_environment_map = true;
-    od.max_samples = 1024;
+    od.max_samples = 128;
     od.max_path_depth = 64;
 
     /* RENDER */
-    uint64_t i{0};
-    for (auto& [n, m]: meshes)
+    uint64_t i{ 0 };
+    for (auto& [n, m] : meshes)
         add(m.get(), entities[i++]);
 
-    std::vector<material_data> materials{};
-    for (auto& e: mats)
-        materials.push_back(std::get<material_data>(e));
+    std::vector<material_data> list_materials{};
+    for (auto& e : materials)
+        list_materials.push_back(std::get<material_data>(e));
 
-    std::vector<light_data> lights{};
-    for (auto& e: li)
-        lights.push_back(std::get<light_data>(e));
+    std::vector<light_data> list_lights{};
+    for (auto& e : li)
+        list_lights.push_back(std::get<light_data>(e));
 
 
-    render(to_camera_data(cam, od.buffer_size), materials, lights);
+    render(to_camera_data(scene_camera, od.buffer_size), list_materials, list_lights);
 
     // copy image buffer
 
-    image_buffer result{od.buffer_size.x, od.buffer_size.y,
-                        (uint32_t*) buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced};
-    write_image(result, fmt::format("{}/{}.png", prefix_path, filename));
+    image_buffer result{ od.buffer_size.x, od.buffer_size.y,
+                        (uint32_t*)buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced };
+    write_image(result, fmt::format("{}/{}.png", prefix_path, scene_name));
 
     optix_destroy();
 }

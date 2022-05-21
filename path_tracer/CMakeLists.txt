@@ -27,9 +27,10 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         # ------------------------------
 
         "src/device/device.hpp"
-
         "src/device/lights.hpp"
 
+        "src/utils/parser.hpp"
+        "src/utils/parser.cpp"
 
         "src/device/path_tracer.hpp" 
         "src/device/device_global.hpp")
@@ -37,6 +38,8 @@ ADD_LIBRARY(lib${PROJECT_NAME}
 TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC
         owl::owl
         fmt::fmt
+        cxxopts
+        nlohmann_json
         tinyobjloader)
 
 TARGET_INCLUDE_DIRECTORIES(lib${PROJECT_NAME} PUBLIC
