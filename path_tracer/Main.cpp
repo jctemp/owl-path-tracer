@@ -242,6 +242,22 @@ render(camera_data const& camera, std::vector<material_data> const& materials, s
     fmt::print(fg(color::stop), "STOP TRACER\n");
 }
 
+int32_t get_input(int32_t min = 0, int32_t max = 10)
+{
+    std::string tmp{};
+    while (true)
+    {
+        fmt::print(" > ");
+        std::getline(std::cin, tmp);
+        if (tmp.empty()) continue;
+
+        auto const s{ std::stoi(tmp) };
+        if (s < min || max <= s) continue;
+
+        return s;
+    }
+}
+
 int main()
 {
     // auto const prefix_path{ std::string{"../.."} };
@@ -258,21 +274,13 @@ int main()
     for (auto const& [name, camera] : scenes)
         fmt::print(fg(color::start), "SCENE[{}]: {}\n", counter++, name);
 
-    fmt::print(" > ");
-    std::getline(std::cin, scene_name);
-
-    if (scene_name.empty())
+    while (scene_name.empty())
     {
-        scene_name = std::get<std::string>(scenes[0]);
-        scene_camera = std::get<camera>(scenes[0]);
-    }
-    else
-    {
-        auto const s{ std::stoi(scene_name) };
+        auto const s{ get_input(0, scenes.size()) };
         scene_name = std::get<std::string>(scenes[s]);
         scene_camera = std::get<camera>(scenes[s]);
+        break;
     }
-
 
     light_data simple_light{ light_data::type::MESH,vec3{1.0f},10.f };
     std::vector<std::tuple<std::string, light_data>> li{ {"simple_light", simple_light} };
@@ -288,12 +296,9 @@ int main()
 
     for (auto& [name, mesh] : meshes)
     {
-        std::string in;
-
-        fmt::print("{}", name);
-        std::getline(std::cin, in);
-        if (!in.empty())
-            entities.push_back({ std::stoi(in) });
+        fmt::print("Object: {}\n", name);
+        auto const s{ get_input(0, materials.size()) };
+        entities.push_back({ s });
     }
 
     optix_init();

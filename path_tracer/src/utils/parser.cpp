@@ -25,7 +25,7 @@ std::vector<std::tuple<std::string, material_data>> parse_materials(std::string 
 
     for (auto& material : config["materials"])
     {
-        fmt::print("Material: {}\n", material["name"]);
+        fmt::print(" - {}\n", material["name"]);
         material_data data{};
 
         data.type = material_data::type::disney;
@@ -58,7 +58,7 @@ std::vector<std::tuple<std::string, camera>> parse_scenes(std::string const& con
     
     for (auto& scene : config["scenes"])
     {
-        fmt::print("Scene: {}\n", scene["scene"]);
+        fmt::print(" - {}\n", scene["scene"]);
         camera data{};
 
         data.look_from = { scene["look_from"][0], scene["look_from"][1], scene["look_from"][2] };
