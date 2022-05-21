@@ -24,7 +24,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 				self.camera.llc + screen.u * self.camera.horizontal + screen.v * self.camera.vertical - self.camera.origin),
             t_min, t_max };
 
-		color += tracePath(ray, pxRand);
+		color += trace_path(ray, pxRand);
 	}
 
 	// take the average of all samples per pixel and apply gamma correction
@@ -43,7 +43,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 
 OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
 {
-    per_ray_data& prd{ getPRD<per_ray_data>() };
+    per_ray_data& prd{ owl::getPRD<per_ray_data>() };
 
     prd.is->t = optixGetRayTmax();
 
@@ -65,7 +65,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
     prd.is->V = -direction;
 
     // get geometric data:
-    triangle_geom_data const& self = getProgramData<triangle_geom_data>();
+    triangle_geom_data const& self = owl::getProgramData<triangle_geom_data>();
     uint32_t const primID{ optixGetPrimitiveIndex() };
     ivec3 const index{ self.index[primID] };
 
@@ -98,12 +98,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
 
 OPTIX_MISS_PROGRAM(miss)()
 {
-    per_ray_data& prd{ getPRD<per_ray_data>() };
+    per_ray_data& prd{ owl::getPRD<per_ray_data>() };
     prd.scatterEvent = scatter_event::MISS;
 }
 
 OPTIX_MISS_PROGRAM(miss_shadow)()
 {
-    bool& prd{ getPRD<bool>() };
+    bool& prd{ owl::getPRD<bool>() };
     prd = true;
 }

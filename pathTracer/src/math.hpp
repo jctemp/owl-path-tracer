@@ -79,15 +79,15 @@ inline __both__ void onb(vec3 const& n, vec3& t, vec3& b)
 }
 
 // move vector V to local space where N is (0,0,1)
-inline __both__ void to_local(vec3 const& t, vec3 const& b, vec3 const& n, vec3& w)
+inline __both__ vec3 to_local(vec3 const& t, vec3 const& b, vec3 const& n, vec3 const& w)
 {
-    w = owl::normalize(vec3{owl::dot(w, t), owl::dot(w, b), owl::dot(w, n) });
+    return owl::normalize(vec3{owl::dot(w, t), owl::dot(w, b), owl::dot(w, n) });
 }
 
 // move V from local to the global space
-inline __both__ void to_world(vec3 const& t, vec3 const& b, vec3 const& n, vec3& w)
+inline __both__ vec3 to_world(vec3 const& t, vec3 const& b, vec3 const& n, vec3 const& w)
 {
-    w = owl::normalize(vec3{w.x * t + w.y * b + w.z * n });
+    return owl::normalize(vec3{w.x * t + w.y * b + w.z * n });
 }
 
 #endif // !PATH_TRACER_MATH_HPP

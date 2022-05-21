@@ -380,7 +380,7 @@ int main()
     od.buffer_size = ivec2{1024};
     od.frame_buffer = create_pinned_host_buffer(
             od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
-    od.use_environment_map = false;
+    od.use_environment_map = true;
     od.max_samples = 1024;
     od.max_path_depth = 64;
 

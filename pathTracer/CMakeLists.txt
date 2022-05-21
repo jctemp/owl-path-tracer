@@ -44,7 +44,7 @@ EMBED_PTX(
         SOURCES "src/device/device.cu"
 )
 
-ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp" )
+ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp" src/device/lights.hpp)
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
         lib${PROJECT_NAME}
         device-ptx)
