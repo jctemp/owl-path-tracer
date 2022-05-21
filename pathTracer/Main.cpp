@@ -32,6 +32,7 @@ struct optix_data
     // Programs
     OWLRayGen ray_gen_program;
     OWLMissProg miss_program;
+    OWLMissProg miss_shadow_program;
 
     // link between host and device
     ivec2 buffer_size{1024};
@@ -77,14 +78,15 @@ void optix_ray_gen_program()
 
 void optix_miss_program()
 {
-
-    var_decl miss_program_vars
-            {
-                    {nullptr}
-            };
-
     od.miss_program =
-            create_miss_program(od.context, od.module, "miss", sizeof(miss_data), miss_program_vars);
+            create_miss_program(od.context, od.module, "miss", 0u, nullptr);
+    owlMissProgSet(od.context, 0, od.miss_program);
+
+    od.miss_shadow_program =
+            create_miss_program(od.context, od.module, "miss_shadow", 0u, nullptr);
+    owlMissProgSet(od.context, 1, od.miss_shadow_program);
+
+
 }
 
 void optix_launch_params()
@@ -244,82 +246,12 @@ int main()
 #pragma region data
 
     /* BSDF */
-    material_data diffuse_dark{material_data::type::disney};
-    diffuse_dark.base_color = vec3{0.2f};
-    diffuse_dark.roughness = 0.0f;
-    diffuse_dark.subsurface = 0.0f;
-    diffuse_dark.metallic = 0.0f;
-    diffuse_dark.specular = 0.0f;
-    diffuse_dark.roughness = 0.5f;
-    diffuse_dark.sheen = 0.5f;
-    diffuse_dark.clearcoat = 0.0f;
-    diffuse_dark.ior = 1.45f;
+    material_data simple_diffuse{material_data::type::disney};
+    simple_diffuse.base_color = vec3{0.8f};
+    simple_diffuse.specular = 0.5f;
+    simple_diffuse.roughness = 0.5f;
 
-    material_data diffuse_bright{material_data::type::disney};
-    diffuse_bright.base_color = vec3{0.8f};
-    diffuse_bright.roughness = 0.0f;
-    diffuse_bright.subsurface = 0.0f;
-    diffuse_bright.metallic = 0.0f;
-    diffuse_bright.specular = 0.0f;
-    diffuse_bright.roughness = 0.5f;
-    diffuse_bright.sheen = 0.5f;
-    diffuse_bright.clearcoat = 0.0f;
-    diffuse_bright.ior = 1.45f;
 
-    auto const base_color_example{vec3{0.8f}};
-
-    material_data disney_diffuse{material_data::type::disney_diffuse};
-    disney_diffuse.base_color = base_color_example;
-    disney_diffuse.ior = 1.45f;
-
-    material_data disney_subsurface{material_data::type::disney_subsurface};
-    disney_subsurface.subsurface_color = base_color_example;
-    disney_subsurface.ior = 1.45f;
-
-    material_data diseny_retro{material_data::type::disney_retro};
-    diseny_retro.base_color = base_color_example;
-    diseny_retro.roughness = 0.5f;
-    diseny_retro.ior = 1.45f;
-
-    material_data diseny_sheen{material_data::type::disney_sheen};
-    diseny_sheen.base_color = base_color_example;
-    diseny_sheen.ior = 1.45f;
-    diseny_sheen.sheen = 0.3f;
-
-    material_data diseny_clearcoat_glossy{material_data::type::disney_clearcoat};
-    diseny_clearcoat_glossy.clearcoat = 1.0f;
-    diseny_clearcoat_glossy.clearcoat_gloss = 1.0f;
-
-    material_data diseny_clearcoat_rough{material_data::type::disney_clearcoat};
-    diseny_clearcoat_rough.clearcoat = 1.0f;
-    diseny_clearcoat_rough.clearcoat_gloss = 0.0f;
-
-    material_data diseny_microfacet_glossy{material_data::type::disney_microfacet};
-    diseny_microfacet_glossy.base_color = base_color_example;
-    diseny_microfacet_glossy.roughness = 0.0f;
-    diseny_microfacet_glossy.ior = 1.45f;
-
-    material_data diseny_microfacet_rough{material_data::type::disney_microfacet};
-    diseny_microfacet_rough.base_color = base_color_example;
-    diseny_microfacet_rough.roughness = 1.0f;
-    diseny_microfacet_rough.ior = 1.45f;
-
-    material_data diseny_brdf{material_data::type::disney};
-    diseny_brdf.base_color = vec3{0.8f};
-    diseny_brdf.roughness = 0.5f;
-    diseny_brdf.metallic = 0.5f;
-    diseny_brdf.specular = 0.5f;
-    diseny_brdf.sheen = 0.5f;
-    diseny_brdf.clearcoat = 0.5f;
-    diseny_brdf.ior = 1.45f;
-
-    material_data diseny_bsdf{material_data::type::disney};
-    diseny_bsdf.base_color = vec3{0.8f};
-    diseny_bsdf.metallic = 0.1f;
-    diseny_bsdf.roughness = 0.0f;
-    diseny_bsdf.specular = 1.0f;
-    diseny_bsdf.clearcoat = 0.5f;
-    diseny_bsdf.ior = 1.45f;
 /* LIGHTS */
     light_data simple_light{
             light_data::type::MESH,
@@ -372,17 +304,7 @@ int main()
 #pragma endregion
 
     std::vector<std::tuple<std::string, material_data>> mats{
-            {"diffuse_dark",       diffuse_dark},
-            {"diffuse_bright",     diffuse_bright},
-            {"disney_diffuse",     disney_diffuse},
-            {"disney_subsurface",  disney_subsurface},
-            {"diseny_retro",       diseny_retro},
-            {"diseny_sheen",       diseny_sheen},
-            {"diseny_clearcoat_glossy", diseny_clearcoat_glossy},
-            {"diseny_clearcoat_rough", diseny_clearcoat_rough},
-            {"diseny_microfacet_glossy", diseny_microfacet_glossy},
-            {"diseny_microfacet_rough", diseny_microfacet_rough},
-            {"diseny_brdf",       diseny_brdf}
+            {"simple_diffuse", simple_diffuse}
     };
     std::vector<std::tuple<std::string, light_data>> li{
             {"simple_light", simple_light},

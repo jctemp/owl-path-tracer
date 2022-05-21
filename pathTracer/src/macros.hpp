@@ -16,5 +16,11 @@
 #define all_zero(vec) \
     (vec.x == 0.0f && vec.y == 0.0f && vec.z == 0.0f)
 
+#define has_nan(vec) \
+    (isnan(vec.x) || isnan(vec.y) || isnan(vec.z))
+
+#define has_inf(vec) \
+    (isinf(vec.x) || isinf(vec.y) || isinf(vec.z))
+
 #endif //PATH_TRACER_MACROS_HPP
 

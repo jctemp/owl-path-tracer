@@ -15,6 +15,8 @@ inline __both__ vec3 o_saturate(vec3 a) { return owl::clamp(a, vec3{0.0f}, vec3{
 
 inline __both__ float sqr(float v) { return v * v; }
 
+inline __both__ vec3 sqr(vec3 v) { return owl::dot(v,v); }
+
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 inline __both__ float cos_theta(vec3 const& w){	return w.z; }

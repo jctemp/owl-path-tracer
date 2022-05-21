@@ -20,7 +20,9 @@ using owl_type = OWLDataType;
 using group = OWLGroup;
 
 inline context create_context(int32_t *device_ids, int32_t const num_devices) {
-    return owlContextCreate(device_ids, num_devices);
+    auto const ctx = owlContextCreate(device_ids, num_devices);
+    owlContextSetRayTypeCount(ctx, 2);
+    return ctx;
 }
 
 inline void destroy_context(context ctx) {

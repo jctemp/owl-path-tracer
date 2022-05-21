@@ -18,7 +18,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 		vec2 const screen{ (vec2{pixelId} + rand) / vec2{self.fbSize} };
 
 		// determine initial ray form the camera
-		owl::Ray ray{
+		radiance_ray ray{
 			self.camera.origin,
 			normalize(
 				self.camera.llc + screen.u * self.camera.horizontal + screen.v * self.camera.vertical - self.camera.origin),
@@ -100,4 +100,10 @@ OPTIX_MISS_PROGRAM(miss)()
 {
     per_ray_data& prd{ getPRD<per_ray_data>() };
     prd.scatterEvent = scatter_event::MISS;
+}
+
+OPTIX_MISS_PROGRAM(miss_shadow)()
+{
+    bool& prd{ getPRD<bool>() };
+    prd = true;
 }
