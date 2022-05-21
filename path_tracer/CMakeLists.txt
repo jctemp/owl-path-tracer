@@ -20,12 +20,16 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/utils/mesh_loader.hpp"
         "src/utils/mesh_loader.cpp"
 
+        # SRC/DEVICE
+        "src/device/materials.hpp"
+        "src/device/bsdf_utils.hpp"
+
         # ------------------------------
 
         "src/device/device.hpp"
 
-        "src/device/materials.hpp"
-        "src/device/bsdf_utils.hpp"
+        "src/device/lights.hpp"
+
 
         "src/device/path_tracer.hpp" 
         "src/device/device_global.hpp")
@@ -44,7 +48,7 @@ EMBED_PTX(
         SOURCES "src/device/device.cu"
 )
 
-ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp" src/device/lights.hpp)
+ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp")
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}
         lib${PROJECT_NAME}
         device-ptx)
