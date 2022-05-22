@@ -18,6 +18,7 @@ extern "C" char device_ptx[];
 
 struct entity
 {
+    mesh* mesh_ptr;
     int32_t materialId{-1};
     int32_t lightId{-1};
 };
@@ -146,9 +147,9 @@ void optix_set_environment_map(image_buffer const& texture)
     );
 }
 
-void add(mesh* m, entity e)
+void add(entity e)
 {
-    mesh& mesh{*m};
+    mesh& mesh{*e.mesh_ptr};
 
     auto& vertices{mesh.vertices};
     auto& indices{mesh.indices};
@@ -185,8 +186,41 @@ void add(mesh* m, entity e)
     od.geoms.push_back(geom_data);
 }
 
-void render(camera_data const& camera, std::vector<material_data> const& materials, 
-    std::vector<light_data> const& lights)
+template<typename T>
+std::vector<T> to_vector(std::vector<std::tuple<std::string, T>> const* data)
+{
+    if (data == nullptr)
+        return {};
+
+    std::vector<T> result;
+    result.reserve(data->size());
+
+    for (auto const& [name, value] : *data)
+        result.push_back(value);
+
+    return result;
+}
+
+int32_t get_input(int32_t min = 0, int32_t max = 10)
+{
+    std::string tmp{};
+    while (true)
+    {
+        fmt::print(" > ");
+        std::getline(std::cin, tmp);
+        if (tmp.empty()) continue;
+
+        auto const s{ std::stoi(tmp) };
+        if (s < min || max <= s) continue;
+
+        return s;
+    }
+}
+
+
+void render(camera_data const& camera,
+            std::vector<std::tuple<std::string, material_data>> const *materials,
+            std::vector<std::tuple<std::string, light_data>> const *lights)
 {
     // 1) set mesh data into buffers
     if (od.geoms.empty())
@@ -216,13 +250,16 @@ void render(camera_data const& camera, std::vector<material_data> const& materia
     set_field(od.ray_gen_program, "camera.horizontal", camera.horizontal);
     set_field(od.ray_gen_program, "camera.vertical", camera.vertical);
 
+    auto const material_list = to_vector(materials);
+    auto const light_list = to_vector(lights);
+
     // 5) set launch params
     auto material_buffer{
-            create_device_buffer(od.context, OWL_USER_TYPE(material_data), materials.size(), materials.data())
+            create_device_buffer(od.context, OWL_USER_TYPE(material_data), material_list.size(), material_list.data())
     };
 
     auto light_buffer{
-            create_device_buffer(od.context, OWL_USER_TYPE(light_data), lights.size(), lights.data())
+            create_device_buffer(od.context, OWL_USER_TYPE(light_data), light_list.size(), light_list.data())
     };
 
     set_field(od.launch_params, "max_path_depth", reinterpret_cast<void*>(&od.max_path_depth));
@@ -242,67 +279,77 @@ void render(camera_data const& camera, std::vector<material_data> const& materia
     fmt::print(fg(color::stop), "STOP TRACER\n");
 }
 
-int32_t get_input(int32_t min = 0, int32_t max = 10)
+std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string, camera>> const& scenes)
 {
-    std::string tmp{};
-    while (true)
+    auto counter{ 0 };
+    for (auto const& [name, camera] : scenes)
+        fmt::print(fg(color::start), "SCENE[{}]: {}\n", counter++, name);
+
+    auto const s{ get_input(0, static_cast<int32_t>(scenes.size())) };
+    return scenes[s];
+}
+
+std::vector<entity> load_scene(std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> const& meshes,
+                               std::vector<std::tuple<std::string, material_data>> const *materials,
+                               std::vector<std::tuple<std::string, light_data>> const *lights)
+{
+    fmt::print(fg(color::log), "> MATERIALS\n");
+    std::vector<entity> entities{};
+
+    for (auto const& [name, mesh] : meshes)
     {
-        fmt::print(" > ");
-        std::getline(std::cin, tmp);
-        if (tmp.empty()) continue;
-
-        auto const s{ std::stoi(tmp) };
-        if (s < min || max <= s) continue;
-
-        return s;
+        entities.push_back(entity{
+            .mesh_ptr = mesh.get(),
+            .materialId = -1,
+            .lightId = -1
+        });
     }
+
+    if (materials)
+    {
+        auto counter{ 0 };
+        for (auto const& [name, material] : *materials)
+            fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
+
+        counter = 0;
+        for (auto const& [name, mesh] : meshes)
+        {
+            fmt::print("Object: {}\n", name);
+            auto const s{ get_input(0, static_cast<int32_t>(materials->size())) };
+            entities[counter++].materialId = s;
+        }
+    }
+
+    if (lights)
+    {
+        auto counter{ 0 };
+        for (auto const& [name, light] : *lights)
+            fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
+
+        counter = 0;
+        for (auto const& [name, mesh] : meshes)
+        {
+            fmt::print("Object: {}\n", name);
+            auto const s{ get_input(0, static_cast<int32_t>(lights->size())) };
+            entities[counter++].lightId = s;
+        }
+    }
+
+    return entities;
 }
 
 int main(int argc, char **argv)
 {
     auto prefix_path{ std::string{"."} };
-
-    if (argc > 1)
-        prefix_path = argv[1];
-
-    auto const config_file{ std::filesystem::absolute(prefix_path + "/config.json").string()};
+    if (argc > 1) prefix_path = argv[1];
+    auto const config_file{prefix_path + "/config.json"};
 
     auto const scenes{ parse_scenes(config_file) };
     auto const materials{ parse_materials(config_file) };
+    auto const [scene_name, scene_camera] = select_scene(scenes);
 
-    std::string scene_name{};
-    camera scene_camera{};
-
-    auto counter{ 0 };
-    for (auto const& [name, camera] : scenes)
-        fmt::print(fg(color::start), "SCENE[{}]: {}\n", counter++, name);
-
-    while (scene_name.empty())
-    {
-        auto const s{ get_input(0, scenes.size()) };
-        scene_name = std::get<std::string>(scenes[s]);
-        scene_camera = std::get<camera>(scenes[s]);
-        break;
-    }
-
-    light_data simple_light{ light_data::type::MESH,vec3{1.0f},10.f };
-    std::vector<std::tuple<std::string, light_data>> li{ {"simple_light", simple_light} };
-    std::vector<entity> entities{};
-
-    auto const meshes{
-            load_obj(fmt::format("{}/{}{}{}", prefix_path, "scenes/", scene_name, ".obj.scene")) };
-
-    fmt::print(fg(color::log), "> MATERIALS\n");
-    counter = 0;
-    for (auto& [name, material] : materials)
-        fmt::print("[{}] {}\n", counter++, name);
-
-    for (auto& [name, mesh] : meshes)
-    {
-        fmt::print("Object: {}\n", name);
-        auto const s{ get_input(0, materials.size()) };
-        entities.push_back({ s });
-    }
+    auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "scenes/", scene_name, ".obj.scene")) };
+    auto const entities = load_scene(meshes, &materials, nullptr);
 
     optix_init();
     optix_ray_gen_program();
@@ -310,30 +357,17 @@ int main(int argc, char **argv)
     optix_launch_params();
     optix_triangle_geom();
 
-    /* SCENE SELECT */
 
     od.buffer_size = ivec2{ 1024 };
-    od.frame_buffer = create_pinned_host_buffer(
-        od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
+    od.frame_buffer = create_pinned_host_buffer(od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
     od.use_environment_map = true;
     od.max_samples = 128;
     od.max_path_depth = 64;
 
-    /* RENDER */
-    uint64_t i{ 0 };
-    for (auto& [n, m] : meshes)
-        add(m.get(), entities[i++]);
 
-    std::vector<material_data> list_materials{};
-    for (auto& e : materials)
-        list_materials.push_back(std::get<material_data>(e));
+    for (auto e: entities) add(e);
 
-    std::vector<light_data> list_lights{};
-    for (auto& e : li)
-        list_lights.push_back(std::get<light_data>(e));
-
-
-    render(to_camera_data(scene_camera, od.buffer_size), list_materials, list_lights);
+    render(to_camera_data(scene_camera, od.buffer_size), &materials, nullptr);
 
     // copy image buffer
 
