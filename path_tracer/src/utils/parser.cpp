@@ -16,6 +16,28 @@ json load_json(std::string const& file_path)
     return config;
 }
 
+std::vector<std::tuple<std::string, light_data>> parse_lights(std::string const& config_path)
+{
+    fmt::print(fg(color::log), "Parsing lights\n");
+
+    auto config{load_json(config_path)};
+    auto lights{std::vector<std::tuple<std::string, light_data>>{}};
+
+    for (auto& light: config["lights"])
+    {
+        fmt::print(" - {}\n", light["name"]);
+        light_data data{};
+
+        data.position = {light["position"][0], light["position"][1], light["position"][2]};
+        data.color = {light["color"][0], light["color"][1], light["color"][2]};
+        data.intensity = light["intensity"];
+
+        lights.emplace_back(light["name"], data);
+    }
+
+    return lights;
+}
+
 std::vector<std::tuple<std::string, material_data>> parse_materials(std::string const& config_path)
 {
     fmt::print(fg(color::log), "Parsing materials\n");

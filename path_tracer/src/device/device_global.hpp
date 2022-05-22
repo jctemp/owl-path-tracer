@@ -36,18 +36,9 @@ struct material_data
 
 struct light_data
 {
-    enum class type
-    {
-        none = 0 << 0,
-        mesh = 1 << 0
-    };
-
-    type type{type::mesh};
-    vec3 color{1.f};
-    float intensity{1.f};
-    float exposure{0.f};
-    float falloff{2.0f};
-    bool use_surface_area{false};
+    vec3 position{0.0f};
+    vec3 color{1.0f};
+    float intensity{1.0f};
 };
 
 struct launch_params_data
@@ -64,7 +55,6 @@ struct launch_params_data
 struct triangle_geom_data
 {
     int32_t matId{-1};
-    int32_t lightId{-1};
     ivec3* index{};
     vec3* vertex{};
     vec3* normal{};

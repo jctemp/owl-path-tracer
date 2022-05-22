@@ -74,18 +74,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         onb(hit_n, T, B);
 
 
-        /* TERMINATE PATH AND SAMPLE LIGHT */
-        if (is.light_id >= 0)
-        {
-            // TODO: SAMPLE LIGHT
-            light_data light{};
-            get_data(light, launch_params.light_buffer, is.light_id, light_data);
-            vec3 emission{light.color * light.intensity};
-            radiance += emission * beta;
-            break;
-        }
-
-
         /* SAMPLE BRDF */
         material_data material{};
         if (is.material_id >= 0) { get_data(material, launch_params.material_buffer, is.material_id, material_data); }
@@ -109,22 +97,20 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         beta *= hit_f / hit_pdf;
 
         /* SAMPLE DIRECT LIGHTS */
-        if (sampled_type == material_type::diffuse ||
-            sampled_type == material_type::clearcoat)
+        if (sampled_type == material_type::diffuse)
         {
             samples++;
 
-            // TODO: GET LIGHT DATA FROM GLOBAL BUFFER
-            auto const light_position{vec3{2.0f, 2.0f, 5.0f}};
-            auto const light_intensity{20.0f};
+            /* TODO: ALLOW MULTIPLE POINT LIGHTS */
+            light_data point_light{};
+            get_data(point_light, launch_params.light_buffer, 0, light_data);
 
             // CALCULATE LIGHT SPATIAL METRICS
-            auto const light_wi{normalize(light_position - hit_p)};
+            auto const light_wi{normalize(point_light.position - hit_p)};
             auto const light_pdf{1.0f};
-            auto const light_power{light_intensity * 4 * pi};
 
-            auto const light_distance{owl::length(light_position - hit_p)};
-            auto const light_li{light_intensity / sqr(light_distance)};
+            auto const light_distance{owl::length(point_light.position - hit_p)};
+            auto const light_li{point_light.color * point_light.intensity / sqr(light_distance)};
 
             // VISIBILITY TEST
             shadow_ray light_ray{hit_p, light_wi, t_min, light_distance + t_min};
@@ -145,7 +131,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
                 surface_f = f_disney_bsdf(material, local_wo, light_wi, sampled_type) * owl::abs(owl::dot(light_wi, hit_n));
                 surface_pdf = pdf_disney_pdf(material, local_wo, light_wi, sampled_type);
 
-                if (!all_zero(surface_f) && light_li != 0)
+                if (!all_zero(surface_f) && !all_zero(light_li))
                 {
                     auto const weight = power_heuristic(1, light_pdf, 1, surface_pdf);
                     radiance += surface_f * light_li * weight / surface_pdf;

@@ -71,7 +71,6 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
     ivec3 const index{self.index[primID]};
 
     prd.is->material_id = self.matId;
-    prd.is->light_id = self.lightId;
     prd.is->prim = primID;
 
     // vertices for P and normal_geometric

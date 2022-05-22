@@ -99,8 +99,7 @@ std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string,
 }
 
 std::vector<entity> load_scene(std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> const& meshes,
-                               std::vector<std::tuple<std::string, material_data>> const* materials,
-                               std::vector<std::tuple<std::string, light_data>> const* lights)
+                               std::vector<std::tuple<std::string, material_data>> const* materials)
 {
     fmt::print(fg(color::log), "> MATERIALS\n");
     std::vector<entity> entities{};
@@ -129,20 +128,19 @@ std::vector<entity> load_scene(std::vector<std::tuple<std::string, std::shared_p
         }
     }
 
-    if (lights)
-    {
-        auto counter{0};
-        for (auto const& [name, light]: *lights)
-            fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
-
-        counter = 0;
-        for (auto const& [name, mesh]: meshes)
-        {
-            fmt::print("Object: {}\n", name);
-            auto const s{get_input(0, static_cast<int32_t>(lights->size()))};
-            entities[counter++].lightId = s;
-        }
-    }
+    //if (lights)
+    //{
+    //    auto counter{0};
+    //    for (auto const& [name, light]: *lights)
+    //        fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
+    //    counter = 0;
+    //    for (auto const& [name, mesh]: meshes)
+    //    {
+    //        fmt::print("Object: {}\n", name);
+    //        auto const s{get_input(0, static_cast<int32_t>(lights->size()))};
+    //        entities[counter++].lightId = s;
+    //    }
+    //}
 
     return entities;
 }
@@ -197,7 +195,6 @@ void optix_init()
     var_decl triangles_geom_vars
             {
                     {"material_id", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, matId)},
-                    {"light_id",    OWL_INT,    OWL_OFFSETOF(triangle_geom_data, lightId)},
                     {"index",       OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index)},
                     {"vertex",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex)},
                     {"normal",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal)},
@@ -263,7 +260,6 @@ void optix_set_entities(std::vector<entity> entities)
 
         // set sbt data
         set_field(geom_data, "material_id", e.materialId);
-        set_field(geom_data, "light_id", e.lightId);
         set_field(geom_data, "vertex", vertex_buffer);
         set_field(geom_data, "normal", normal_buffer);
         set_field(geom_data, "index", index_buffer);
@@ -331,13 +327,14 @@ int main(int argc, char** argv)
 
     auto const scenes{parse_scenes(config_file)};
     auto const materials{parse_materials(config_file)};
+    auto const lights{parse_lights(config_file)};
     auto const [scene_name, scene_camera] = select_scene(scenes);
 
     auto environment{load_image("environment.hdr", prefix_path + "/assets/")};
     environment.ptr_tag = image_buffer::tag::allocated;
 
     auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "assets/", scene_name, ".obj.scene"))};
-    auto const entities = load_scene(meshes, &materials, nullptr);
+    auto const entities = load_scene(meshes, &materials);
 
     optix_init();
     optix_set_environment_map(environment);
@@ -349,7 +346,7 @@ int main(int argc, char** argv)
     od.max_samples = 1024;
     od.max_path_depth = 16;
 
-    optix_render(to_camera_data(scene_camera, od.buffer_size), &materials, nullptr);
+    optix_render(to_camera_data(scene_camera, od.buffer_size), &materials, &lights);
 
     // copy image buffer
 
