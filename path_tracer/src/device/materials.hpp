@@ -297,9 +297,58 @@ __both__ void sample_disney_transmission(material_data const& m, vec3 const& wo,
 //  + Subsurface
 //
 
-__both__ void
-sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand,
-                   vec3& wi, vec3& f, float& pdf, material_type sampled_type)
+__both__ vec3 pdf_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 const& wh,
+                              vec3 const &wi, material_type const &sampled_type)
+{
+    vec3 f{0.0f};
+    if (sampled_type == material_type::diffuse)
+    {
+        auto const diffuse = f_disney_diffuse(mat, wo, wi);
+        auto const ss = f_disney_subsurface(mat, wo, wi);
+        auto const retro = f_disney_retro(mat, wo, wi);
+        auto const sheen = f_disney_sheen(mat, wo, wi);
+
+        auto const fd_weight = 1 - mat.subsurface;
+        auto const fs_weight = mat.subsurface;
+
+        f += (diffuse + retro) * fd_weight;
+        f += ss * fs_weight;
+        f += sheen;
+        f *= owl::abs(cos_theta(wi));
+    }
+    else if (sampled_type == material_type::specular)
+    {
+        f = f_disney_microfacet(mat, wo, wi);
+    }
+    else if (sampled_type == material_type::clearcoat)
+    {
+        f = f_disney_clearcoat(mat, wo, wi);
+    }
+    return f;
+}
+
+__both__ float pdf_disney_pdf(material_data const& mat, vec3 const& wo, vec3 const& wh,
+                              vec3 const &wi, material_type const &sampled_type)
+{
+    float pdf{0.0f};
+    if (sampled_type == material_type::diffuse)
+    {
+        pdf = pdf_cosine_hemisphere(wo, wi);
+
+    }
+    else if (sampled_type == material_type::specular)
+    {
+        pdf = pdf_disney_microfacet(mat, wo, wi);
+    }
+    else if (sampled_type == material_type::clearcoat)
+    {
+        pdf = pdf_disney_clearcoat(mat, wo, wi);
+    }
+    return pdf;
+}
+
+__both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand,
+                   vec3 &wi, vec3& f, float& pdf, material_type &sampled_type)
 {
     f = vec3{0.0f};
     pdf = 0.0f;
@@ -320,59 +369,35 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand,
     cdf[1] = p_specular + cdf[0];
     cdf[2] = p_clearcoat + cdf[1];
 
-    // diffuse
-    if (r1 < cdf[0])
+
+    auto wh{vec3{0.0f}};
+    if (r1 < cdf[0]) // diffuse
     {
         sampled_type = material_type::diffuse;
-
         wi = sample_cosine_hemisphere(rand.rng<vec2>());
-        pdf = pdf_cosine_hemisphere(wo, wi);
-
-        auto const diffuse = f_disney_diffuse(mat, wo, wi);
-        auto const ss = f_disney_subsurface(mat, wo, wi);
-        auto const retro = f_disney_retro(mat, wo, wi);
-        auto const sheen = f_disney_sheen(mat, wo, wi);
-
-        auto const fd_weight = 1 - mat.subsurface;
-        auto const fs_weight = mat.subsurface;
-
-        f += (diffuse + retro) * fd_weight;
-        f += ss * fs_weight;
-        f += sheen;
-        f *= owl::abs(cos_theta(wi));
     }
-
-        // specular reflective
-    else if (r1 < cdf[1])
+    else if (r1 < cdf[1]) // specular reflective
     {
         sampled_type = material_type::specular;
 
         auto const alpha{to_alpha(mat.roughness)};
-        auto const wh{sample_gtr2_vndf(wo, alpha, rand.rng<vec2>())};
-
+        wh = sample_gtr2_vndf(wo, alpha, rand.rng<vec2>());
         wi = normalize(reflect(wo, wh));
         if (!same_hemisphere(wo, wi)) return;
 
-        f = f_disney_microfacet(mat, wo, wi);
-        pdf = pdf_disney_microfacet(mat, wo, wi);
     }
-
-        // clearcoat
-    else
+    else // clearcoat
     {
         sampled_type = material_type::clearcoat;
 
         auto const alpha_g{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f};
-        auto const wh{sample_gtr1(wo, alpha_g, rand.rng<vec2>())};
-
+        wh= sample_gtr1(wo, alpha_g, rand.rng<vec2>());
         wi = normalize(reflect(wo, wh));
         if (!same_hemisphere(wo, wi)) return;
-
-        f = f_disney_clearcoat(mat, wo, wi);
-        pdf = pdf_disney_clearcoat(mat, wo, wi);
     }
 
-
+    f = pdf_disney_bsdf(mat, wo, wh, wi, sampled_type);
+    pdf = pdf_disney_pdf(mat, wo, wh, wi, sampled_type);
 }
 
 #endif // !DISNEY_BRDF_HPP
