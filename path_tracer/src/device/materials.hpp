@@ -197,13 +197,7 @@ sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand,
     // proportional to D and reflect it at H
 
     auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
-    auto const alpha2{sqr(alpha_g)};
-    auto const cos_theta{owl::sqrt(owl::max(0.0f, (1 - powf(alpha2, 1 - rand())) / (1 - alpha2)))};
-    auto const sin_theta{owl::sqrt(owl::max(0.0f, 1 - sqr(cos_theta)))};
-    auto const phi{two_pi * rand()};
-
-    auto wh{to_sphere_coordinates(sin_theta, cos_theta, phi)};
-    if (!same_hemisphere(wo, wh)) wh = -wh;
+    auto const wh{sample_gtr1(wo, alpha_g, rand.rng<vec2>())};
 
     f = vec3{0.0f};
     pdf = 0.0f;
@@ -368,7 +362,14 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand,
     {
         sampled_type = material_type::clearcoat;
 
-        sample_disney_clearcoat(mat, wo, rand, wi, f, pdf);
+        auto const alpha_g{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f};
+        auto const wh{sample_gtr1(wo, alpha_g, rand.rng<vec2>())};
+
+        wi = normalize(reflect(wo, wh));
+        if (!same_hemisphere(wo, wi)) return;
+
+        f = f_disney_clearcoat(mat, wo, wi);
+        pdf = pdf_disney_clearcoat(mat, wo, wi);
     }
 
 

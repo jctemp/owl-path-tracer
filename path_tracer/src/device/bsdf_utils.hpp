@@ -53,6 +53,18 @@ inline __both__ float d_gtr1(const float& cos_theta, const float& alpha)
     return (alpha2 - 1.0f) / (pi * logf(alpha2) * t);
 }
 
+inline __both__ vec3 sample_gtr1(vec3 const& wo, const float& alpha_g, const vec2& u)
+{
+    auto const alpha2{sqr(alpha_g)};
+    auto const cos_theta{owl::sqrt(owl::max(0.0f, (1.0f - powf(alpha2, 1.0f - u[0])) / (1.0f - alpha2)))};
+    auto const sin_theta{owl::sqrt(owl::max(0.0f, 1.0f - sqr(cos_theta)))};
+    auto const phi{two_pi * u[1]};
+
+    auto wh{to_sphere_coordinates(sin_theta, cos_theta, phi)};
+    if (!same_hemisphere(wo, wh)) wh = -wh;
+    return wh;
+}
+
 inline __both__ float d_gtr2(const float& cos_theta, const float& alpha)
 {
     auto const alpha2{sqr(alpha)};
