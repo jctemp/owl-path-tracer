@@ -9,6 +9,7 @@ struct image_buffer
 {
     enum class tag
     {
+        manual,
         allocated,
         referenced
     };

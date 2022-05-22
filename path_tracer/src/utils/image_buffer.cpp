@@ -38,7 +38,10 @@ image_buffer load_image(std::string const& name, std::string const& path)
     std::string const file_path{path + "/" + name};
 
     if (!std::filesystem::exists(file_path))
-        throw std::runtime_error{file_path + " does not exists at the location.\n"};
+    {
+        fmt::print(fg(color::warn), "Image file {} does not exist. Continue with empty.\n", file_path);
+        return image_buffer{};
+    }
 
     int32_t width, height, comp;
     auto buffer{reinterpret_cast<uint32_t*>(stbi_load(file_path.c_str(), &width,
@@ -51,6 +54,6 @@ image_buffer load_image(std::string const& name, std::string const& path)
         for (int x = 0; x < width; x++) std::swap(line_y[x], mirrored_y[x]);
     }
 
-    image_buffer image{width, height, buffer, image_buffer::tag::allocated};
+    image_buffer image{width, height, buffer, image_buffer::tag::manual};
     return image;
 }

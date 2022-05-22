@@ -60,12 +60,12 @@ static optix_data od{};
 
 void optix_init()
 {
+    /* ━━━━━━━━━ CREATE CONTEXT AND MODULE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     od.context = create_context(nullptr, 1);
     od.module = create_module(od.context, device_ptx);
-}
 
-void optix_ray_gen_program()
-{
+
+    /* ━━━━━━━━━ CREATE RAY GEN PROGRAM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     var_decl ray_gen_vars
             {
                     {"fbPtr",             OWL_BUFPTR, OWL_OFFSETOF(ray_gen_data, fbPtr)},
@@ -77,25 +77,18 @@ void optix_ray_gen_program()
                     {nullptr}
             };
 
-    od.ray_gen_program =
-            create_ray_gen_program(od.context, od.module, "ray_gen", sizeof(ray_gen_data), ray_gen_vars);
-}
+    od.ray_gen_program = create_ray_gen_program(od.context, od.module, "ray_gen", sizeof(ray_gen_data), ray_gen_vars);
 
-void optix_miss_program()
-{
-    od.miss_program =
-            create_miss_program(od.context, od.module, "miss", 0u, nullptr);
+
+    /* ━━━━━━━━━ CREATE MISS PROGRAMS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+    od.miss_program = create_miss_program(od.context, od.module, "miss", 0u, nullptr);
     owlMissProgSet(od.context, 0, od.miss_program);
 
-    od.miss_shadow_program =
-            create_miss_program(od.context, od.module, "miss_shadow", 0u, nullptr);
+    od.miss_shadow_program = create_miss_program(od.context, od.module, "miss_shadow", 0u, nullptr);
     owlMissProgSet(od.context, 1, od.miss_shadow_program);
 
 
-}
-
-void optix_launch_params()
-{
+    /* ━━━━━━━━━ CREATE LAUNCH PARAMS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     var_decl launchParamsVars
             {
                     {"max_path_depth", OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, max_path_depth)},
@@ -108,12 +101,10 @@ void optix_launch_params()
                     {nullptr}
             };
 
-    od.launch_params =
-            create_launch_params(od.context, sizeof(launch_params_data), launchParamsVars);
-}
+    od.launch_params = create_launch_params(od.context, sizeof(launch_params_data), launchParamsVars);
 
-void optix_triangle_geom()
-{
+
+    /* ━━━━━━━━━ CREATE TRIANGLE GEOM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     var_decl triangles_geom_vars
             {
                     {"matId",   OWL_INT,    OWL_OFFSETOF(triangle_geom_data, matId)},
@@ -137,6 +128,9 @@ void optix_destroy()
 
 void optix_set_environment_map(image_buffer const& texture)
 {
+    if (!texture.buffer)
+        return;
+
     if (od.environment_map != nullptr)
         destroy_texture(od.environment_map);
 
@@ -348,15 +342,14 @@ int main(int argc, char **argv)
     auto const materials{ parse_materials(config_file) };
     auto const [scene_name, scene_camera] = select_scene(scenes);
 
-    auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "scenes/", scene_name, ".obj.scene")) };
+    auto environment{ load_image("environment.hdr", prefix_path + "/assets/") };
+    environment.ptr_tag = image_buffer::tag::allocated;
+
+    auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "assets/", scene_name, ".obj.scene")) };
     auto const entities = load_scene(meshes, &materials, nullptr);
 
     optix_init();
-    optix_ray_gen_program();
-    optix_miss_program();
-    optix_launch_params();
-    optix_triangle_geom();
-
+    optix_set_environment_map(environment);
 
     od.buffer_size = ivec2{ 1024 };
     od.frame_buffer = create_pinned_host_buffer(od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
