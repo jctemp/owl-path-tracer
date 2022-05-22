@@ -15,7 +15,9 @@ struct image_buffer
     };
 
     image_buffer();
+
     image_buffer(int32_t x, int32_t y, uint32_t const* ptr, image_buffer::tag t);
+
     ~image_buffer();
 
     int32_t width;

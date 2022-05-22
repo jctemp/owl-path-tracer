@@ -22,22 +22,22 @@ struct material_data
         disney_transmission = 1 << 9
     };
 
-    type type{ type::none };
-    vec3  base_color{0.8f, 0.8f, 0.8f };
-    float subsurface{ 0.0f };
-    vec3  subsurface_radius{1.0f, 0.2f, 0.1f };
-    vec3  subsurface_color{0.8f, 0.8f, 0.8f };
-    float metallic{ 0.0f };
-    float specular{ 0.5f };
-    float specular_tint{1.0f };
-    float roughness{ 0.5f };
-    float sheen{ 0.0f };
-    float sheen_tint{1.0f };
-    float clearcoat{ 0.0f };
-    float clearcoat_gloss{0.03f };
-    float ior{ 1.45f };
-    float transmission{ 0.0f };
-    float transmission_roughness{ 0.0f };
+    type type{type::none};
+    vec3 base_color{0.8f, 0.8f, 0.8f};
+    float subsurface{0.0f};
+    vec3 subsurface_radius{1.0f, 0.2f, 0.1f};
+    vec3 subsurface_color{0.8f, 0.8f, 0.8f};
+    float metallic{0.0f};
+    float specular{0.5f};
+    float specular_tint{1.0f};
+    float roughness{0.5f};
+    float sheen{0.0f};
+    float sheen_tint{1.0f};
+    float clearcoat{0.0f};
+    float clearcoat_gloss{0.03f};
+    float ior{1.45f};
+    float transmission{0.0f};
+    float transmission_roughness{0.0f};
 };
 
 struct light_data
@@ -48,11 +48,11 @@ struct light_data
         MESH = 1 << 0
     };
 
-    type type{ type::MESH };
-    vec3 color{ 1.f };
-    float intensity{ 1.f };
-    float exposure{ 0.f };
-    float falloff{ 2.0f };
+    type type{type::MESH};
+    vec3 color{1.f};
+    float intensity{1.f};
+    float exposure{0.f};
+    float falloff{2.0f};
     bool use_surface_area = false;
 };
 
@@ -69,8 +69,8 @@ struct launch_params_data
 
 struct triangle_geom_data
 {
-    int32_t matId{ -1 };
-    int32_t lightId{ -1 };
+    int32_t matId{-1};
+    int32_t lightId{-1};
     ivec3* index;
     vec3* vertex;
     vec3* normal;

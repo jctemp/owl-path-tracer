@@ -31,17 +31,17 @@
 
 #include "types.hpp"
 
-struct Random
+struct random
 {
-    inline __both__ Random() : state{0} { /* REQUIRED FOR DEVICE VARS */ }
+    inline __both__ random() : state{0} { /* REQUIRED FOR DEVICE VARS */ }
 
-    inline __both__ Random(int32_t seed_u, int32_t seed_v) : state{0} { init((uint32_t) seed_u, (uint32_t) seed_v); }
+    inline __both__ random(int32_t seed_u, int32_t seed_v) : state{0} { init((uint32_t) seed_u, (uint32_t) seed_v); }
 
-    inline __both__ explicit Random(uvec2 seed) : state{0} { init((uint32_t) seed.u, (uint32_t) seed.v); }
+    inline __both__ explicit random(uvec2 seed) : state{0} { init((uint32_t) seed.u, (uint32_t) seed.v); }
 
-    inline __both__ Random(uint32_t seed_u, uint32_t seed_v) : state{0} { init(seed_u, seed_v); }
+    inline __both__ random(uint32_t seed_u, uint32_t seed_v) : state{0} { init(seed_u, seed_v); }
 
-    inline __both__ explicit Random(ivec2 seed) : state{0} { init(seed.u, seed.v); }
+    inline __both__ explicit random(ivec2 seed) : state{0} { init(seed.u, seed.v); }
 
     inline __both__ void init(uint32_t seed_u, uint32_t seed_v)
     {
@@ -56,10 +56,10 @@ struct Random
     }
 
     template<typename T = float>
-    inline __both__ T random();
+    inline __both__ T rng();
 
     template<>
-    inline __both__ float random()
+    inline __both__ float rng()
     {
         uint32_t constexpr A{16807};
         uint32_t constexpr C{1013904223};
@@ -69,15 +69,15 @@ struct Random
     }
 
     template<>
-    inline __both__ vec2 random()
+    inline __both__ vec2 rng()
     {
-        return {this->random(), this->random()};
+        return {this->rng(), this->rng()};
     }
 
     template<typename T = float>
     inline __both__ float operator()()
     {
-        return this->random<T>();
+        return this->rng<T>();
     }
 
     int32_t N{4};

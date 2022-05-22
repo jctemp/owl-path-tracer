@@ -29,7 +29,7 @@ __device__ vec3 sample_environment(vec3 dir)
     return vec3{texColor};
 }
 
-__device__ vec3 trace_path(radiance_ray& ray, Random& random)
+__device__ vec3 trace_path(radiance_ray& ray, random& random)
 {
     auto& launch_params{optixLaunchParams};
 
@@ -156,8 +156,8 @@ __device__ vec3 trace_path(radiance_ray& ray, Random& random)
                     | OPTIX_RAY_FLAG_DISABLE_ANYHIT
                     | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT);
 
-            auto surface_f{ vec3{0.0f} };
-            auto surface_pdf{ 0.0f };
+            auto surface_f{vec3{0.0f}};
+            auto surface_pdf{0.0f};
 
             if (visible && light_pdf > 0.0)
             {

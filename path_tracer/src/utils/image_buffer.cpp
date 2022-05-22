@@ -45,7 +45,7 @@ image_buffer load_image(std::string const& name, std::string const& path)
 
     int32_t width, height, comp;
     auto buffer{reinterpret_cast<uint32_t*>(stbi_load(file_path.c_str(), &width,
-                    &height, &comp, STBI_rgb_alpha))};
+            &height, &comp, STBI_rgb_alpha))};
 
     for (int32_t y{0}; y < height / 2; y++)
     {

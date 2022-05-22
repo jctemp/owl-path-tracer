@@ -11,20 +11,20 @@
 
 __both__ vec2 sample_uniform_disk(const vec2& rand)
 {
-    float phi{ two_pi * rand.y };
-    float r{ owl::sqrt(rand.x) };
-    return { r * owl::cos(phi),r * owl::sin(phi) };
+    float phi{two_pi * rand.y};
+    float r{owl::sqrt(rand.x)};
+    return {r * owl::cos(phi), r * owl::sin(phi)};
 }
 
 __both__ vec2 sample_concentric_disk(const vec2& rand)
 {
     // re-scale rand to be between [-1,1]
-    float dx{ 2.0f * rand.x - 1 };
-    float dy{ 2.0f * rand.y - 1 };
+    float dx{2.0f * rand.x - 1};
+    float dy{2.0f * rand.y - 1};
 
     // handle degenerated origin
     if (dx == 0 && dy == 0)
-        return vec2 {0.0f};
+        return vec2{0.0f};
 
     // handle mapping unit square to unit disk
     float phi, r;
@@ -32,23 +32,22 @@ __both__ vec2 sample_concentric_disk(const vec2& rand)
     {
         r = dx;
         phi = pi_over_four * (dy / dx);
-    }
-    else
+    } else
     {
         r = dy;
         phi = pi_over_two - pi_over_four * (dx / dy);
     }
-    return { r * owl::cos(phi),r * owl::sin(phi) };
+    return {r * owl::cos(phi), r * owl::sin(phi)};
 }
 
 __both__ vec3 sample_uniform_sphere(const vec2& rand)
 {
-    float z{ 1.0f - 2.0f * rand.x };
-    float r{ owl::sqrt(owl::max(0.0f, 1.0f - z * z)) };
-    float phi{ two_pi * rand.y };
+    float z{1.0f - 2.0f * rand.x};
+    float r{owl::sqrt(owl::max(0.0f, 1.0f - z * z))};
+    float phi{two_pi * rand.y};
     float x = r * owl::cos(phi);
     float y = r * owl::sin(phi);
-    return vec3{ x, y, z };
+    return vec3{x, y, z};
 }
 
 __both__ vec3 sample_cosine_hemisphere(vec2 const& rand)
@@ -56,8 +55,8 @@ __both__ vec3 sample_cosine_hemisphere(vec2 const& rand)
     // 1. sample unit circle and save position into rand.u, rand.v
     vec2 circle_points{sample_concentric_disk(rand)};
     // 2. calculate cos_theta => 1 = rand.u^2 + rand.v^2 => cos = 1 - (rand.u^2 + rand.v^2)
-    float cos_theta{ owl::sqrt(owl::max(0.0f, 1.0f - sqr(circle_points.x) - sqr(circle_points.y))) };
-    return vec3{ circle_points.x, circle_points.y, cos_theta };
+    float cos_theta{owl::sqrt(owl::max(0.0f, 1.0f - sqr(circle_points.x) - sqr(circle_points.y)))};
+    return vec3{circle_points.x, circle_points.y, cos_theta};
 }
 
 __both__ float pdf_cosine_hemisphere(vec3 const& w_o, vec3 const& w_i)
@@ -67,12 +66,12 @@ __both__ float pdf_cosine_hemisphere(vec3 const& w_o, vec3 const& w_i)
 
 __both__ vec3 sample_uniform_hemisphere(vec2 const& rand)
 {
-    float z{ rand.x };
-    float r{ owl::sqrt(owl::max(0.0f, 1.0f - z * z)) };
+    float z{rand.x};
+    float r{owl::sqrt(owl::max(0.0f, 1.0f - z * z))};
     float phi = two_pi * rand.y;
     float x = r * owl::cos(phi);
     float y = r * owl::sin(phi);
-    return vec3{ x, y, z };
+    return vec3{x, y, z};
 }
 
 __both__ float pdf_uniform_hemisphere(vec3 const& w_o, vec3 const& w_i)
