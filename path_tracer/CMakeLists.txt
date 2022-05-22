@@ -20,6 +20,9 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/utils/mesh_loader.hpp"
         "src/utils/mesh_loader.cpp"
 
+        "src/utils/parser.hpp"
+        "src/utils/parser.cpp"
+
         # SRC/DEVICE
         "src/device/materials.hpp"
         "src/device/bsdf_utils.hpp"
@@ -29,8 +32,7 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/device/device.hpp"
         "src/device/lights.hpp"
 
-        "src/utils/parser.hpp"
-        "src/utils/parser.cpp"
+
 
         "src/device/path_tracer.hpp" 
         "src/device/device_global.hpp")
@@ -42,14 +44,11 @@ TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC
         nlohmann_json
         tinyobjloader)
 
-TARGET_INCLUDE_DIRECTORIES(lib${PROJECT_NAME} PUBLIC
-        "src")
+TARGET_INCLUDE_DIRECTORIES(lib${PROJECT_NAME} PUBLIC "src")
 
-EMBED_PTX(
-        OUTPUT_TARGET device-ptx
-        PTX_LINK_LIBRARIES ${CUDA_RUNTIME_LIBRARY} lib${PROJECT_NAME}
-        SOURCES "src/device/device.cu"
-)
+EMBED_PTX(OUTPUT_TARGET device-ptx
+          PTX_LINK_LIBRARIES ${CUDA_RUNTIME_LIBRARY} lib${PROJECT_NAME}
+          SOURCES "src/device/device.cu")
 
 ADD_EXECUTABLE(${PROJECT_NAME} "Main.cpp")
 TARGET_LINK_LIBRARIES(${PROJECT_NAME}

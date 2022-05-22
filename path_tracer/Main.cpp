@@ -185,8 +185,8 @@ void add(mesh* m, entity e)
     od.geoms.push_back(geom_data);
 }
 
-void
-render(camera_data const& camera, std::vector<material_data> const& materials, std::vector<light_data> const& lights)
+void render(camera_data const& camera, std::vector<material_data> const& materials, 
+    std::vector<light_data> const& lights)
 {
     // 1) set mesh data into buffers
     if (od.geoms.empty())
@@ -258,11 +258,14 @@ int32_t get_input(int32_t min = 0, int32_t max = 10)
     }
 }
 
-int main()
+int main(int argc, char **argv)
 {
-    // auto const prefix_path{ std::string{"../.."} };
-    auto const prefix_path{std::string{"../../../.."}};
-    auto const config_file{ std::filesystem::absolute(prefix_path + "/config.json").string() };
+    auto prefix_path{ std::string{"."} };
+
+    if (argc > 1)
+        prefix_path = argv[1];
+
+    auto const config_file{ std::filesystem::absolute(prefix_path + "/config.json").string()};
 
     auto const scenes{ parse_scenes(config_file) };
     auto const materials{ parse_materials(config_file) };
@@ -336,7 +339,7 @@ int main()
 
     image_buffer result{ od.buffer_size.x, od.buffer_size.y,
                         (uint32_t*)buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced };
-    write_image(result, fmt::format("{}/{}.png", prefix_path, scene_name));
+    write_image(result, fmt::format("{}.png", scene_name), prefix_path);
 
     optix_destroy();
 }
