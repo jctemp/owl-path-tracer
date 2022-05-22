@@ -43,7 +43,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
     interface_data is;
     material_data ms;
 
-    per_ray_data prd{random, scatter_event::NONE, &is, &ms};
+    per_ray_data prd{random, scatter_event::none, &is, &ms};
 
     for (int32_t depth{0}; depth < launch_params.max_path_depth; ++depth)
     {
@@ -52,7 +52,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
 
 
         /* TERMINATE PATH AND SAMPLE ENVIRONMENT*/
-        if (prd.scatterEvent == scatter_event::MISS)
+        if (prd.scatter_event == scatter_event::missed)
         {
             vec3 li{0.0f};
             if (!launch_params.use_environment_map)
@@ -67,19 +67,19 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
         }
 
 
-        /* PREPARE MESH FOR CALCULATIONS */
-        auto const& hit_p{is.P}, hit_n{is.N}, world_wo{is.V};
+        /* PREPARE mesh FOR CALCULATIONS */
+        auto const& hit_p{is.position}, hit_n{is.normal}, world_wo{is.wo};
 
         vec3 T{}, B{};
         onb(hit_n, T, B);
 
 
         /* TERMINATE PATH AND SAMPLE LIGHT */
-        if (is.lightId >= 0)
+        if (is.light_id >= 0)
         {
             // TODO: SAMPLE LIGHT
             light_data light{};
-            get_data(light, launch_params.light_buffer, is.lightId, light_data);
+            get_data(light, launch_params.light_buffer, is.light_id, light_data);
             vec3 emission{light.color * light.intensity};
             radiance += emission * beta;
             break;
@@ -88,7 +88,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
 
         /* SAMPLE BRDF */
         material_data material{};
-        if (is.matId >= 0) { get_data(material, launch_params.material_buffer, is.matId, material_data); }
+        if (is.material_id >= 0) { get_data(material, launch_params.material_buffer, is.material_id, material_data); }
 
         auto const local_wo{to_local(T, B, hit_n, world_wo)};
         auto local_wi{vec3{0.0f}};

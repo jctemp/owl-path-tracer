@@ -10,17 +10,17 @@
 // https://media.disneyanimation.com/uploads/production/publication_asset/48/asset/s2012_pbs_disney_brdf_notes_v3.pdf
 // https://blog.selfshadow.com/publications/s2015-shading-course/burley/s2015_pbs_disney_bsdf_notes.pdf
 
-__device__ vec3 f_lambert(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_lambert(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return m.base_color * inv_pi;
 }
 
-__device__ float pdf_lambert(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_lambert(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__device__ void sample_lambert(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_lambert(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     sample_cosine_hemisphere(rand.rng<vec2>());
     pdf = pdf_lambert(m, wo, wi);
@@ -28,7 +28,7 @@ __device__ void sample_lambert(material_data const& m, vec3 const& wo, random& r
 }
 
 
-__device__ vec3 f_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     // Burley 2015, eq (4).
     auto const n_dot_wo{owl::abs(cos_theta(wo))};
@@ -40,12 +40,12 @@ __device__ vec3 f_disney_diffuse(material_data const& m, vec3 const& wo, vec3 co
     return m.base_color * inv_pi * (1.0f - fresnel_wi / 2.0f) * (1.0f - fresnel_wo / 2.0f);
 }
 
-__device__ float pdf_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__device__ void
+__both__ void
 sample_disney_diffuse(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
@@ -54,7 +54,7 @@ sample_disney_diffuse(material_data const& m, vec3 const& wo, random& rand, vec3
 }
 
 
-__device__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     auto wh{wi + wo};
     if (all_zero(wh)) return vec3{0.0f};
@@ -76,13 +76,13 @@ __device__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3
     return m.subsurface_color * inv_pi * fs;
 }
 
-__device__ float pdf_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__device__ void
-sample_disney_subsurface(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__
+void sample_disney_subsurface(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_subsurface(m, wo, wi);
@@ -90,7 +90,7 @@ sample_disney_subsurface(material_data const& m, vec3 const& wo, random& rand, v
 }
 
 
-__device__ vec3 f_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     auto wh{wi + wo};
     if (all_zero(wh)) return vec3{0.0f};
@@ -108,12 +108,12 @@ __device__ vec3 f_disney_retro(material_data const& m, vec3 const& wo, vec3 cons
     return m.base_color * inv_pi * rr * (fresnel_wo + fresnel_wi + fresnel_wo * fresnel_wi * (rr - 1));
 }
 
-__device__ float pdf_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__device__ void sample_disney_retro(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_disney_retro(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere(rand.rng<vec2>());
     pdf = pdf_disney_retro(m, wo, wi);
@@ -121,7 +121,7 @@ __device__ void sample_disney_retro(material_data const& m, vec3 const& wo, rand
 }
 
 
-__device__ vec3 f_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     if (m.sheen <= 0.0f) return vec3{0.0f};
 
@@ -135,12 +135,12 @@ __device__ vec3 f_disney_sheen(material_data const& m, vec3 const& wo, vec3 cons
     return m.sheen * lerp(vec3{1.0f}, tint, vec3{m.sheen_tint}) * schlick_fresnel(cos_theta_d, m.ior);
 }
 
-__device__ float pdf_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__device__ void sample_disney_sheen(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_disney_sheen(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_sheen(m, wo, wi);
@@ -148,7 +148,7 @@ __device__ void sample_disney_sheen(material_data const& m, vec3 const& wo, rand
 }
 
 
-__device__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     auto wh{wi + wo};
     if (all_zero(wh)) return vec3{0.0f};
@@ -167,7 +167,7 @@ __device__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 
     return m.clearcoat * gr * fr * dr / (4.0f * owl::abs(cos_theta(wh)));
 }
 
-__device__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     auto wh{wi + wo};
     if (all_zero(wh)) return 0.0f;
@@ -183,7 +183,7 @@ __device__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, ve
     return dr * owl::abs(cos_theta(wh)) / (4.0f * owl::abs(cos_theta(wo)));
 }
 
-__device__ void
+__both__ void
 sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     // there is no visible normal sampling for BRDF because the Clearcoat has no
@@ -211,7 +211,7 @@ sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand, ve
 }
 
 
-__device__ vec3 f_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     if (owl::abs(cos_theta(wo)) == 0) return vec3{0.0f};
 
@@ -228,7 +228,7 @@ __device__ vec3 f_disney_microfacet(material_data const& m, vec3 const& wo, vec3
     return dr * fr * gr / (4.0f * owl::abs(cos_theta(wi)));
 }
 
-__device__ float pdf_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     auto wh{wi + wo};
     if (all_zero(wh)) return 0.0f;
@@ -238,7 +238,7 @@ __device__ float pdf_disney_microfacet(material_data const& m, vec3 const& wo, v
     return pdf_gtr2(wo, wh, alpha);
 }
 
-__device__ void
+__both__ void
 sample_disney_microfacet(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     auto const alpha{to_alpha(m.roughness)};
@@ -256,13 +256,13 @@ sample_disney_microfacet(material_data const& m, vec3 const& wo, random& rand, v
 }
 
 #ifdef TRANSMISSION
-__device__ vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat) {
+__both__ vec3 refract(const vec3& uv, const vec3& n, float etai_over_etat) {
     auto cos_theta = owl::min(owl::dot(uv, n), 1.0f);
     vec3 r_out_perp =  etai_over_etat * (-uv + cos_theta*n);
     vec3 r_out_parallel = -sqrt(fabs(1.0f - owl::dot(r_out_perp,r_out_perp))) * -n;
     return r_out_perp + r_out_parallel;
 }
-__device__ void sample_disney_transmission(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_disney_transmission(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     auto const eta = (cos_theta(wo) > 0) ? 1 / m.ior : m.ior;
     auto const cos_theta_h = owl::min(cos_theta(wo), 1.0f);
@@ -297,7 +297,7 @@ __device__ void sample_disney_transmission(material_data const& m, vec3 const& w
 //  + Subsurface
 //
 
-__device__ void
+__both__ void
 sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
 {
     f = vec3{0.0f};

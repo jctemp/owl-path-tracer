@@ -53,7 +53,7 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
     float b2{optixGetTriangleBarycentrics().y};
     float b0{1 - b1 - b2};
 
-    prd.is->UV = {b1, b2};
+    prd.is->uv = {b1, b2};
 
     // get direction
     auto ray_dir{optixGetWorldRayDirection()};
@@ -63,44 +63,44 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
             ray_dir.z
     };
 
-    prd.is->V = -direction;
+    prd.is->wo = -direction;
 
     // get geometric data:
     triangle_geom_data const& self = owl::getProgramData<triangle_geom_data>();
     uint32_t const primID{optixGetPrimitiveIndex()};
     ivec3 const index{self.index[primID]};
 
-    prd.is->matId = self.matId;
-    prd.is->lightId = self.lightId;
+    prd.is->material_id = self.matId;
+    prd.is->light_id = self.lightId;
     prd.is->prim = primID;
 
-    // vertices for P and Ng
+    // vertices for P and normal_geometric
     vec3 const& p0{self.vertex[index.x]};
     vec3 const& p1{self.vertex[index.y]};
     vec3 const& p2{self.vertex[index.z]};
 
-    prd.is->TRI[0] = vec3{p0};
-    prd.is->TRI[1] = vec3{p1};
-    prd.is->TRI[2] = vec3{p2};
+    prd.is->triangle_points[0] = vec3{p0};
+    prd.is->triangle_points[1] = vec3{p1};
+    prd.is->triangle_points[2] = vec3{p2};
 
-    prd.is->Ng = normalize(cross(p1 - p0, p2 - p0));
-    prd.is->P = p0 * b0 + p1 * b1 + p2 * b2;
+    prd.is->normal_geometric = normalize(cross(p1 - p0, p2 - p0));
+    prd.is->position = p0 * b0 + p1 * b1 + p2 * b2;
 
     // vertex normals for N
     vec3 const& n0{self.normal[index.x]};
     vec3 const& n1{self.normal[index.y]};
     vec3 const& n2{self.normal[index.z]};
 
-    prd.is->N = normalize(n0 * b0 + n1 * b1 + n2 * b2);
+    prd.is->normal = normalize(n0 * b0 + n1 * b1 + n2 * b2);
 
     // scatter event type
-    prd.scatterEvent = scatter_event::BOUNCED;
+    prd.scatter_event = scatter_event::bounced;
 }
 
 OPTIX_MISS_PROGRAM(miss)()
 {
     per_ray_data& prd{owl::getPRD<per_ray_data>()};
-    prd.scatterEvent = scatter_event::MISS;
+    prd.scatter_event = scatter_event::missed;
 }
 
 OPTIX_MISS_PROGRAM(miss_shadow)()

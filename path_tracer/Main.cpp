@@ -196,8 +196,8 @@ void optix_init()
     /* ━━━━━━━━━ CREATE TRIANGLE GEOM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     var_decl triangles_geom_vars
             {
-                    {"matId",   OWL_INT,    OWL_OFFSETOF(triangle_geom_data, matId)},
-                    {"lightId", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, lightId)},
+                    {"material_id",   OWL_INT,    OWL_OFFSETOF(triangle_geom_data, matId)},
+                    {"light_id", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, lightId)},
                     {"index",   OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index)},
                     {"vertex",  OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex)},
                     {"normal",  OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal)},
@@ -262,8 +262,8 @@ void optix_set_entities(std::vector<entity> entities)
                 indices.size(), sizeof(ivec3));
 
         // set sbt data
-        set_field(geom_data, "matId", e.materialId);
-        set_field(geom_data, "lightId", e.lightId);
+        set_field(geom_data, "material_id", e.materialId);
+        set_field(geom_data, "light_id", e.lightId);
         set_field(geom_data, "vertex", vertex_buffer);
         set_field(geom_data, "normal", normal_buffer);
         set_field(geom_data, "index", index_buffer);

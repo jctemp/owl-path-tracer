@@ -8,7 +8,7 @@
 
 mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attribute)
 {
-    auto const meshptr{new mesh{}};
+    auto const mesh_ptr{new mesh{}};
 
     // global, no offset, shared by all meshes
     auto const& mesh_vertices{attribute.vertices};
@@ -26,8 +26,8 @@ mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
 
     for (std::size_t f{0}; f < shape.mesh.num_face_vertices.size(); ++f)
     {
-        meshptr->indices.emplace_back(0, 0, 0);
-        auto& vertex_local{meshptr->indices[meshptr->indices.size() - 1]};
+        mesh_ptr->indices.emplace_back(0, 0, 0);
+        auto& vertex_local{mesh_ptr->indices[mesh_ptr->indices.size() - 1]};
 
         for (size_t v{0}; v < OBJ_TRIANGLE; v++)
         {
@@ -41,8 +41,8 @@ mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
             // check if global ID is mapped
             if (!vertex_mapping.contains(vertex_id))
             {
-                vertex_mapping.insert({vertex_id, static_cast<int32_t>(meshptr->vertices.size())});
-                meshptr->vertices.emplace_back(
+                vertex_mapping.insert({vertex_id, static_cast<int32_t>(mesh_ptr->vertices.size())});
+                mesh_ptr->vertices.emplace_back(
                         mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 0],
                         mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 1],
                         mesh_vertices[3 * static_cast<uint64_t>(vertex_id) + 2]
@@ -54,9 +54,9 @@ mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
             if (index.normal_index >= 0)
             {
                 // wtf no idea why this works lol
-                while (meshptr->normals.size() < meshptr->vertices.size())
+                while (mesh_ptr->normals.size() < mesh_ptr->vertices.size())
                 {
-                    meshptr->normals.emplace_back(
+                    mesh_ptr->normals.emplace_back(
                             mesh_normals[3 * static_cast<uint64_t>(normal_id) + 0],
                             mesh_normals[3 * static_cast<uint64_t>(normal_id) + 1],
                             mesh_normals[3 * static_cast<uint64_t>(normal_id) + 2]
@@ -66,12 +66,12 @@ mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
         }
         index_offset += OBJ_TRIANGLE;
     }
-    return meshptr;
+    return mesh_ptr;
 }
 
 std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> load_obj(std::string const& obj_file)
 {
-    // 1.) create OBJ reader
+    // 1) create OBJ reader
     tinyobj::ObjReader reader{};
 
     tinyobj::ObjReaderConfig readerConfig{};
@@ -79,21 +79,21 @@ std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> load_obj(std::string
 
     auto path = std::filesystem::absolute(obj_file);
 
-    // 2.) load obj file and checking for errors
+    // 2) load obj file and checking for errors
     if (!reader.ParseFromFile(obj_file, readerConfig))
         if (!reader.Error().empty())
             throw std::runtime_error(reader.Error());
 
-    // 3). check for warings
+    // 3) check for warnings
     if (!reader.Warning().empty())
         printf("WARNING: %s\n", reader.Warning().c_str());
 
-    // 4.) get references to attribute and shapes of reader
+    // 4) get references to attribute and shapes of reader
     /*
     > tinyobj::attrib_t contains for all object vertex, normals and uv data
     > hence the indices inside shapes refers to the global index
     >
-    > tinyobj::shape_t has meta data of object. It helps to build faces
+    > tinyobj::shape_t has metadata of object. It helps to build faces
     > lines and points. Creating custom meshes needs an internal mapping
     */
     tinyobj::attrib_t const& attribute{reader.GetAttrib()};

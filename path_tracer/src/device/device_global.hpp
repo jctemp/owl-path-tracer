@@ -44,11 +44,11 @@ struct light_data
 {
     enum class type
     {
-        NONE = 0 << 0,
-        MESH = 1 << 0
+        none = 0 << 0,
+        mesh = 1 << 0
     };
 
-    type type{type::MESH};
+    type type{type::mesh};
     vec3 color{1.f};
     float intensity{1.f};
     float exposure{0.f};
@@ -81,10 +81,6 @@ struct ray_gen_data
     uint32_t* fbPtr;
     ivec2 fbSize;
     camera_data camera;
-};
-
-struct miss_data
-{
 };
 
 #endif //PATH_TRACER_DEVICE_GLOBAL_HPP
