@@ -29,7 +29,7 @@ __device__ vec3 sample_environment(vec3 dir)
     return vec3{texColor};
 }
 
-__device__ vec3 trace_path(radiance_ray& ray, random& random)
+__device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 {
     auto& launch_params{optixLaunchParams};
 
@@ -94,11 +94,11 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
         auto hit_f{vec3{0.0f}};
         auto sampled_type{material_type::none};
 
-        // TODO: SAMPLE BRDF
         auto const local_wo{to_local(T, B, hit_n, world_wo)};
         auto local_wi{vec3{0.0f}};
+        auto local_wh{vec3{0.0f}};
         sample_disney_bsdf(material, local_wo, prd.random,
-                local_wi, hit_f, hit_pdf, sampled_type);
+                local_wi, local_wh, hit_f, hit_pdf, sampled_type);
         auto const world_wi{to_world(T, B, hit_n, local_wi)};
 
 
@@ -109,20 +109,25 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
         beta *= hit_f / hit_pdf;
 
         /* SAMPLE DIRECT LIGHTS */
-        if (false)
+        if (sampled_type == material_type::diffuse ||
+            sampled_type == material_type::clearcoat)
         {
+            samples++;
+
             // TODO: GET LIGHT DATA FROM GLOBAL BUFFER
-            auto const light_position{2.0f};
-            auto const light_intensity{1.0f};
+            auto const light_position{vec3{2.0f, 2.0f, 5.0f}};
+            auto const light_intensity{20.0f};
 
             // CALCULATE LIGHT SPATIAL METRICS
             auto const light_wi{normalize(light_position - hit_p)};
             auto const light_pdf{1.0f};
             auto const light_power{light_intensity * 4 * pi};
-            auto const light_li{light_intensity / sqr(light_position - hit_p)};
+
+            auto const light_distance{owl::length(light_position - hit_p)};
+            auto const light_li{light_intensity / sqr(light_distance)};
 
             // VISIBILITY TEST
-            shadow_ray light_ray{hit_p, light_wi, t_min, light_position + t_min};
+            shadow_ray light_ray{hit_p, light_wi, t_min, light_distance + t_min};
 
             bool visible{false};
             owl::traceRay(launch_params.world, light_ray, visible,
@@ -137,17 +142,17 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
             {
                 // TODO: add additional branch to evaluate subsurface scattering
 
-                // TODO: replace f_lambert with f_disney
-                surface_f = f_lambert(material, world_wo, light_wi) * owl::abs(owl::dot(light_wi, hit_n));
-                surface_pdf = pdf_lambert(material, world_wo, light_wi);
+                surface_f = f_disney_bsdf(material, local_wo, light_wi, sampled_type) * owl::abs(owl::dot(light_wi, hit_n));
+                surface_pdf = pdf_disney_pdf(material, local_wo, light_wi, sampled_type);
 
-                if (!all_zero(surface_f) && !all_zero(light_li))
+                if (!all_zero(surface_f) && light_li != 0)
                 {
                     auto const weight = power_heuristic(1, light_pdf, 1, surface_pdf);
                     radiance += surface_f * light_li * weight / surface_pdf;
                 }
             }
         }
+
 
         /* TERMINATE PATH IF RUSSIAN ROULETTE  */
         auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
@@ -158,6 +163,11 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
         }
 
         ray = radiance_ray{hit_p, world_wi, t_min, t_max};
+    }
+
+    if (has_inf(radiance) || has_nan(radiance))
+    {
+        printf("error\n");
     }
 
     return radiance;

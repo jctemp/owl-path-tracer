@@ -345,9 +345,9 @@ int main(int argc, char** argv)
 
     od.buffer_size = ivec2{1024};
     od.frame_buffer = create_pinned_host_buffer(od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
-    od.use_environment_map = true;
-    od.max_samples = 128;
-    od.max_path_depth = 64;
+    od.use_environment_map = false;
+    od.max_samples = 1024;
+    od.max_path_depth = 16;
 
     optix_render(to_camera_data(scene_camera, od.buffer_size), &materials, nullptr);
 

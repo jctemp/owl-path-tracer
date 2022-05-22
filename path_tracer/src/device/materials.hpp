@@ -297,8 +297,8 @@ __both__ void sample_disney_transmission(material_data const& m, vec3 const& wo,
 //  + Subsurface
 //
 
-__both__ vec3 pdf_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 const& wh,
-                              vec3 const &wi, material_type const &sampled_type)
+__both__ vec3 f_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 const &wi,
+                            material_type const &sampled_type)
 {
     vec3 f{0.0f};
     if (sampled_type == material_type::diffuse)
@@ -327,8 +327,8 @@ __both__ vec3 pdf_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 con
     return f;
 }
 
-__both__ float pdf_disney_pdf(material_data const& mat, vec3 const& wo, vec3 const& wh,
-                              vec3 const &wi, material_type const &sampled_type)
+__both__ float pdf_disney_pdf(material_data const& mat, vec3 const& wo, vec3 const &wi,
+                              material_type const &sampled_type)
 {
     float pdf{0.0f};
     if (sampled_type == material_type::diffuse)
@@ -348,7 +348,7 @@ __both__ float pdf_disney_pdf(material_data const& mat, vec3 const& wo, vec3 con
 }
 
 __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand,
-                   vec3 &wi, vec3& f, float& pdf, material_type &sampled_type)
+                   vec3 &wi, vec3 &wh, vec3& f, float& pdf, material_type &sampled_type)
 {
     f = vec3{0.0f};
     pdf = 0.0f;
@@ -369,8 +369,6 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
     cdf[1] = p_specular + cdf[0];
     cdf[2] = p_clearcoat + cdf[1];
 
-
-    auto wh{vec3{0.0f}};
     if (r1 < cdf[0]) // diffuse
     {
         sampled_type = material_type::diffuse;
@@ -396,8 +394,8 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
         if (!same_hemisphere(wo, wi)) return;
     }
 
-    f = pdf_disney_bsdf(mat, wo, wh, wi, sampled_type);
-    pdf = pdf_disney_pdf(mat, wo, wh, wi, sampled_type);
+    f = f_disney_bsdf(mat, wo, wi, sampled_type);
+    pdf = pdf_disney_pdf(mat, wo, wi, sampled_type);
 }
 
 #endif // !DISNEY_BRDF_HPP

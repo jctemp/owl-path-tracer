@@ -25,7 +25,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
                         self.camera.origin),
                 t_min, t_max};
 
-        color += trace_path(ray, pxRand);
+        color += trace_path(ray, pxRand, s);
     }
 
     // take the average of all samples per pixel and apply gamma correction
