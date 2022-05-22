@@ -15,7 +15,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
     {
         // shot ray with slight randomness to make soft edges
         vec2 const rand{pxRand(), pxRand()};
-        vec2 const screen{(vec2{pixelId} + rand) / vec2{self.fbSize}};
+        vec2 const screen{(vec2{pixelId} + rand) / vec2{self.fb_size}};
 
         // determine initial ray form the camera
         radiance_ray ray{
@@ -37,8 +37,8 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
     assert_condition(isnan(color.x) || isnan(color.y) || isnan(color.z), "nan detected\n")
 
     // save result into the buffer
-    const int fbOfs = pixelId.x + self.fbSize.x * (self.fbSize.y - 1 - pixelId.y);
-    self.fbPtr[fbOfs]
+    const int fbOfs = pixelId.x + self.fb_size.x * (self.fb_size.y - 1 - pixelId.y);
+    self.fb_ptr[fbOfs]
             = owl::make_rgba(color);
 }
 

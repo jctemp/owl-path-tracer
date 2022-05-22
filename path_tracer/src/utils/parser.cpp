@@ -28,7 +28,6 @@ std::vector<std::tuple<std::string, material_data>> parse_materials(std::string 
         fmt::print(" - {}\n", material["name"]);
         material_data data{};
 
-        data.type = material_data::type::disney;
         data.base_color = {material["base_color"][0], material["base_color"][1], material["base_color"][2]};
         data.subsurface = material["subsurface"];
         data.subsurface_radius = {material["subsurface_radius"][0], material["subsurface_radius"][1],

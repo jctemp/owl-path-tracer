@@ -66,7 +66,7 @@ std::vector<T> to_vector(std::vector<std::tuple<std::string, T>> const* data)
     std::vector<T> result;
     result.reserve(data->size());
 
-    for (auto const& [name, value] : *data)
+    for (auto const& [name, value]: *data)
         result.push_back(value);
 
     return result;
@@ -81,7 +81,7 @@ int32_t get_input(int32_t min = 0, int32_t max = 10)
         std::getline(std::cin, tmp);
         if (tmp.empty()) continue;
 
-        auto const s{ std::stoi(tmp) };
+        auto const s{std::stoi(tmp)};
         if (s < min || max <= s) continue;
 
         return s;
@@ -90,22 +90,22 @@ int32_t get_input(int32_t min = 0, int32_t max = 10)
 
 std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string, camera>> const& scenes)
 {
-    auto counter{ 0 };
-    for (auto const& [name, camera] : scenes)
+    auto counter{0};
+    for (auto const& [name, camera]: scenes)
         fmt::print(fg(color::start), "SCENE[{}]: {}\n", counter++, name);
 
-    auto const s{ get_input(0, static_cast<int32_t>(scenes.size())) };
+    auto const s{get_input(0, static_cast<int32_t>(scenes.size()))};
     return scenes[s];
 }
 
 std::vector<entity> load_scene(std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> const& meshes,
-                               std::vector<std::tuple<std::string, material_data>> const *materials,
-                               std::vector<std::tuple<std::string, light_data>> const *lights)
+                               std::vector<std::tuple<std::string, material_data>> const* materials,
+                               std::vector<std::tuple<std::string, light_data>> const* lights)
 {
     fmt::print(fg(color::log), "> MATERIALS\n");
     std::vector<entity> entities{};
 
-    for (auto const& [name, mesh] : meshes)
+    for (auto const& [name, mesh]: meshes)
     {
         entities.push_back(entity{
                 .mesh_ptr = mesh.get(),
@@ -116,30 +116,30 @@ std::vector<entity> load_scene(std::vector<std::tuple<std::string, std::shared_p
 
     if (materials)
     {
-        auto counter{ 0 };
-        for (auto const& [name, material] : *materials)
+        auto counter{0};
+        for (auto const& [name, material]: *materials)
             fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
 
         counter = 0;
-        for (auto const& [name, mesh] : meshes)
+        for (auto const& [name, mesh]: meshes)
         {
             fmt::print("Object: {}\n", name);
-            auto const s{ get_input(0, static_cast<int32_t>(materials->size())) };
+            auto const s{get_input(0, static_cast<int32_t>(materials->size()))};
             entities[counter++].materialId = s;
         }
     }
 
     if (lights)
     {
-        auto counter{ 0 };
-        for (auto const& [name, light] : *lights)
+        auto counter{0};
+        for (auto const& [name, light]: *lights)
             fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
 
         counter = 0;
-        for (auto const& [name, mesh] : meshes)
+        for (auto const& [name, mesh]: meshes)
         {
             fmt::print("Object: {}\n", name);
-            auto const s{ get_input(0, static_cast<int32_t>(lights->size())) };
+            auto const s{get_input(0, static_cast<int32_t>(lights->size()))};
             entities[counter++].lightId = s;
         }
     }
@@ -157,8 +157,8 @@ void optix_init()
     /* ━━━━━━━━━ CREATE RAY GEN PROGRAM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     var_decl ray_gen_vars
             {
-                    {"fbPtr",             OWL_BUFPTR, OWL_OFFSETOF(ray_gen_data, fbPtr)},
-                    {"fbSize",            OWL_INT2,   OWL_OFFSETOF(ray_gen_data, fbSize)},
+                    {"fb_ptr",            OWL_BUFPTR, OWL_OFFSETOF(ray_gen_data, fb_ptr)},
+                    {"fb_size",           OWL_INT2,   OWL_OFFSETOF(ray_gen_data, fb_size)},
                     {"camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.origin)},
                     {"camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.llc)},
                     {"camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.horizontal)},
@@ -196,11 +196,11 @@ void optix_init()
     /* ━━━━━━━━━ CREATE TRIANGLE GEOM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
     var_decl triangles_geom_vars
             {
-                    {"material_id",   OWL_INT,    OWL_OFFSETOF(triangle_geom_data, matId)},
-                    {"light_id", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, lightId)},
-                    {"index",   OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index)},
-                    {"vertex",  OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex)},
-                    {"normal",  OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal)},
+                    {"material_id", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, matId)},
+                    {"light_id",    OWL_INT,    OWL_OFFSETOF(triangle_geom_data, lightId)},
+                    {"index",       OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index)},
+                    {"vertex",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex)},
+                    {"normal",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal)},
                     {nullptr}
             };
 
@@ -232,7 +232,7 @@ void optix_set_environment_map(image_buffer const& texture)
 
 void optix_set_entities(std::vector<entity> entities)
 {
-    for (auto e : entities)
+    for (auto e: entities)
     {
         mesh& mesh{*e.mesh_ptr};
 
@@ -273,48 +273,38 @@ void optix_set_entities(std::vector<entity> entities)
 }
 
 void optix_render(camera_data const& camera,
-            std::vector<std::tuple<std::string, material_data>> const *materials,
-            std::vector<std::tuple<std::string, light_data>> const *lights)
+                  std::vector<std::tuple<std::string, material_data>> const* materials,
+                  std::vector<std::tuple<std::string, light_data>> const* lights)
 {
-    // 1) set mesh data into buffers
+    /* CREATE TRAVERSABLE (WORLD / IAS) */
     if (od.geoms.empty())
     {
         od.world = create_instance_group(od.context, 0, nullptr);
         build_group_acceleration_structure(od.world);
     } else
     {
-        // Create Geom group and build world
-        auto triangles_group =
-                owlTrianglesGeomGroupCreate(od.context, od.geoms.size(), od.geoms.data());
+        auto triangles_group = owlTrianglesGeomGroupCreate(od.context, od.geoms.size(), od.geoms.data());
         build_group_acceleration_structure(triangles_group);
 
-        // Create an Instance group to make world
         od.world = create_instance_group(od.context, 1, &triangles_group);
         build_group_acceleration_structure(od.world);
     }
 
-    // 2) set miss program data
-    /* INSERT HERE PROGRAM DATA */
-
-    // 4) set ray gen data
-    set_field(od.ray_gen_program, "fbPtr", od.frame_buffer);
-    set_field(od.ray_gen_program, "fbSize", od.buffer_size);
+    /* SET RAY GEN SBT DATA */
+    set_field(od.ray_gen_program, "fb_ptr", od.frame_buffer);
+    set_field(od.ray_gen_program, "fb_size", od.buffer_size);
     set_field(od.ray_gen_program, "camera.origin", camera.origin);
     set_field(od.ray_gen_program, "camera.llc", camera.llc);
     set_field(od.ray_gen_program, "camera.horizontal", camera.horizontal);
     set_field(od.ray_gen_program, "camera.vertical", camera.vertical);
 
-    auto const material_list = to_vector(materials);
-    auto const light_list = to_vector(lights);
+    /* SET LAUNCH PARAMS SBT DATA */
+    auto const vec_material = to_vector(materials);
+    auto const vec_light = to_vector(lights);
 
-    // 5) set launch params
-    auto material_buffer{
-            create_device_buffer(od.context, OWL_USER_TYPE(material_data), material_list.size(), material_list.data())
-    };
-
-    auto light_buffer{
-            create_device_buffer(od.context, OWL_USER_TYPE(light_data), light_list.size(), light_list.data())
-    };
+    auto material_buffer{create_device_buffer(od.context, OWL_USER_TYPE(material_data), vec_material.size(),
+            vec_material.data())};
+    auto light_buffer{create_device_buffer(od.context, OWL_USER_TYPE(light_data), vec_light.size(), vec_light.data())};
 
     set_field(od.launch_params, "max_path_depth", reinterpret_cast<void*>(&od.max_path_depth));
     set_field(od.launch_params, "max_samples", reinterpret_cast<void*>(&od.max_samples));
@@ -324,36 +314,36 @@ void optix_render(camera_data const& camera,
     set_field(od.launch_params, "environment_map", od.environment_map);
     set_field(od.launch_params, "use_environment_map", od.use_environment_map);
 
-    // 6) build sbt tables and load data
+    /* BUILD PROGRAMS, PIPELINE AND SBT */
     build_optix(od.context);
 
-    // 7) compute image
+    /* LAUNCH TRACING */
     fmt::print(fg(color::start), "LAUNCH TRACER\n");
     owlLaunch2D(od.ray_gen_program, od.buffer_size.x, od.buffer_size.y, od.launch_params);
     fmt::print(fg(color::stop), "STOP TRACER\n");
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    auto prefix_path{ std::string{"."} };
+    auto prefix_path{std::string{"."}};
     if (argc > 1) prefix_path = argv[1];
     auto const config_file{prefix_path + "/config.json"};
 
-    auto const scenes{ parse_scenes(config_file) };
-    auto const materials{ parse_materials(config_file) };
+    auto const scenes{parse_scenes(config_file)};
+    auto const materials{parse_materials(config_file)};
     auto const [scene_name, scene_camera] = select_scene(scenes);
 
-    auto environment{ load_image("environment.hdr", prefix_path + "/assets/") };
+    auto environment{load_image("environment.hdr", prefix_path + "/assets/")};
     environment.ptr_tag = image_buffer::tag::allocated;
 
-    auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "assets/", scene_name, ".obj.scene")) };
+    auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "assets/", scene_name, ".obj.scene"))};
     auto const entities = load_scene(meshes, &materials, nullptr);
 
     optix_init();
     optix_set_environment_map(environment);
     optix_set_entities(entities);
 
-    od.buffer_size = ivec2{ 1024 };
+    od.buffer_size = ivec2{1024};
     od.frame_buffer = create_pinned_host_buffer(od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
     od.use_environment_map = true;
     od.max_samples = 128;
@@ -363,8 +353,8 @@ int main(int argc, char **argv)
 
     // copy image buffer
 
-    image_buffer result{ od.buffer_size.x, od.buffer_size.y,
-                        (uint32_t*)buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced };
+    image_buffer result{od.buffer_size.x, od.buffer_size.y,
+                        (uint32_t*) buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced};
     write_image(result, fmt::format("{}.png", scene_name), prefix_path);
 
     optix_destroy();

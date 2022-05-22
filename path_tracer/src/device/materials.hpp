@@ -20,8 +20,10 @@ __both__ float pdf_lambert(material_data const& m, vec3 const& wo, vec3 const& w
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__both__ void sample_lambert(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_lambert(material_data const& m, vec3 const& wo, random& rand,
+                             vec3& wi, vec3& f, float& pdf, material_type& sampled_type)
 {
+    sampled_type = material_type::lambertian;
     sample_cosine_hemisphere(rand.rng<vec2>());
     pdf = pdf_lambert(m, wo, wi);
     f = f_lambert(m, wo, wi);
@@ -46,13 +48,13 @@ __both__ float pdf_disney_diffuse(material_data const& m, vec3 const& wo, vec3 c
 }
 
 __both__ void
-sample_disney_diffuse(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+sample_disney_diffuse(material_data const& m, vec3 const& wo, random& rand,
+                      vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_diffuse(m, wo, wi);
     f = f_disney_diffuse(m, wo, wi) * owl::abs(cos_theta(wi));
 }
-
 
 __both__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
@@ -81,8 +83,8 @@ __both__ float pdf_disney_subsurface(material_data const& m, vec3 const& wo, vec
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__both__
-void sample_disney_subsurface(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_disney_subsurface(material_data const& m, vec3 const& wo, random& rand,
+                                       vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_subsurface(m, wo, wi);
@@ -113,7 +115,8 @@ __both__ float pdf_disney_retro(material_data const& m, vec3 const& wo, vec3 con
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__both__ void sample_disney_retro(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_disney_retro(material_data const& m, vec3 const& wo, random& rand,
+                                  vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere(rand.rng<vec2>());
     pdf = pdf_disney_retro(m, wo, wi);
@@ -140,7 +143,8 @@ __both__ float pdf_disney_sheen(material_data const& m, vec3 const& wo, vec3 con
     return pdf_cosine_hemisphere(wo, wi);
 }
 
-__both__ void sample_disney_sheen(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+__both__ void sample_disney_sheen(material_data const& m, vec3 const& wo, random& rand,
+                                  vec3& wi, vec3& f, float& pdf)
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_sheen(m, wo, wi);
@@ -184,7 +188,8 @@ __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3
 }
 
 __both__ void
-sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand,
+                        vec3& wi, vec3& f, float& pdf)
 {
     // there is no visible normal sampling for BRDF because the Clearcoat has no
     // physical meaning
@@ -239,7 +244,8 @@ __both__ float pdf_disney_microfacet(material_data const& m, vec3 const& wo, vec
 }
 
 __both__ void
-sample_disney_microfacet(material_data const& m, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+sample_disney_microfacet(material_data const& m, vec3 const& wo, random& rand,
+                         vec3& wi, vec3& f, float& pdf)
 {
     auto const alpha{to_alpha(m.roughness)};
     auto const wh{sample_gtr2_vndf(wo, alpha, rand.rng<vec2>())};
@@ -298,7 +304,8 @@ __both__ void sample_disney_transmission(material_data const& m, vec3 const& wo,
 //
 
 __both__ void
-sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand, vec3& wi, vec3& f, float& pdf)
+sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand,
+                   vec3& wi, vec3& f, float& pdf, material_type sampled_type)
 {
     f = vec3{0.0f};
     pdf = 0.0f;
@@ -322,6 +329,8 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand, vec3&
     // diffuse
     if (r1 < cdf[0])
     {
+        sampled_type = material_type::diffuse;
+
         wi = sample_cosine_hemisphere(rand.rng<vec2>());
         pdf = pdf_cosine_hemisphere(wo, wi);
 
@@ -342,6 +351,8 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand, vec3&
         // specular reflective
     else if (r1 < cdf[1])
     {
+        sampled_type = material_type::specular;
+
         auto const alpha{to_alpha(mat.roughness)};
         auto const wh{sample_gtr2_vndf(wo, alpha, rand.rng<vec2>())};
 
@@ -355,6 +366,8 @@ sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand, vec3&
         // clearcoat
     else
     {
+        sampled_type = material_type::clearcoat;
+
         sample_disney_clearcoat(mat, wo, rand, wi, f, pdf);
     }
 

@@ -90,49 +90,23 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
         material_data material{};
         if (is.material_id >= 0) { get_data(material, launch_params.material_buffer, is.material_id, material_data); }
 
-        auto const local_wo{to_local(T, B, hit_n, world_wo)};
-        auto local_wi{vec3{0.0f}};
         auto hit_pdf{0.0f};
         auto hit_f{vec3{0.0f}};
+        auto sampled_type{material_type::none};
 
-        switch (material.type)
-        {
-            case material_data::type::disney:
-                sample_disney_bsdf(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            case material_data::type::lambert:
-                sample_lambert(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            case material_data::type::disney_diffuse:
-                sample_disney_diffuse(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            case material_data::type::disney_subsurface:
-                sample_disney_subsurface(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            case material_data::type::disney_retro:
-                sample_disney_retro(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            case material_data::type::disney_sheen:
-                sample_disney_sheen(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            case material_data::type::disney_clearcoat:
-                sample_disney_clearcoat(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            case material_data::type::disney_microfacet:
-                sample_disney_microfacet(material, local_wo, prd.random, local_wi, hit_f, hit_pdf);
-                break;
-            default:
-                printf("unknown material type\n");
-                break;
-        }
+        // TODO: SAMPLE BRDF
+        auto const local_wo{to_local(T, B, hit_n, world_wo)};
+        auto local_wi{vec3{0.0f}};
+        sample_disney_bsdf(material, local_wo, prd.random,
+                local_wi, hit_f, hit_pdf, sampled_type);
+        auto const world_wi{to_world(T, B, hit_n, local_wi)};
+
 
         /* TERMINATE PATH IF IMPOSSIBLE */
         if (hit_pdf <= 1E-5f)
             break;
 
         beta *= hit_f / hit_pdf;
-
-        auto const world_wi{to_world(T, B, hit_n, local_wi)};
 
         /* SAMPLE DIRECT LIGHTS */
         if (false)
@@ -174,7 +148,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random)
                 }
             }
         }
-
 
         /* TERMINATE PATH IF RUSSIAN ROULETTE  */
         auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
