@@ -2,38 +2,24 @@
   "scenes": [
     {
       "scene": "dragon",
-      "look_from": [ 2.0, 1.2, 0.0 ],
+      "look_from": [ 2.0, 1.0, 0.0 ],
       "look_at": [ 0, 0.5, 0 ],
       "look_up": [ 0, 1, 0 ],
       "vertical_fov": 50
     },
     {
-      "scene": "cornell-box-w-boxes",
-      "look_from": [ 3.3, 1.0, 0.0 ],
+      "scene": "cornell-box",
+      "look_from": [ 3.0, 1.0, 0.0 ],
       "look_at": [ 0.0, 1.0, 0.0 ],
       "look_up": [ 0.0, 1.0, 0.0 ],
-      "vertical_fov": 45
+      "vertical_fov": 50
     },
     {
       "scene": "mitsuba",
-      "look_from": [ 5.0, 3.0, 0.0 ],
-      "look_at": [ 0.0, 0.75, 0.0 ],
-      "look_up": [ 0.0, 1.0, 0.0 ],
-      "vertical_fov": 30
-    },
-    {
-      "scene": "suzanne",
-      "look_from": [ 5.0, 5.0, 0.0 ],
-      "look_at": [ 0.0, 0.75, 0.0 ],
-      "look_up": [ 0.0, 1.0, 0.0 ],
-      "vertical_fov": 30
-    },
-    {
-      "scene": "three-sphere-test",
-      "look_from": [3.0, 0.5, 0.0 ],
+      "look_from": [ 4.0, 3.0, 0.0 ],
       "look_at": [ 0.0, 0.5, 0.0 ],
       "look_up": [ 0.0, 1.0, 0.0 ],
-      "vertical_fov": 60
+      "vertical_fov": 50
     }
   ],
   "materials": [
@@ -160,7 +146,7 @@
   "lights": [
     {
       "name" : "point-light",
-      "position" : [-2.0, 2.0, 3.0],
+      "position" : [-1.0, 1.0, 0.01],
       "color" : [1.0, 1.0, 1.0],
       "intensity" : 20
     }
