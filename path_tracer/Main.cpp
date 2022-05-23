@@ -287,6 +287,9 @@ void optix_render(camera_data const& camera,
     }
 
     /* SET RAY GEN SBT DATA */
+
+    od.frame_buffer = create_pinned_host_buffer(od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
+
     set_field(od.ray_gen_program, "fb_ptr", od.frame_buffer);
     set_field(od.ray_gen_program, "fb_size", od.buffer_size);
     set_field(od.ray_gen_program, "camera.origin", camera.origin);
@@ -341,9 +344,8 @@ int main(int argc, char** argv)
     optix_set_entities(entities);
 
     od.buffer_size = ivec2{1024};
-    od.frame_buffer = create_pinned_host_buffer(od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
-    od.use_environment_map = false;
-    od.max_samples = 1024;
+    od.use_environment_map = true;
+    od.max_samples = 8196;
     od.max_path_depth = 16;
 
     optix_render(to_camera_data(scene_camera, od.buffer_size), &materials, &lights);
@@ -351,7 +353,8 @@ int main(int argc, char** argv)
     // copy image buffer
 
     image_buffer result{od.buffer_size.x, od.buffer_size.y,
-                        (uint32_t*) buffer_to_pointer(od.frame_buffer, 0), image_buffer::tag::referenced};
+                        reinterpret_cast<uint32_t const*>(buffer_to_pointer(od.frame_buffer, 0)),
+                        image_buffer::tag::referenced};
     write_image(result, fmt::format("{}.png", scene_name), prefix_path);
 
     optix_destroy();

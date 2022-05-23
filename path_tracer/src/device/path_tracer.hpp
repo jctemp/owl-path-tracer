@@ -97,7 +97,8 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         beta *= hit_f / hit_pdf;
 
         /* SAMPLE DIRECT LIGHTS */
-        if (sampled_type == material_type::diffuse)
+
+        if (launch_params.light_buffer.count != 0 && sampled_type == material_type::diffuse)
         {
             samples++;
 
