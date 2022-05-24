@@ -60,6 +60,7 @@ std::vector<std::tuple<std::string, material_data>> parse_materials(std::string 
         data.specular = material["specular"];
         data.specular_tint = material["specular_tint"];
         data.roughness = material["roughness"];
+        data.anisotropic = material["anisotropic"];
         data.sheen = material["sheen"];
         data.sheen_tint = material["sheen_tint"];
         data.clearcoat = material["clearcoat"];

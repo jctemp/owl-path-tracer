@@ -165,7 +165,7 @@ __both__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 co
     auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
     auto const d{d_gtr1(wh, alpha_g)};
     auto const f{lerp(.04f, 1.0f, f_schlick(owl::dot(wi, wh)))};
-    auto const g{g2_smith_correlated(wo, wi, wh, {.25f,.25f})};
+    auto const g{g2_smith_correlated(wo, wi, wh, .25f,.25f)};
 
     return m.clearcoat * g * f * d / (4.0f * owl::abs(cos_theta(wi)));
 }
@@ -216,10 +216,10 @@ __both__ vec3 f_disney_specular(material_data const& m, vec3 const& wo, vec3 con
     if (all_zero(wh)) return vec3{0.0f};
     wh = owl::normalize(wh);
 
-    auto const alpha{to_alpha(m.roughness)};
-    auto const dr{d_gtr2(wh, alpha)};
+    auto const alpha{to_alpha(m.roughness, m.anisotropic)};
+    auto const dr{d_gtr2(wh, alpha.x, alpha.y)};
     auto const fr{lerp(m.base_color, (1.0f - m.base_color),f_schlick(dot(wh, wo)))};
-    auto const gr{g2_smith_correlated(wo, wi, wh, alpha)};
+    auto const gr{g2_smith_correlated(wo, wi, wh, alpha.x, alpha.y)};
     // auto const gr{g1_smith(wo, alpha) * g1_smith(wi, alpha)};
 
     return dr * fr * gr / (4.0f * owl::abs(cos_theta(wi)));
@@ -231,9 +231,9 @@ __both__ float pdf_disney_specular(material_data const& m, vec3 const& wo, vec3 
     if (all_zero(wh)) return 0.0f;
     wh = owl::normalize(wh);
 
-    auto const alpha{to_alpha(m.roughness)};
-    auto const d{d_gtr2(wh, alpha)};
-    auto const g1{g1_smith(wo, alpha)};
+    auto const alpha{to_alpha(m.roughness, m.anisotropic)};
+    auto const d{d_gtr2(wh, alpha.x, alpha.y)};
+    auto const g1{g1_smith(wo, alpha.x, alpha.y)};
 
     // see sampling the ggx distribution of visible normals heitz
     // A. Complete Implementation of the GGX VNDF Sampling Routine
@@ -244,8 +244,9 @@ __both__ void
 sample_disney_specular(material_data const& m, vec3 const& wo, random& rand,
                        vec3& wi, vec3& f, float& pdf)
 {
-    auto const alpha{to_alpha(m.roughness)};
-    auto const wh{sample_gtr2_vndf(wo, alpha, rand.rng<vec2>())};
+    // TODO: anisotrpic is not behaving as expected. Presumably wrong sampling of VNDF, NDF itself or G term
+    auto const alpha{to_alpha(m.roughness, m.anisotropic)};
+    auto const wh{sample_gtr2_vndf(wo, alpha.x, alpha.y, rand.rng<vec2>())};
 
     f = vec3{0.0f};
     pdf = 0.0f;
@@ -358,8 +359,8 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
     {
         sampled_type = material_type::specular;
 
-        auto const alpha{to_alpha(mat.roughness)};
-        wh = sample_gtr2_vndf(wo, alpha, rand.rng<vec2>());
+        auto const alpha{to_alpha(mat.roughness, mat.anisotropic)};
+        wh = sample_gtr2_vndf(wo, alpha.x, alpha.y, rand.rng<vec2>());
 
         wi = reflect(wo, wh);
         if (!same_hemisphere(wo, wi)) return;

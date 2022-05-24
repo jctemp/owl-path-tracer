@@ -20,16 +20,10 @@ inline __both__ vec3 calculate_tint(const vec3& base_color)
 }
 
 // Physically Based Shading at Disney 2012 - Section 5.1 page 15
-inline __both__ float to_alpha(float roughness)
+inline __both__ vec2 to_alpha(float roughness, float anisotopic = 0.0f)
 {
-    return owl::max(alpha_min, sqr(roughness));
-}
-
-// Physically Based Shading at Disney 2012 - Addenda
-inline __both__ vec2 to_alpha(float roughness, float anisotropy)
-{
-    auto const aspect{owl::sqrt(1.0f - 0.9f * anisotropy)};
-    return vec2{to_alpha(roughness) / aspect, to_alpha(roughness) * aspect};
+    auto const aspect{owl::sqrt(1.0f - 0.9f * anisotopic)};
+    return vec2{owl::max(alpha_min, sqr(roughness) / aspect), owl::max(alpha_min, sqr(roughness) * aspect)};
 }
 
 inline __both__ float f_schlick(float cos_theta, float ior)
@@ -57,41 +51,6 @@ inline __both__ float d_gtr1(vec3 const& wh, float alpha)
     return (alpha2 - 1.0f) / (pi * logf(alpha2) * t);
 }
 
-// Microfacet Models for Refraction through Rough Surfaces equ. (33)
-inline __both__ float d_gtr2(vec3 const& wh, vec2 const& a)
-{
-    auto const tan2_theta {sqr(tan_theta(wh))};
-    if (isinf(tan2_theta)) return 0.0f;
-    auto const cos4_theta {sqr(cos_theta(wh)) * sqr(cos_theta(wh))};
-    auto const e{sqr(cos_phi(wh) * a.x) + sqr(sin_phi(wh) * a.y) * tan2_theta};
-    return 1.0f / (pi * a.x * a.y * cos4_theta * (1 + e) * (1 + e));
-}
-
-// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (72)
-inline __both__ float lambda_gtr(vec3 const& w, vec2 const& a)
-{
-    auto const abs_tan_theta{owl::abs(tan_theta(w))};
-    if (isinf(abs_tan_theta)) return 0.0f;
-    auto const alpha{sqr(cos_phi(w) * a.x) + sqr(sin_phi(w) * a.y)};
-    auto const alpha2_tan2_theta{sqr(alpha * abs_tan_theta)};
-    return (-1.0f + owl::sqrt(1.0f + alpha2_tan2_theta)) / 2.0f;
-
-}
-
-// Microfacet Models for Refraction through Rough Surfaces equ. (51)
-inline __both__ float g1_smith(vec3 const& w, float const& alpha)
-{
-    return 1.0f / (1.0f + lambda_gtr(w, alpha));
-}
-
-// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (99)
-inline __both__ float g2_smith_correlated(vec3 const& wo, vec3 const& wi, vec3 const& wh, vec2 const& alpha)
-{
-    auto const lambda_o{lambda_gtr(wo, alpha)};
-    auto const lambda_i{lambda_gtr(wi, alpha)};
-    return 1.0f / (1.0f + lambda_o + lambda_i);
-}
-
 // Physically Based Shading at Disney 2012 - B, GTR equ. (2) and (9)
 inline __both__ vec3 sample_gtr1(vec3 const& wo, const float& alpha_g, const vec2& u)
 {
@@ -105,25 +64,58 @@ inline __both__ vec3 sample_gtr1(vec3 const& wo, const float& alpha_g, const vec
     return wh;
 }
 
-// Sampling the GGX Distribution of visible normals - listing 1. complete implementation
-inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, const vec2& alpha, const vec2& u)
+// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (85)
+inline __both__ float d_gtr2(vec3 const& wh, float ax, float ay)
 {
-    auto const wh{normalize(vec3(alpha.x * wo.x, alpha.y * wo.y, wo.z))};
+    auto const tan2_theta {sqr(tan_theta(wh))};
+    if (isinf(tan2_theta)) return 0.0f;
+    auto const cos4_theta {sqr(cos_theta(wh)) * sqr(cos_theta(wh))};
+    auto const e{1.0f + tan2_theta * (sqr(cos_phi(wh) / ax) + sqr(sin_phi(wh) / ay))};
+    return 1.0f / (pi * ax * ay * cos4_theta * sqr(e));
+}
+
+// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (72)
+inline __both__ float g_smith_lambda(vec3 const& w, float ax, float ay)
+{
+    auto const abs_tan_theta {owl::abs(tan_theta(w))};
+    if (isinf(abs_tan_theta)) return 0.0f;
+    auto const a0{owl::sqrt(sqr(ax * cos_phi(w)) + sqr(ay * sin_phi(w)))};
+    return (-1.0f + owl::sqrt(1.0f + sqr(a0) * sqr(abs_tan_theta))) / 2.0f;
+}
+
+// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (43)
+inline __both__ float g1_smith(vec3 const& w, float ax, float ay)
+{
+    return 1.0f / (1.0f + g_smith_lambda(w, ax, ay));
+}
+
+// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (99)
+inline __both__ float g2_smith_correlated(vec3 const& wo, vec3 const& wi, vec3 const& wh, float ax, float ay)
+{
+    auto const lambda_o{g_smith_lambda(wo, ax, ay)};
+    auto const lambda_i{g_smith_lambda(wi, ax, ay)};
+    return 1.0f / (1.0f + lambda_o + lambda_i);
+}
+
+// Sampling the GGX Distribution of visible normals - listing 1. complete implementation
+inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, const vec2& u)
+{
+    auto const wh{normalize(vec3(ax * wo.x, ay * wo.y, wo.z))};
     auto const length_sqr = wh.x * wh.x + wh.y * wh.y;
 
     auto const T1{length_sqr > 0.0f ? vec3{-wh.y, wh.x, 0.0f} * (1.0f / owl::sqrt(length_sqr)) : vec3{1, 0, 0}};
     auto const T2 = owl::cross(wh, T1);
 
-    auto const r = owl::sqrt(u.x);
-    auto const phi = two_pi * u.y;
-    auto const s = 0.5f * (1.0f + wh.z);
-
-    auto const t1 = r * owl::cos(phi);
-    auto const t2 = (1.0f - s) * owl::sqrt(1.0f - sqr(t1)) + s * r * owl::sin(phi);
+    float r = sqrtf(u.x);
+    float phi = 2.0f * pi * u.y;
+    float t1 = r * cos(phi);
+    float t2 = r * sin(phi);
+    float s = 0.5f * (1.0f + wh.z);
+    t2 = (1.0f - s) * sqrtf(1.0f - t1*t1) + s*t2;
 
     auto const nh{t1 * T1 + t2 * T2 + owl::sqrt(owl::max(0.0f, 1.0f - t1 * t1 - t2 * t2)) * wh};
 
-    return owl::normalize(vec3{alpha.x * nh.x, alpha.y * nh.y, owl::max(0.0f, nh.z)});
+    return owl::normalize(vec3{ax * nh.x, ay * nh.y, owl::max(0.0f, nh.z)});
 }
 
 #endif // !PATH_TRACER_BSDF_UITLS_HPP
