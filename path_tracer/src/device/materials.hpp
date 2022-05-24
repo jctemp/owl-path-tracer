@@ -162,15 +162,12 @@ __both__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 co
     // GTR1 distribution, which has even fatter tails than Trowbridge-Reitz
     // (which is GTR2). The geometric term always based on alpha = 0.25
 
-    auto const n_dot_h{owl::abs(cos_theta(wh))};
-    auto const n_dot_i{owl::abs(cos_theta(wi))};
-
     auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
-    auto const d{d_gtr1(n_dot_h, alpha_g)};
+    auto const d{d_gtr1(wh, alpha_g)};
     auto const f{lerp(.04f, 1.0f, f_schlick(owl::dot(wi, wh)))};
     auto const g{g2_smith_correlated(wo, wi, wh, {.25f,.25f})};
 
-    return m.clearcoat * g * f * d / (4.0f * n_dot_i);
+    return m.clearcoat * g * f * d / (4.0f * owl::abs(cos_theta(wi)));
 }
 
 __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -184,9 +181,8 @@ __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3
     // distribution for wh converted to a measure with respect to the
     // surface normal.
 
-    auto const n_dot_h{owl::abs(cos_theta(wh))};
     auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
-    auto const d{d_gtr1(n_dot_h, alpha_g)};
+    auto const d{d_gtr1(wh, alpha_g)};
     return d * 0.25f / (owl::abs(owl::dot(wo, wh)));
 }
 
