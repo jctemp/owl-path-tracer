@@ -221,9 +221,10 @@ __both__ vec3 f_disney_specular(material_data const& m, vec3 const& wo, vec3 con
     wh = owl::normalize(wh);
 
     auto const alpha{to_alpha(m.roughness)};
-    auto const dr{d_gtr2(cos_theta(wh), alpha)};
+    auto const dr{d_gtr2(wh, alpha)};
     auto const fr{lerp(m.base_color, (1.0f - m.base_color),f_schlick(dot(wh, wo)))};
     auto const gr{g2_smith_correlated(wo, wi, wh, alpha)};
+    // auto const gr{g1_smith(wo, alpha) * g1_smith(wi, alpha)};
 
     return dr * fr * gr / (4.0f * owl::abs(cos_theta(wi)));
 }
@@ -235,7 +236,7 @@ __both__ float pdf_disney_specular(material_data const& m, vec3 const& wo, vec3 
     wh = owl::normalize(wh);
 
     auto const alpha{to_alpha(m.roughness)};
-    auto const d{d_gtr2(cos_theta(wh), alpha)};
+    auto const d{d_gtr2(wh, alpha)};
     auto const g1{g1_smith(wo, alpha)};
 
     // see sampling the ggx distribution of visible normals heitz
@@ -362,7 +363,7 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
         sampled_type = material_type::specular;
 
         auto const alpha{to_alpha(mat.roughness)};
-        auto const wh{sample_gtr2_vndf(wo, alpha, rand.rng<vec2>())};
+        wh = sample_gtr2_vndf(wo, alpha, rand.rng<vec2>());
 
         wi = reflect(wo, wh);
         if (!same_hemisphere(wo, wi)) return;
@@ -373,7 +374,7 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
         sampled_type = material_type::clearcoat;
 
         auto const alpha_g{lerp(.1f, .001f, mat.clearcoat_gloss)};
-        auto const wh{sample_gtr1(wo, alpha_g, rand.rng<vec2>())};
+        wh = sample_gtr1(wo, alpha_g, rand.rng<vec2>());
 
         wi = reflect(wo, wh);
         if (!same_hemisphere(wo, wi)) return;
