@@ -62,7 +62,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             else
                 li = lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f));
 
-            radiance += li * beta;
+            radiance += li * beta * 1.0f;
             break;
         }
 
@@ -85,20 +85,30 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         auto const local_wo{to_local(T, B, hit_n, world_wo)};
         auto local_wi{vec3{0.0f}};
         auto local_wh{vec3{0.0f}};
+
         sample_disney_bsdf(material, local_wo, prd.random,
                 local_wi, local_wh, hit_f, hit_pdf, sampled_type);
+
         auto const world_wi{to_world(T, B, hit_n, local_wi)};
 
 
         /* TERMINATE PATH IF IMPOSSIBLE */
-        if (hit_pdf <= 1E-5f)
+        if (hit_pdf < 1E-5f)
             break;
 
-        beta *= hit_f / hit_pdf;
+
+        /* CATCHING DE-GENERATED VALUES */
+        if (has_inf(hit_f) || has_nan(hit_f))
+        {
+            --depth; // invalid path and re-sample
+            continue;
+        }
+
+        beta *= (hit_f * owl::abs(cos_theta(local_wi))) / hit_pdf;
 
         /* SAMPLE DIRECT LIGHTS */
 
-        if (launch_params.light_buffer.count != 0 && sampled_type == material_type::diffuse)
+        if (false)
         {
             samples++;
 
@@ -129,14 +139,18 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             {
                 // TODO: add additional branch to evaluate subsurface scattering
 
-                surface_f = f_disney_bsdf(material, local_wo, light_wi, sampled_type) * owl::abs(owl::dot(light_wi, hit_n));
-                surface_pdf = pdf_disney_pdf(material, local_wo, light_wi, sampled_type);
+                // surface_f = f_disney_bsdf(material, local_wo, light_wi, sampled_type) * owl::abs(cos_theta(local_wi))
+                //         * owl::abs(owl::dot(light_wi, hit_n));
+                // surface_pdf = pdf_disney_pdf(material, local_wo, light_wi, sampled_type);
 
-                if (!all_zero(surface_f) && !all_zero(light_li))
-                {
-                    auto const weight = power_heuristic(1, light_pdf, 1, surface_pdf);
-                    radiance += surface_f * light_li * weight / surface_pdf;
-                }
+                //if (!all_zero(surface_f) && !all_zero(light_li))
+                //{
+                //    auto const weight = power_heuristic(1, light_pdf, 1, surface_pdf);
+                //    radiance += surface_f * light_li * weight / surface_pdf;
+                //}
+
+                if (!all_zero(light_li))
+                    radiance += light_li / light_pdf;
             }
         }
 
@@ -150,11 +164,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         }
 
         ray = radiance_ray{hit_p, world_wi, t_min, t_max};
-    }
-
-    if (has_inf(radiance) || has_nan(radiance))
-    {
-        printf("error\n");
     }
 
     return radiance;

@@ -19,12 +19,12 @@ inline __both__ vec3 calculate_tint(const vec3& base_color)
     return (lum > 0.0f) ? base_color * (1.0f / lum) : vec3{1.0f};
 }
 
-inline __both__ float to_alpha(const float& roughness)
+inline __both__ float to_alpha(float roughness)
 {
     return owl::max(alpha_min, sqr(roughness));
 }
 
-inline __both__ float schlick_fresnel(const float& cos_theta, const float& ior)
+inline __both__ float f_schlick(float cos_theta, float ior)
 {
     auto const r0{sqr((1.0f - ior) / (1.0f + ior))};
     auto const m{owl::clamp(1.0f - cos_theta, 0.0f, 1.0f)};
@@ -32,26 +32,64 @@ inline __both__ float schlick_fresnel(const float& cos_theta, const float& ior)
     return r0 + (1.0f - r0) * (m2 * m2 * m);
 }
 
-inline __both__ float lambda(const float& tan_theta, const float& alpha)
+
+inline __both__ float f_schlick(float u)
 {
-    auto const abs_tan_theta_h{owl::abs(tan_theta)};
-    if (isinf(abs_tan_theta_h)) return 0.0f;
-    auto const alpha2_tan2_theta{sqr(alpha * abs_tan_theta_h)};
-    return (-1.0f + owl::sqrt(1.0f + alpha2_tan2_theta)) / 2.0f;
+    auto const m{owl::clamp(1.0f - u, 0.0f, 1.0f)};
+    auto const m2{m * m};
+    return m2 * m2 * m;
 }
 
-inline __both__ float g_smith(const float& tan_theta, const float& alpha)
-{
-    return 1.0f / (1.0f + lambda(owl::abs(tan_theta), alpha));
-}
-
-inline __both__ float d_gtr1(const float& cos_theta, const float& alpha)
+inline __both__ float d_gtr1(vec3 const& wh, float alpha)
 {
     if (alpha >= 1.0f) return inv_pi;
     auto const alpha2{sqr(alpha)};
-    auto const t{1.0f + (alpha2 - 1.0f) * sqr(owl::abs(cos_theta))};
+    auto const t{1.0f + (alpha2 - 1.0f) * sqr(cos_theta(wh))};
     return (alpha2 - 1.0f) / (pi * logf(alpha2) * t);
 }
+
+inline __both__ float d_gtr2(vec3 const& wh, vec2 const& a)
+{
+    auto const tan2_theta {sqr(tan_theta(wh))};
+    if (isinf(tan2_theta)) return 0.0f;
+    auto const cos4_theta {sqr(cos_theta(wh)) * sqr(cos_theta(wh))};
+    auto const e{sqr(cos_phi(wh) * a.x) + sqr(sin_phi(wh) * a.y) * tan2_theta};
+    return 1.0f / (pi * a.x * a.y * cos4_theta * (1 + e) * (1 + e));
+}
+
+
+// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017)
+inline __both__ float lambda_gtr(vec3 const& w, vec2 const& a)
+{
+    auto const abs_tan_theta{owl::abs(tan_theta(w))};
+    if (isinf(abs_tan_theta)) return 0.0f;
+    auto const alpha{sqr(cos_phi(w) * a.x) + sqr(sin_phi(w) * a.y)};
+    auto const alpha2_tan2_theta{sqr(alpha * abs_tan_theta)};
+    return (-1.0f + owl::sqrt(1.0f + alpha2_tan2_theta)) / 2.0f;
+
+}
+
+inline __both__ float g1_smith(vec3 const& w, float const& alpha)
+{
+    return 1.0f / (1.0f + lambda_gtr(w, alpha));
+}
+
+inline __both__ float g1_smith(float n_dot_w, float alpha_g)
+{
+    float a{sqr(alpha_g)};
+    float b{sqr(n_dot_w)};
+    return 1.0f / (n_dot_w + sqrt(a + b - a * b));
+}
+
+inline __both__ float g2_smith_correlated(vec3 const& wo, vec3 const& wi, vec3 const& wh, vec2 const& alpha)
+{
+    auto const lambda_o{lambda_gtr(wo, alpha)};
+    auto const lambda_i{lambda_gtr(wi, alpha)};
+    return 1.0f / (1.0f + lambda_o + lambda_i);
+}
+
+
+
 
 inline __both__ vec3 sample_gtr1(vec3 const& wo, const float& alpha_g, const vec2& u)
 {
@@ -63,13 +101,6 @@ inline __both__ vec3 sample_gtr1(vec3 const& wo, const float& alpha_g, const vec
     auto wh{to_sphere_coordinates(sin_theta, cos_theta, phi)};
     if (!same_hemisphere(wo, wh)) wh = -wh;
     return wh;
-}
-
-inline __both__ float d_gtr2(const float& cos_theta, const float& alpha)
-{
-    auto const alpha2{sqr(alpha)};
-    auto const t{1.0f + (alpha2 - 1.0f) * sqr(cos_theta)};
-    return alpha2 / (pi * sqr(t));
 }
 
 inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, const float& alpha, const vec2& u)
@@ -94,9 +125,7 @@ inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, const float& alpha, const 
 
 inline __both__ float pdf_gtr2(vec3 const& wo, vec3 const& wh, const float& alpha)
 {
-    auto const dr{d_gtr2(cos_theta(wh), alpha)};
-    auto const gr{g_smith(owl::abs(tan_theta(wo)), alpha)};
-    return dr * gr * owl::abs(cos_theta(wh)) / (4.0f * owl::abs(cos_theta(wo)));
+
 }
 
 #endif // !PATH_TRACER_BSDF_UITLS_HPP

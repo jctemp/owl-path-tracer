@@ -36,10 +36,10 @@ __both__ vec3 f_disney_diffuse(material_data const& m, vec3 const& wo, vec3 cons
     auto const n_dot_wo{owl::abs(cos_theta(wo))};
     auto const n_dot_wi{owl::abs(cos_theta(wi))};
 
-    auto const fresnel_wo{schlick_fresnel(n_dot_wo, m.ior)};
-    auto const fresnel_wi{schlick_fresnel(n_dot_wi, m.ior)};
+    auto const fresnel_wo{f_schlick(n_dot_wo, m.ior)};
+    auto const fresnel_wi{f_schlick(n_dot_wi, m.ior)};
 
-    return m.base_color * inv_pi * (1.0f - fresnel_wi / 2.0f) * (1.0f - fresnel_wo / 2.0f);
+    return inv_pi * (1.0f - fresnel_wi / 2.0f) * (1.0f - fresnel_wo / 2.0f);
 }
 
 __both__ float pdf_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -53,7 +53,7 @@ sample_disney_diffuse(material_data const& m, vec3 const& wo, random& rand,
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_diffuse(m, wo, wi);
-    f = f_disney_diffuse(m, wo, wi) * owl::abs(cos_theta(wi));
+    f = f_disney_diffuse(m, wo, wi);
 }
 
 __both__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -69,13 +69,13 @@ __both__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3 c
     auto const cos_theta_d{owl::dot(wi, wh)};
     auto const n_dot_wo{owl::abs(cos_theta(wo))};
     auto const n_dot_wi{owl::abs(cos_theta(wi))};
-    auto const fresnel_wo{schlick_fresnel(n_dot_wo, m.ior)};
-    auto const fresnel_wi{schlick_fresnel(n_dot_wi, m.ior)};
+    auto const fresnel_wo{f_schlick(n_dot_wo, m.ior)};
+    auto const fresnel_wi{f_schlick(n_dot_wi, m.ior)};
     auto const fss90{sqr(cos_theta_d) * m.roughness};
     auto const fss{lerp(1.0f, fss90, fresnel_wo) * lerp(1.0f, fss90, fresnel_wi)};
     auto const fs{1.25f * (fss * (1.0f / (n_dot_wo + n_dot_wi) - 0.5f) + 0.5f)};
 
-    return m.subsurface_color * inv_pi * fs;
+    return inv_pi * fs;
 }
 
 __both__ float pdf_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -88,7 +88,7 @@ __both__ void sample_disney_subsurface(material_data const& m, vec3 const& wo, r
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_subsurface(m, wo, wi);
-    f = f_disney_subsurface(m, wo, wi) * owl::abs(cos_theta(wi));
+    f = f_disney_subsurface(m, wo, wi);
 }
 
 
@@ -101,13 +101,13 @@ __both__ vec3 f_disney_retro(material_data const& m, vec3 const& wo, vec3 const&
     // Burley 2015, eq (4).
 
     auto const cos_theta_d{owl::dot(wi, wh)};
-    auto const n_dot_wo{owl::abs(cos_theta(wo))};
-    auto const n_dot_wi{owl::abs(cos_theta(wi))};
-    auto const fresnel_wo{schlick_fresnel(n_dot_wo, m.ior)};
-    auto const fresnel_wi{schlick_fresnel(n_dot_wi, m.ior)};
+    auto const n_dot_o{owl::abs(cos_theta(wo))};
+    auto const n_dot_i{owl::abs(cos_theta(wi))};
+    auto const fresnel_wo{f_schlick(n_dot_o, m.ior)};
+    auto const fresnel_wi{f_schlick(n_dot_i, m.ior)};
     auto const rr{2 * m.roughness * sqr(cos_theta_d)};
 
-    return m.base_color * inv_pi * rr * (fresnel_wo + fresnel_wi + fresnel_wo * fresnel_wi * (rr - 1));
+    return inv_pi * rr * (fresnel_wo + fresnel_wi + fresnel_wo * fresnel_wi * (rr - 1));
 }
 
 __both__ float pdf_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -120,7 +120,7 @@ __both__ void sample_disney_retro(material_data const& m, vec3 const& wo, random
 {
     wi = sample_cosine_hemisphere(rand.rng<vec2>());
     pdf = pdf_disney_retro(m, wo, wi);
-    f = f_disney_retro(m, wo, wi) * owl::abs(cos_theta(wi));
+    f = f_disney_retro(m, wo, wi);
 }
 
 
@@ -135,7 +135,7 @@ __both__ vec3 f_disney_sheen(material_data const& m, vec3 const& wo, vec3 const&
     auto const cos_theta_d{owl::dot(wi, wh)};
     auto const tint{calculate_tint(m.base_color)};
 
-    return m.sheen * lerp(vec3{1.0f}, tint, vec3{m.sheen_tint}) * schlick_fresnel(cos_theta_d, m.ior);
+    return m.sheen * lerp(vec3{1.0f}, tint, vec3{m.sheen_tint}) * f_schlick(cos_theta_d, m.ior);
 }
 
 __both__ float pdf_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -148,7 +148,7 @@ __both__ void sample_disney_sheen(material_data const& m, vec3 const& wo, random
 {
     wi = sample_cosine_hemisphere({rand.rng(), rand.rng()});
     pdf = pdf_disney_sheen(m, wo, wi);
-    f = f_disney_sheen(m, wo, wi) * owl::abs(cos_theta(wi));
+    f = f_disney_sheen(m, wo, wi);
 }
 
 
@@ -162,13 +162,15 @@ __both__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 co
     // GTR1 distribution, which has even fatter tails than Trowbridge-Reitz
     // (which is GTR2). The geometric term always based on alpha = 0.25
 
-    auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
-    auto const dr{d_gtr1(owl::abs(cos_theta(wh)), alpha_g)};
-    auto const fr{lerp(.04f, 1.0f, schlick_fresnel(owl::abs(cos_theta(wh)), 1.5f))};
-    auto const gr{g_smith(owl::abs(tan_theta(wo)), .25f) *
-                  g_smith(owl::abs(tan_theta(wi)), .25f)};
+    auto const n_dot_h{owl::abs(cos_theta(wh))};
+    auto const n_dot_i{owl::abs(cos_theta(wi))};
 
-    return m.clearcoat * gr * fr * dr / (4.0f * owl::abs(cos_theta(wh)));
+    auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
+    auto const d{d_gtr1(n_dot_h, alpha_g)};
+    auto const f{lerp(.04f, 1.0f, f_schlick(owl::dot(wi, wh)))};
+    auto const g{g2_smith_correlated(wo, wi, wh, {.25f,.25f})};
+
+    return m.clearcoat * g * f * d / (4.0f * n_dot_i);
 }
 
 __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -182,13 +184,13 @@ __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3
     // distribution for wh converted to a measure with respect to the
     // surface normal.
 
-    auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
-    auto const dr{d_gtr1(owl::abs(cos_theta(wh)), alpha_g)};
-    return dr * owl::abs(cos_theta(wh)) / (4.0f * owl::abs(cos_theta(wo)));
+    auto const n_dot_h{owl::abs(cos_theta(wh))};
+    auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
+    auto const d{d_gtr1(n_dot_h, alpha_g)};
+    return d * 0.25f / (owl::abs(owl::dot(wo, wh)));
 }
 
-__both__ void
-sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand,
+__both__ void sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand,
                         vec3& wi, vec3& f, float& pdf)
 {
     // there is no visible normal sampling for BRDF because the Clearcoat has no
@@ -196,7 +198,7 @@ sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand,
     // Apply importance sampling to D * dot(N * H) / (4 * dot(H, V)) by choosing normal
     // proportional to D and reflect it at H
 
-    auto const alpha_g{(1 - m.clearcoat_gloss) * 0.1f + m.clearcoat_gloss * 0.001f};
+    auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
     auto const wh{sample_gtr1(wo, alpha_g, rand.rng<vec2>())};
 
     f = vec3{0.0f};
@@ -210,7 +212,7 @@ sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand,
 }
 
 
-__both__ vec3 f_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 f_disney_specular(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     if (owl::abs(cos_theta(wo)) == 0) return vec3{0.0f};
 
@@ -220,39 +222,42 @@ __both__ vec3 f_disney_microfacet(material_data const& m, vec3 const& wo, vec3 c
 
     auto const alpha{to_alpha(m.roughness)};
     auto const dr{d_gtr2(cos_theta(wh), alpha)};
-    auto const fr{lerp(m.base_color, 1.0f - m.base_color, schlick_fresnel(dot(wh, wo), m.ior))};
-    auto const gr{g_smith(abs(tan_theta(wo)), alpha) *
-                  g_smith(abs(tan_theta(wi)), alpha)};
+    auto const fr{lerp(m.base_color, (1.0f - m.base_color),f_schlick(dot(wh, wo)))};
+    auto const gr{g2_smith_correlated(wo, wi, wh, alpha)};
 
     return dr * fr * gr / (4.0f * owl::abs(cos_theta(wi)));
 }
 
-__both__ float pdf_disney_microfacet(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ float pdf_disney_specular(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     auto wh{wi + wo};
     if (all_zero(wh)) return 0.0f;
     wh = owl::normalize(wh);
 
     auto const alpha{to_alpha(m.roughness)};
-    return pdf_gtr2(wo, wh, alpha);
+    auto const d{d_gtr2(cos_theta(wh), alpha)};
+    auto const g1{g1_smith(wo, alpha)};
+
+    // see sampling the ggx distribution of visible normals heitz
+    // A. Complete Implementation of the GGX VNDF Sampling Routine
+    return g1 * owl::max(0.0f, owl::dot(wo, wh)) * d / (owl::abs(cos_theta(wi)));
 }
 
 __both__ void
-sample_disney_microfacet(material_data const& m, vec3 const& wo, random& rand,
-                         vec3& wi, vec3& f, float& pdf)
+sample_disney_specular(material_data const& m, vec3 const& wo, random& rand,
+                       vec3& wi, vec3& f, float& pdf)
 {
     auto const alpha{to_alpha(m.roughness)};
     auto const wh{sample_gtr2_vndf(wo, alpha, rand.rng<vec2>())};
 
-    wi = reflect(wo, wh);
-
     f = vec3{0.0f};
     pdf = 0.0f;
 
+    wi = reflect(wo, wh);
     if (!same_hemisphere(wo, wi)) return;
 
-    f = f_disney_microfacet(m, wo, wi);
-    pdf = pdf_disney_microfacet(m, wo, wi);
+    f = f_disney_specular(m, wo, wi);
+    pdf = pdf_disney_specular(m, wo, wi);
 }
 
 #ifdef TRANSMISSION
@@ -300,51 +305,29 @@ __both__ void sample_disney_transmission(material_data const& m, vec3 const& wo,
 __both__ vec3 f_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 const &wi,
                             material_type const &sampled_type)
 {
-    vec3 f{0.0f};
-    if (sampled_type == material_type::diffuse)
-    {
-        auto const diffuse = f_disney_diffuse(mat, wo, wi);
-        auto const ss = f_disney_subsurface(mat, wo, wi);
-        auto const retro = f_disney_retro(mat, wo, wi);
-        auto const sheen = f_disney_sheen(mat, wo, wi);
+    auto const diffuse = f_disney_diffuse(mat, wo, wi);
+    auto const ss = f_disney_subsurface(mat, wo, wi);
+    auto const retro = f_disney_retro(mat, wo, wi);
+    auto const sheen = f_disney_sheen(mat, wo, wi);
+    auto const clearcoat = f_disney_clearcoat(mat, wo, wi);
+    auto const specular = f_disney_specular(mat, wo, wi);
 
-        auto const fd_weight = 1 - mat.subsurface;
-        auto const fs_weight = mat.subsurface;
+    auto const base_color = mat.base_color;
+    auto const subsurface_color = mat.subsurface_color;
 
-        f += (diffuse + retro) * fd_weight;
-        f += ss * fs_weight;
-        f += sheen;
-        f *= owl::abs(cos_theta(wi));
-    }
-    else if (sampled_type == material_type::specular)
-    {
-        f = f_disney_microfacet(mat, wo, wi);
-    }
-    else if (sampled_type == material_type::clearcoat)
-    {
-        f = f_disney_clearcoat(mat, wo, wi);
-    }
-    return f;
+    return lerp(base_color * (diffuse + retro), ss * subsurface_color, mat.subsurface)
+        * (1.0f - mat.metallic) * (1.0f - mat.specular_transmission)
+        + sheen + clearcoat + specular;
 }
 
 __both__ float pdf_disney_pdf(material_data const& mat, vec3 const& wo, vec3 const &wi,
                               material_type const &sampled_type)
 {
-    float pdf{0.0f};
-    if (sampled_type == material_type::diffuse)
-    {
-        pdf = pdf_cosine_hemisphere(wo, wi);
+    auto const p_diffuse = pdf_cosine_hemisphere(wo, wi);
+    auto const p_specular = pdf_disney_specular(mat, wo, wi);
+    auto const p_clearcoat = pdf_disney_clearcoat(mat, wo, wi);
 
-    }
-    else if (sampled_type == material_type::specular)
-    {
-        pdf = pdf_disney_microfacet(mat, wo, wi);
-    }
-    else if (sampled_type == material_type::clearcoat)
-    {
-        pdf = pdf_disney_clearcoat(mat, wo, wi);
-    }
-    return pdf;
+    return (p_diffuse + p_specular + p_clearcoat) / 3.0f;
 }
 
 __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, random& rand,
@@ -379,8 +362,9 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
         sampled_type = material_type::specular;
 
         auto const alpha{to_alpha(mat.roughness)};
-        wh = sample_gtr2_vndf(wo, alpha, rand.rng<vec2>());
-        wi = normalize(reflect(wo, wh));
+        auto const wh{sample_gtr2_vndf(wo, alpha, rand.rng<vec2>())};
+
+        wi = reflect(wo, wh);
         if (!same_hemisphere(wo, wi)) return;
 
     }
@@ -388,9 +372,10 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
     {
         sampled_type = material_type::clearcoat;
 
-        auto const alpha_g{(1 - mat.clearcoat_gloss) * 0.1f + mat.clearcoat_gloss * 0.001f};
-        wh= sample_gtr1(wo, alpha_g, rand.rng<vec2>());
-        wi = normalize(reflect(wo, wh));
+        auto const alpha_g{lerp(.1f, .001f, mat.clearcoat_gloss)};
+        auto const wh{sample_gtr1(wo, alpha_g, rand.rng<vec2>())};
+
+        wi = reflect(wo, wh);
         if (!same_hemisphere(wo, wi)) return;
     }
 

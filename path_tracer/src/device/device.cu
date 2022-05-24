@@ -4,6 +4,11 @@
 
 __constant__ launch_params_data optixLaunchParams;
 
+inline __device__ vec3 pow(vec3 const& v, float const& p)
+{
+    return vec3{powf(v.x, p), powf(v.y, p), powf(v.z, p)};
+}
+
 OPTIX_RAYGEN_PROGRAM(ray_gen)()
 {
     ray_gen_data const& self{owl::getProgramData<ray_gen_data>()};
@@ -30,7 +35,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 
     // take the average of all samples per pixel and apply gamma correction
     color *= 1.0f / static_cast<float>(optixLaunchParams.max_samples);
-    color = owl::sqrt(color);
+    color = pow(color, 1.0f / 3.0f);
     color = o_saturate(color);
 
     assert_condition(isinf(color.x) || isinf(color.y) || isinf(color.z), "inf detected\n")

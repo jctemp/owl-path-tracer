@@ -25,13 +25,14 @@ struct material_data
     float specular{0.5f};
     float specular_tint{1.0f};
     float roughness{0.5f};
+    float anisotropic{0.0f};
     float sheen{0.0f};
     float sheen_tint{1.0f};
     float clearcoat{0.0f};
     float clearcoat_gloss{0.03f};
     float ior{1.45f};
-    float transmission{0.0f};
-    float transmission_roughness{0.0f};
+    float specular_transmission{0.0f};
+    float specular_transmission_roughness{0.0f};
 };
 
 struct light_data
