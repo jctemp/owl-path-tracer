@@ -345,7 +345,7 @@ int main(int argc, char** argv)
 
     od.buffer_size = ivec2{1024};
     od.use_environment_map = true;
-    od.max_samples = 1024;
+    od.max_samples = 128;
     od.max_path_depth = 8;
 
     optix_render(to_camera_data(scene_camera, od.buffer_size), &materials, &lights);
