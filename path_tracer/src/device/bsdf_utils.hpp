@@ -19,9 +19,17 @@ inline __both__ vec3 calculate_tint(const vec3& base_color)
     return (lum > 0.0f) ? base_color * (1.0f / lum) : vec3{1.0f};
 }
 
+// Physically Based Shading at Disney 2012 - Section 5.1 page 15
 inline __both__ float to_alpha(float roughness)
 {
     return owl::max(alpha_min, sqr(roughness));
+}
+
+// Physically Based Shading at Disney 2012 - Addenda
+inline __both__ vec2 to_alpha(float roughness, float anisotropy)
+{
+    auto const aspect{owl::sqrt(1.0f - 0.9f * anisotropy)};
+    return vec2{to_alpha(roughness) / aspect, to_alpha(roughness) * aspect};
 }
 
 inline __both__ float f_schlick(float cos_theta, float ior)
@@ -32,7 +40,7 @@ inline __both__ float f_schlick(float cos_theta, float ior)
     return r0 + (1.0f - r0) * (m2 * m2 * m);
 }
 
-
+// An Inexpensive BRDF Model for Physically Based Rendering - Schlick - equ. (15)
 inline __both__ float f_schlick(float u)
 {
     auto const m{owl::clamp(1.0f - u, 0.0f, 1.0f)};
@@ -40,6 +48,7 @@ inline __both__ float f_schlick(float u)
     return m2 * m2 * m;
 }
 
+// Physically Based Shading at Disney 2012 - B.2 GTR equ. (4)
 inline __both__ float d_gtr1(vec3 const& wh, float alpha)
 {
     if (alpha >= 1.0f) return inv_pi;
@@ -48,6 +57,7 @@ inline __both__ float d_gtr1(vec3 const& wh, float alpha)
     return (alpha2 - 1.0f) / (pi * logf(alpha2) * t);
 }
 
+// Microfacet Models for Refraction through Rough Surfaces equ. (33)
 inline __both__ float d_gtr2(vec3 const& wh, vec2 const& a)
 {
     auto const tan2_theta {sqr(tan_theta(wh))};
@@ -57,8 +67,7 @@ inline __both__ float d_gtr2(vec3 const& wh, vec2 const& a)
     return 1.0f / (pi * a.x * a.y * cos4_theta * (1 + e) * (1 + e));
 }
 
-
-// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017)
+// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (72)
 inline __both__ float lambda_gtr(vec3 const& w, vec2 const& a)
 {
     auto const abs_tan_theta{owl::abs(tan_theta(w))};
@@ -69,18 +78,13 @@ inline __both__ float lambda_gtr(vec3 const& w, vec2 const& a)
 
 }
 
+// Microfacet Models for Refraction through Rough Surfaces equ. (51)
 inline __both__ float g1_smith(vec3 const& w, float const& alpha)
 {
     return 1.0f / (1.0f + lambda_gtr(w, alpha));
 }
 
-inline __both__ float g1_smith(float n_dot_w, float alpha_g)
-{
-    float a{sqr(alpha_g)};
-    float b{sqr(n_dot_w)};
-    return 1.0f / (n_dot_w + sqrt(a + b - a * b));
-}
-
+// Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (99)
 inline __both__ float g2_smith_correlated(vec3 const& wo, vec3 const& wi, vec3 const& wh, vec2 const& alpha)
 {
     auto const lambda_o{lambda_gtr(wo, alpha)};
@@ -88,9 +92,7 @@ inline __both__ float g2_smith_correlated(vec3 const& wo, vec3 const& wi, vec3 c
     return 1.0f / (1.0f + lambda_o + lambda_i);
 }
 
-
-
-
+// Physically Based Shading at Disney 2012 - B, GTR equ. (2) and (9)
 inline __both__ vec3 sample_gtr1(vec3 const& wo, const float& alpha_g, const vec2& u)
 {
     auto const alpha2{sqr(alpha_g)};
@@ -103,9 +105,10 @@ inline __both__ vec3 sample_gtr1(vec3 const& wo, const float& alpha_g, const vec
     return wh;
 }
 
-inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, const float& alpha, const vec2& u)
+// Sampling the GGX Distribution of visible normals - listing 1. complete implementation
+inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, const vec2& alpha, const vec2& u)
 {
-    auto const wh{normalize(vec3(alpha * wo.x, alpha * wo.y, wo.z))};
+    auto const wh{normalize(vec3(alpha.x * wo.x, alpha.y * wo.y, wo.z))};
     auto const length_sqr = wh.x * wh.x + wh.y * wh.y;
 
     auto const T1{length_sqr > 0.0f ? vec3{-wh.y, wh.x, 0.0f} * (1.0f / owl::sqrt(length_sqr)) : vec3{1, 0, 0}};
@@ -120,12 +123,7 @@ inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, const float& alpha, const 
 
     auto const nh{t1 * T1 + t2 * T2 + owl::sqrt(owl::max(0.0f, 1.0f - t1 * t1 - t2 * t2)) * wh};
 
-    return owl::normalize(vec3{alpha * nh.x, alpha * nh.y, owl::max(0.0f, nh.z)});
-}
-
-inline __both__ float pdf_gtr2(vec3 const& wo, vec3 const& wh, const float& alpha)
-{
-
+    return owl::normalize(vec3{alpha.x * nh.x, alpha.y * nh.y, owl::max(0.0f, nh.z)});
 }
 
 #endif // !PATH_TRACER_BSDF_UITLS_HPP
