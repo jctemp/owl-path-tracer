@@ -35,8 +35,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 
     // take the average of all samples per pixel and apply gamma correction
     color *= 1.0f / static_cast<float>(optixLaunchParams.max_samples);
-    color = pow(color, 1.0f / 3.0f);
-    color = o_saturate(color);
+    color = o_saturate(pow(color, 1.0f / 2.2f));
 
     assert_condition(isinf(color.x) || isinf(color.y) || isinf(color.z), "inf detected\n")
     assert_condition(isnan(color.x) || isnan(color.y) || isnan(color.z), "nan detected\n")

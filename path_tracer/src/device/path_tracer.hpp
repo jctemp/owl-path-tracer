@@ -54,24 +54,25 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         /* TERMINATE PATH AND SAMPLE ENVIRONMENT*/
         if (prd.scatter_event == scatter_event::missed)
         {
-            vec3 li{0.0f};
-            if (!launch_params.use_environment_map)
-                li = 0.0f;
-            else if (launch_params.environment_map)
-                li = sample_environment(ray.direction);
-            else
-                li = lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f));
+            vec3 li{1.0f};
+            //if (!launch_params.use_environment_map)
+            //    li = 0.0f;
+            //else if (launch_params.environment_map)
+            //    li = sample_environment(ray.direction);
+            //else
+            //    li = lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f));
 
-            radiance += li * beta * 1.0f;
+            radiance += li * beta;
             break;
         }
 
 
         /* PREPARE mesh FOR CALCULATIONS */
-        auto const& hit_p{is.position}, hit_n{is.normal}, world_wo{is.wo};
+        auto const& hit_p{is.position}, shading_n{is.normal}, world_wo{is.wo},
+                geometric_n{is.normal_geometric};
 
         vec3 T{}, B{};
-        onb(hit_n, T, B);
+        onb(shading_n, T, B);
 
 
         /* SAMPLE BRDF */
@@ -82,14 +83,14 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         auto hit_f{vec3{0.0f}};
         auto sampled_type{material_type::none};
 
-        auto const local_wo{to_local(T, B, hit_n, world_wo)};
+        auto const local_wo{to_local(T, B, shading_n, world_wo)};
         auto local_wi{vec3{0.0f}};
         auto local_wh{vec3{0.0f}};
 
         sample_disney_bsdf(material, local_wo, prd.random,
                 local_wi, local_wh, hit_f, hit_pdf, sampled_type);
 
-        auto const world_wi{to_world(T, B, hit_n, local_wi)};
+        auto const world_wi{to_world(T, B, shading_n, local_wi)};
 
 
         /* TERMINATE PATH IF IMPOSSIBLE */
@@ -106,8 +107,9 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
         beta *= (hit_f * owl::abs(cos_theta(local_wi))) / hit_pdf;
 
-        /* SAMPLE DIRECT LIGHTS */
 
+        /* SAMPLE DIRECT LIGHTS */
+        // TODO: handle edge cases for degenerated geometry
         if (false)
         {
             samples++;
@@ -135,22 +137,30 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             auto surface_f{vec3{0.0f}};
             auto surface_pdf{0.0f};
 
+            // compute bent normal
+            vec3 r = reflect(world_wo, shading_n);
+            float a = dot(geometric_n, r);
+            vec3 bend_normal = shading_n;
+            if (a < 0.f) {
+                float b = max(0.001f, dot(shading_n, geometric_n));
+                bend_normal = normalize(world_wo + normalize(r - shading_n * a / b));
+            }
+
             if (visible && light_pdf > 0.0)
             {
                 // TODO: add additional branch to evaluate subsurface scattering
 
-                // surface_f = f_disney_bsdf(material, local_wo, light_wi, sampled_type) * owl::abs(cos_theta(local_wi))
-                //         * owl::abs(owl::dot(light_wi, hit_n));
-                // surface_pdf = pdf_disney_pdf(material, local_wo, light_wi, sampled_type);
+                auto const local_light_wi{to_local(T, B, bend_normal, light_wi)};
 
-                //if (!all_zero(surface_f) && !all_zero(light_li))
-                //{
-                //    auto const weight = power_heuristic(1, light_pdf, 1, surface_pdf);
-                //    radiance += surface_f * light_li * weight / surface_pdf;
-                //}
+                surface_f = f_disney_bsdf(material, local_wo, local_light_wi, sampled_type)
+                            * owl::abs(cos_theta(local_wi));
+                surface_pdf = pdf_disney_pdf(material, local_wo, local_light_wi, sampled_type);
 
-                if (!all_zero(light_li))
-                    radiance += light_li / light_pdf;
+                if (!all_zero(surface_f) && !all_zero(light_li))
+                {
+                    auto const weight = power_heuristic(1, light_pdf, 1, surface_pdf);
+                    radiance += light_li * weight / light_pdf;
+                }
             }
         }
 

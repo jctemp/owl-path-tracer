@@ -13,6 +13,15 @@ inline __both__ float luminance(const vec3& color)
     return owl::dot(vec3{0.2126f, 0.7152f, 0.0722f}, color);
 }
 
+inline __both__ vec3 mon2lin(vec3 v)
+{
+    return vec3{
+        pow(v.x, 2.2f),
+        pow(v.y, 2.2f),
+        pow(v.z, 2.2f)
+    };
+}
+
 inline __both__ vec3 calculate_tint(const vec3& base_color)
 {
     auto const lum{luminance(base_color)};
@@ -26,20 +35,16 @@ inline __both__ vec2 to_alpha(float roughness, float anisotopic = 0.0f)
     return vec2{owl::max(alpha_min, sqr(roughness) / aspect), owl::max(alpha_min, sqr(roughness) * aspect)};
 }
 
-inline __both__ float f_schlick(float cos_theta, float ior)
+// An Inexpensive BRDF Model for Physically Based Rendering - Schlick - equ. (15)
+inline __both__ float f_schlick_weight(float cos_theta)
 {
-    auto const r0{sqr((1.0f - ior) / (1.0f + ior))};
     auto const m{owl::clamp(1.0f - cos_theta, 0.0f, 1.0f)};
-    auto const m2{m * m};
-    return r0 + (1.0f - r0) * (m2 * m2 * m);
+    return (m * m) * (m * m) * m;
 }
 
-// An Inexpensive BRDF Model for Physically Based Rendering - Schlick - equ. (15)
-inline __both__ float f_schlick(float u)
+inline __both__ float fr_schlick(float r0, float cos_theta)
 {
-    auto const m{owl::clamp(1.0f - u, 0.0f, 1.0f)};
-    auto const m2{m * m};
-    return m2 * m2 * m;
+	return lerp(r0, 1.0f, f_schlick_weight(cos_theta));
 }
 
 // Physically Based Shading at Disney 2012 - B.2 GTR equ. (4)
@@ -69,8 +74,8 @@ inline __both__ float d_gtr2(vec3 const& wh, float ax, float ay)
 {
     auto const tan2_theta {sqr(tan_theta(wh))};
     if (isinf(tan2_theta)) return 0.0f;
-    auto const cos4_theta {sqr(cos_theta(wh)) * sqr(cos_theta(wh))};
-    auto const e{1.0f + tan2_theta * (sqr(cos_phi(wh) / ax) + sqr(sin_phi(wh) / ay))};
+    auto const cos4_theta {sqr(sqr(cos_theta(wh)))};
+    auto const e{1.0f + tan2_theta * (sqr(cos_phi(wh)) / sqr(ax) + sqr(sin_phi(wh)) / sqr(ay))};
     return 1.0f / (pi * ax * ay * cos4_theta * sqr(e));
 }
 
@@ -101,19 +106,21 @@ inline __both__ float g2_smith_correlated(vec3 const& wo, vec3 const& wi, vec3 c
 inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, const vec2& u)
 {
     auto const wh{normalize(vec3(ax * wo.x, ay * wo.y, wo.z))};
-    auto const length_sqr = wh.x * wh.x + wh.y * wh.y;
+    auto const length_sqr = sqr(wh.x) + sqr(wh.y);
 
     auto const T1{length_sqr > 0.0f ? vec3{-wh.y, wh.x, 0.0f} * (1.0f / owl::sqrt(length_sqr)) : vec3{1, 0, 0}};
     auto const T2 = owl::cross(wh, T1);
 
-    float r = sqrtf(u.x);
-    float phi = 2.0f * pi * u.y;
-    float t1 = r * cos(phi);
-    float t2 = r * sin(phi);
+    float r = owl::sqrt(u.x);
+    float phi = two_pi * u.y;
+	
+    float t1 = r * owl::cos(phi);
+    float t2 = r * owl::sin(phi);
+	
     float s = 0.5f * (1.0f + wh.z);
-    t2 = (1.0f - s) * sqrtf(1.0f - t1*t1) + s*t2;
+    t2 = (1.0f - s) * owl::sqrt(1.0f - sqr(t1)) + s * t2;
 
-    auto const nh{t1 * T1 + t2 * T2 + owl::sqrt(owl::max(0.0f, 1.0f - t1 * t1 - t2 * t2)) * wh};
+    auto const nh{t1 * T1 + t2 * T2 + owl::sqrt(owl::max(0.0f, 1.0f - sqr(t1) - sqr(t2))) * wh};
 
     return owl::normalize(vec3{ax * nh.x, ay * nh.y, owl::max(0.0f, nh.z)});
 }

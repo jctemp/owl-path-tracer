@@ -36,10 +36,10 @@ __both__ vec3 f_disney_diffuse(material_data const& m, vec3 const& wo, vec3 cons
     auto const n_dot_wo{owl::abs(cos_theta(wo))};
     auto const n_dot_wi{owl::abs(cos_theta(wi))};
 
-    auto const fresnel_wo{f_schlick(n_dot_wo, m.ior)};
-    auto const fresnel_wi{f_schlick(n_dot_wi, m.ior)};
+    auto const fresnel_wo{f_schlick_weight(n_dot_wo)};
+    auto const fresnel_wi{f_schlick_weight(n_dot_wi)};
 
-    return inv_pi * (1.0f - fresnel_wi / 2.0f) * (1.0f - fresnel_wo / 2.0f);
+    return (1.0f - fresnel_wi * .5f) * (1.0f - fresnel_wo * .5f);
 }
 
 __both__ float pdf_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -69,13 +69,13 @@ __both__ vec3 f_disney_subsurface(material_data const& m, vec3 const& wo, vec3 c
     auto const cos_theta_d{owl::dot(wi, wh)};
     auto const n_dot_wo{owl::abs(cos_theta(wo))};
     auto const n_dot_wi{owl::abs(cos_theta(wi))};
-    auto const fresnel_wo{f_schlick(n_dot_wo, m.ior)};
-    auto const fresnel_wi{f_schlick(n_dot_wi, m.ior)};
+    auto const fresnel_wo{f_schlick_weight(n_dot_wo)};
+    auto const fresnel_wi{f_schlick_weight(n_dot_wi)};
     auto const fss90{sqr(cos_theta_d) * m.roughness};
     auto const fss{lerp(1.0f, fss90, fresnel_wo) * lerp(1.0f, fss90, fresnel_wi)};
     auto const fs{1.25f * (fss * (1.0f / (n_dot_wo + n_dot_wi) - 0.5f) + 0.5f)};
 
-    return inv_pi * fs;
+    return fs;
 }
 
 __both__ float pdf_disney_subsurface(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -100,14 +100,16 @@ __both__ vec3 f_disney_retro(material_data const& m, vec3 const& wo, vec3 const&
 
     // Burley 2015, eq (4).
 
-    auto const cos_theta_d{owl::dot(wi, wh)};
     auto const n_dot_o{owl::abs(cos_theta(wo))};
     auto const n_dot_i{owl::abs(cos_theta(wi))};
-    auto const fresnel_wo{f_schlick(n_dot_o, m.ior)};
-    auto const fresnel_wi{f_schlick(n_dot_i, m.ior)};
-    auto const rr{2 * m.roughness * sqr(cos_theta_d)};
+	
+    auto const fresnel_wo{f_schlick_weight(n_dot_o)};
+    auto const fresnel_wi{f_schlick_weight(n_dot_i)};
 
-    return inv_pi * rr * (fresnel_wo + fresnel_wi + fresnel_wo * fresnel_wi * (rr - 1));
+    auto const cos_theta_d{ owl::dot(wi, wh) };
+    auto const rr{2.0f * m.roughness * sqr(cos_theta_d)};
+
+    return  rr * (fresnel_wo + fresnel_wi + fresnel_wo * fresnel_wi * (rr - 1));
 }
 
 __both__ float pdf_disney_retro(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -135,7 +137,7 @@ __both__ vec3 f_disney_sheen(material_data const& m, vec3 const& wo, vec3 const&
     auto const cos_theta_d{owl::dot(wi, wh)};
     auto const tint{calculate_tint(m.base_color)};
 
-    return m.sheen * lerp(vec3{1.0f}, tint, vec3{m.sheen_tint}) * f_schlick(cos_theta_d, m.ior);
+    return m.sheen * lerp(vec3{1.0f}, tint, vec3{m.sheen_tint}) * f_schlick_weight(cos_theta_d);
 }
 
 __both__ float pdf_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -162,12 +164,15 @@ __both__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 co
     // GTR1 distribution, which has even fatter tails than Trowbridge-Reitz
     // (which is GTR2). The geometric term always based on alpha = 0.25
 
-    auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
+    auto const alpha_g{ lerp(0.1f, .001f, m.clearcoat_gloss) };
     auto const d{d_gtr1(wh, alpha_g)};
-    auto const f{lerp(.04f, 1.0f, f_schlick(owl::dot(wi, wh)))};
-    auto const g{g2_smith_correlated(wo, wi, wh, .25f,.25f)};
+	auto const f{fr_schlick(.04f, owl::dot(wi, wh))};
+    //auto const g{g2_smith_correlated(wo, wi, wh, .25f,.25f)};
+	auto const g1i{g1_smith(wi, .25, .25)};
+	auto const g1o{g1_smith(wo, .25, .25)};
+	auto const g{g1i * g1o};
 
-    return m.clearcoat * g * f * d / (4.0f * owl::abs(cos_theta(wi)));
+    return m.clearcoat * g * f * d * 0.25f;
 }
 
 __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -181,9 +186,9 @@ __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3
     // distribution for wh converted to a measure with respect to the
     // surface normal.
 
-    auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
+    auto const alpha_g{ lerp(0.1f, .001f, m.clearcoat_gloss) };
     auto const d{d_gtr1(wh, alpha_g)};
-    return d * 0.25f / (owl::abs(owl::dot(wo, wh)));
+    return d * cos_theta(wh) / (4.0f * owl::dot(wo, wh));
 }
 
 __both__ void sample_disney_clearcoat(material_data const& m, vec3 const& wo, random& rand,
@@ -194,7 +199,9 @@ __both__ void sample_disney_clearcoat(material_data const& m, vec3 const& wo, ra
     // Apply importance sampling to D * dot(N * H) / (4 * dot(H, V)) by choosing normal
     // proportional to D and reflect it at H
 
-    auto const alpha_g{lerp(.1f, .001f, m.clearcoat_gloss)};
+	// !TODO: review clearcoat because for gloss = 1 fireflies are there
+
+    auto const alpha_g{ lerp(0.1f, .001f, m.clearcoat_gloss) };
     auto const wh{sample_gtr1(wo, alpha_g, rand.rng<vec2>())};
 
     f = vec3{0.0f};
@@ -216,13 +223,23 @@ __both__ vec3 f_disney_specular(material_data const& m, vec3 const& wo, vec3 con
     if (all_zero(wh)) return vec3{0.0f};
     wh = owl::normalize(wh);
 
-    auto const alpha{to_alpha(m.roughness, m.anisotropic)};
-    auto const dr{d_gtr2(wh, alpha.x, alpha.y)};
-    auto const fr{lerp(m.base_color, (1.0f - m.base_color),f_schlick(dot(wh, wo)))};
-    auto const gr{g2_smith_correlated(wo, wi, wh, alpha.x, alpha.y)};
-    // auto const gr{g1_smith(wo, alpha) * g1_smith(wi, alpha)};
+	// working here strictly with rgb values because everywhere else we use it
+	// alternative would be to transform rgb to another color space to represent color and
+	// luminance better
+    auto const cdlum = luminance(m.base_color);
+    auto const c_tint = cdlum > 0.0f ? m.base_color / cdlum : vec3{ 1.0f };
+    auto const c_spec0 = lerp(m.specular * .08f * lerp(vec3{ 1.0f }, c_tint, m.specular_tint), m.base_color, m.metallic);
 
-    return dr * fr * gr / (4.0f * owl::abs(cos_theta(wi)));
+    auto const alpha{to_alpha(m.roughness, m.anisotropic)};
+    auto const dr{ d_gtr2(wh, alpha.x, alpha.y) };
+
+	// fr is determining the reflection color !replacable with proper fresnel
+    auto const fr{lerp(c_spec0, 1.0f, f_schlick_weight(dot(wh, wo)))};
+    auto const gr{ g2_smith_correlated(wo, wi, wh, alpha.x, alpha.y) };
+
+	// cos_theta of wo is needed to have correct behaviour for grazing angles
+	// _> Understanding the Masking-Shadowing Function in Microfacet-Based BRDFs (p. 65) eq. 36
+    return dr * fr * gr  / (4.0f * cos_theta(wo));
 }
 
 __both__ float pdf_disney_specular(material_data const& m, vec3 const& wo, vec3 const& wi)
@@ -237,14 +254,22 @@ __both__ float pdf_disney_specular(material_data const& m, vec3 const& wo, vec3 
 
     // see sampling the ggx distribution of visible normals heitz
     // A. Complete Implementation of the GGX VNDF Sampling Routine
-    return g1 * owl::max(0.0f, owl::dot(wo, wh)) * d / (owl::abs(cos_theta(wi)));
+    return g1 * owl::max(0.0f, owl::dot(wo, wh)) * d;
+
+	// dividing the value by cos(wi) results in a darker image
+    // -> (f * cos(wi)) / pdf with pdf = d * g1 * <wo, wh> / cos(wi)
+    // -> (f * cos²(wi)) / (d * g1 * <wo, wh>)
+    // hence by not dividing the pdf by cos(wi) we get a brighter image because
+    // cos(wi) is not factored twice
+    // return g1 * owl::max(0.0f, owl::dot(wo, wh)) * d / owl::abs(cos_theta(wi));
 }
 
 __both__ void
 sample_disney_specular(material_data const& m, vec3 const& wo, random& rand,
                        vec3& wi, vec3& f, float& pdf)
 {
-    // TODO: anisotrpic is not behaving as expected. Presumably wrong sampling of VNDF, NDF itself or G term
+    // !TODO: anisotrpic is not behaving as expected. Presumably wrong sampling of VNDF, NDF itself or G term
+	
     auto const alpha{to_alpha(m.roughness, m.anisotropic)};
     auto const wh{sample_gtr2_vndf(wo, alpha.x, alpha.y, rand.rng<vec2>())};
 
@@ -310,12 +335,8 @@ __both__ vec3 f_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 const
     auto const clearcoat = f_disney_clearcoat(mat, wo, wi);
     auto const specular = f_disney_specular(mat, wo, wi);
 
-    auto const base_color = mat.base_color;
-    auto const subsurface_color = mat.subsurface_color;
-
-    return lerp(base_color * (diffuse + retro), ss * subsurface_color, mat.subsurface)
-        * (1.0f - mat.metallic) * (1.0f - mat.specular_transmission)
-        + sheen + clearcoat + specular;
+    return ((inv_pi * lerp(diffuse + retro, ss, mat.subsurface) * mat.base_color + sheen)
+        * (1.0f - mat.metallic) + clearcoat + specular);
 }
 
 __both__ float pdf_disney_pdf(material_data const& mat, vec3 const& wo, vec3 const &wi,
@@ -370,7 +391,7 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
     {
         sampled_type = material_type::clearcoat;
 
-        auto const alpha_g{lerp(.1f, .001f, mat.clearcoat_gloss)};
+        auto const alpha_g{lerp(0.1f, .001f, mat.clearcoat_gloss)};
         wh = sample_gtr1(wo, alpha_g, rand.rng<vec2>());
 
         wi = reflect(wo, wh);

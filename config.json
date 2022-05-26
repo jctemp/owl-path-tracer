@@ -33,7 +33,7 @@
       "metallic": 0.0,
       "specular": 0.0,
       "specular_tint": 0.0,
-      "roughness": 0.8,
+      "roughness": 1.0,
       "anisotropic": 0.0,
       "sheen": 0.0,
       "sheen_tint": 0.0,
@@ -62,7 +62,7 @@
     {
       "type": "disney",
       "name": "clearcoat_red",
-      "base_color": [ 1.0, 0.0, 0.0 ],
+      "base_color": [ 0.8, 0.0, 0.0 ],
       "subsurface": 0.0,
       "subsurface_color": [ 0.5, 0.5, 0.5 ],
       "subsurface_radius": [ 0.5, 0.5, 0.5 ],
@@ -74,13 +74,31 @@
       "sheen": 0.0,
       "sheen_tint": 0.0,
       "clearcoat": 1.0,
-      "clearcoat_gloss": 1.0,
+      "clearcoat_gloss": 0.0,
       "ior": 1.5
     },
     {
       "type": "disney",
       "name": "metallic_rough",
       "base_color": [ 0.8, 0.8, 0.8 ],
+      "subsurface": 0.0,
+      "subsurface_color": [ 0.5, 0.5, 0.5 ],
+      "subsurface_radius": [ 0.5, 0.5, 0.5 ],
+      "metallic": 1.0,
+      "specular": 0.0,
+      "specular_tint": 0.0,
+      "roughness": 0.9,
+      "anisotropic": 0.0,
+      "sheen": 0.0,
+      "sheen_tint": 0.0,
+      "clearcoat": 0.0,
+      "clearcoat_gloss": 0.0,
+      "ior": 1.5
+    },
+    {
+      "type": "disney",
+      "name": "metallic_rough_colored",
+      "base_color": [ 0.8, 0.352899, 0.189154 ],
       "subsurface": 0.0,
       "subsurface_color": [ 0.5, 0.5, 0.5 ],
       "subsurface_radius": [ 0.5, 0.5, 0.5 ],
@@ -106,7 +124,7 @@
       "specular": 0.0,
       "specular_tint": 0.0,
       "roughness": 0.3,
-      "anisotropic": 0.0,
+      "anisotropic": 1.0,
       "sheen": 0.0,
       "sheen_tint": 0.0,
       "clearcoat": 0.0,
@@ -137,7 +155,7 @@
       "name" : "point-light",
       "position" : [5.0, 5.0, 5.0],
       "color" : [1.0, 1.0, 1.0],
-      "intensity" : 0
+      "intensity" : 10.0
     }
   ]
 }

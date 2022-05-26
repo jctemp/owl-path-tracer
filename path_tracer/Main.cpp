@@ -340,12 +340,12 @@ int main(int argc, char** argv)
     auto const entities = load_scene(meshes, &materials);
 
     optix_init();
-    //optix_set_environment_map(environment);
+    optix_set_environment_map(environment);
     optix_set_entities(entities);
 
     od.buffer_size = ivec2{1024};
     od.use_environment_map = true;
-    od.max_samples = 128;
+    od.max_samples = 2048;
     od.max_path_depth = 8;
 
     optix_render(to_camera_data(scene_camera, od.buffer_size), &materials, &lights);
