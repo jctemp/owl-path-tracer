@@ -7,7 +7,7 @@
 using radiance_ray = owl::RayT<0, 2>;
 using shadow_ray = owl::RayT<1, 2>;
 
-/// this constant must be called optixLaunchParams
+/// this constant must be called optixLaunchParams<br>
 /// it is declared in path_tracer extern/owl/owl/DeviceContext.cpp
 __constant__ launch_params_data optixLaunchParams;
 
@@ -28,7 +28,7 @@ inline __device__ vec2 uv_on_sphere(vec3 n)
 
 inline __device__ vec3 sample_environment(vec3 dir)
 {
-    auto& launch_params = optixLaunchParams;
+    auto& launch_params {optixLaunchParams};
 
     vec2 tc{uv_on_sphere(dir)};
     owl::vec4f const texColor{
@@ -71,28 +71,46 @@ inline __device__ void load_triangle_normals(int32_t const& mesh_index, ivec3 co
 }
 
 
+inline __device__ bool visibiliy_test(vec3 const& position, vec3 const& direction, float const& max_distance)
+{
+    auto& launch_params {optixLaunchParams};
+
+    // check the space between position and target only
+    shadow_ray light_ray{position, direction, t_min, max_distance - t_min};
+    bool visible{false};
+
+    owl::traceRay(launch_params.world, light_ray, visible,
+              OPTIX_RAY_FLAG_DISABLE_ANYHIT
+            | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT);
+
+    return visible;
+}
+
+
 __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 {
     auto& launch_params = optixLaunchParams;
 
-    // hold total sum of accumulated radiance
+    /// total accumulation of existent radiance
     vec3 radiance{0.0f};
 
-    // hold the path throughput weight (f * cos(theta)) / pdf
-    // => current implementation has f and cos already combined
+
+    /// keeps tracks of the throughput of a ray, it is weighting the radiance <br>
+    /// beta = f * cos(theta) / pdf
     vec3 beta{1.0f};
 
     hit_data hd;
     material_data ms;
     per_ray_data prd{random, scatter_event::none, &hd, &ms};
+    material_type sampled_type{};
 
     for (int32_t depth{0}; depth < launch_params.max_path_depth; ++depth)
     {
-        /* FIND INTERSECTION */
+        /// find closest intersection
         owl::traceRay(launch_params.world, ray, prd);
 
 
-        /* TERMINATE PATH AND SAMPLE ENVIRONMENT*/
+        /// miss then terminate the path and sample environment
         if (prd.scatter_event == scatter_event::miss)
         {
             vec3 li{1.0f};
@@ -106,7 +124,8 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             break;
         }
 
-        /* PREPARE mesh FOR CALCULATIONS */
+
+        /// load mesh for interaction calculations
         ivec3 index{};
         vec3 v_p{}, v_gn{}, v_n{};
 
@@ -119,38 +138,40 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         vec3 T{}, B{};
         onb(v_n, T, B);
 
-        /* SAMPLE BRDF */
-        material_data material{};
-        if (hd.material_index >= 0) { get_data(material, launch_params.material_buffer, hd.material_index, material_data); }
 
-        auto pdf{0.0f};
-        auto f{vec3{0.0f}};
-        auto sampled_type{material_type::none};
+        // TODO: HANDLE LIGHT DIRECT HIT
 
-        vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{}, local_wh{};
+        float pdf{};
+        vec3 f{};
 
-        sample_disney_bsdf(material, local_wo, prd.random,
-                local_wi, local_wh, f, pdf, sampled_type);
+        /// sample the bsdf lobes
+        if (hd.material_index >= 0)
+        {
+            get_data(material_data material, launch_params.material_buffer, hd.material_index, material_data);
 
-        wi = to_world(T, B, v_n, local_wi);
+            vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{}, local_wh{};
+
+            sample_disney_bsdf(material, local_wo, prd.random,
+                    local_wi, local_wh, f, pdf, sampled_type);
+
+            wi = to_world(T, B, v_n, local_wi);
+        }
 
 
-        /* TERMINATE PATH IF IMPOSSIBLE */
+        /// terminate or catching de-generate paths
         if (pdf < 1E-5f)
             break;
 
-
-        /* CATCHING DE-GENERATED VALUES */
         if (has_inf(f) || has_nan(f))
         {
             --depth; // invalid path and re-sample
             continue;
         }
 
-        beta *= (f * owl::abs(cos_theta(local_wi))) / pdf;
+        beta *= (f * owl::abs(owl::dot(wi, v_n))) / pdf;
 
 
-        /* SAMPLE DIRECT LIGHTS */
+        /// sample direct lights
         // shadow_ray light_ray{hit_p, light_wi, t_min, light_distance + t_min};
         // bool visible{false};
 
@@ -163,13 +184,14 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         // vec3 r = reflect(world_wo, shading_n);
         // float a = dot(geometric_n, r);
         // vec3 bend_normal = shading_n;
-        // if (a < 0.f) {
+        // if (a < 0.f)
+        // {
         //     float b = max(0.001f, dot(shading_n, geometric_n));
         //     bend_normal = normalize(world_wo + normalize(r - shading_n * a / b));
         // }
 
 
-        /* TERMINATE PATH IF RUSSIAN ROULETTE  */
+        /// terminate path by random
         auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
         if (depth > 3)
         {
