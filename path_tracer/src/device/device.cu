@@ -11,6 +11,7 @@ using shadow_ray = owl::RayT<1, 2>;
 /// it is declared in path_tracer extern/owl/owl/DeviceContext.cpp
 __constant__ launch_params_data optixLaunchParams;
 
+
 inline __device__ vec3 pow(vec3 const& v, float const& p)
 {
     return vec3{powf(v.x, p), powf(v.y, p), powf(v.z, p)};
