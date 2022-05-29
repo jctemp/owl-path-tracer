@@ -58,13 +58,11 @@ struct launch_params_data
     bool use_environment_map;
 };
 
-struct triangle_geom_data
+struct entity_data
 {
-    int32_t id{-1};
-    int32_t material_id{-1};
-    ivec3* index{};
-    vec3* vertex{};
-    vec3* normal{};
+    int32_t mesh_index{-1};
+    int32_t material_index{-1};
+    int32_t light_index{-1};
 };
 
 struct ray_gen_data

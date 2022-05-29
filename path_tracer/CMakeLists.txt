@@ -33,8 +33,6 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/device/lights.hpp"
 
 
-
-        "src/device/path_tracer.hpp" 
         "src/device/device_global.hpp")
 
 TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC

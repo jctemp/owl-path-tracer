@@ -6,49 +6,27 @@
 
 enum class scatter_event
 {
-    bounced = 1 << 0,
-    missed = 1 << 1,
+    hit = 1 << 0,
+    miss = 1 << 1,
     none = 1 << 2
 };
 
-struct interface_data
+struct hit_data
 {
-    /* triangle points */
-    vec3 triangle_points[3];
-
-    /* hit position */
-    vec3 position;
-
-    /* shading normal */
-    vec3 normal;
-
-    /* geometric normal */
-    vec3 normal_geometric;
-
-    /* view direction (wo or V) */
+    int32_t primitive_index;
+    int32_t material_index;
+    int32_t mesh_index;
+    int32_t light_index;
+    vec2 barycentric;
     vec3 wo;
-
-    /* barycentrics */
-    vec2 uv;
-
-    /* thit */
     float t;
-
-    /* primitive id => 0 if not exists */
-    int32_t prim;
-
-    /* material id for LP reference */
-    int32_t material_id;
-
-    /* light id for LP reference */
-    int32_t light_id;
 };
 
 struct per_ray_data
 {
     random& random;
     scatter_event scatter_event;
-    interface_data* is;
+    hit_data* hd;
     material_data* ms;
 };
 

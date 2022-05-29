@@ -145,16 +145,14 @@ int main(int argc, char** argv)
 
     var_decl triangles_geom_vars
             {
-                    {"id",          OWL_INT,    OWL_OFFSETOF(triangle_geom_data, id)},
-                    {"material_id", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, material_id)},
-                    {"index",       OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index)},
-                    {"vertex",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex)},
-                    {"normal",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal)},
+                    {"mesh_index",     OWL_INT,    OWL_OFFSETOF(entity_data, mesh_index)},
+                    {"material_index", OWL_INT,    OWL_OFFSETOF(entity_data, material_index)},
+                    {"light_index",    OWL_INT,    OWL_OFFSETOF(entity_data, light_index)},
                     {nullptr}
             };
 
     geom_type triangle_geom{create_geom_type(owl_context, OWL_GEOM_TRIANGLES,
-            sizeof(triangle_geom_data), triangles_geom_vars)};
+            sizeof(entity_data), triangles_geom_vars)};
 
     geom_type_closest_hit_program(triangle_geom, owl_module, "triangle_hit", 0);
 
@@ -190,11 +188,9 @@ int main(int argc, char** argv)
         set_triangle_vertices(geom_data, vertex_buffer, vertices.size(), sizeof(vec3));
         set_triangle_indices(geom_data, index_buffer, indices.size(), sizeof(ivec3));
 
-        set_field(geom_data, "id", mesh_id++);
-        set_field(geom_data, "material_id", e.materialId);
-        set_field(geom_data, "vertex", vertex_buffer);
-        set_field(geom_data, "normal", normal_buffer);
-        set_field(geom_data, "index", index_buffer);
+        set_field(geom_data, "mesh_index", mesh_id++);
+        set_field(geom_data, "material_index", e.materialId);
+        set_field(geom_data, "light_index", e.lightId);
 
         geoms.push_back(geom_data);
     }
