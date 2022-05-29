@@ -8,7 +8,7 @@
     if (address >= buffer.count) { \
         ::printf("Device Error (%d, %s): out of bounds access (address: %d, size %d).\n", \
             __LINE__, __FILE__, address, uint32_t(buffer.count)); asm("trap;"); } \
-    dest = ((type*)buffer.data)[address];
+    dest = ((type*)buffer.data)[address]
 
 #define assert_condition(check, msg) \
     if (check) {::printf("Device Error (%d, %s): %s\n", __LINE__, __FILE__, msg); asm("trap;"); }

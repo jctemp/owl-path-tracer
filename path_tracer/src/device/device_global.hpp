@@ -48,6 +48,11 @@ struct launch_params_data
     int32_t max_samples;
     Buffer material_buffer;
     Buffer light_buffer;
+
+    Buffer vertices_buffer;
+    Buffer indices_buffer;
+    Buffer normals_buffer;
+
     OptixTraversableHandle world;
     cudaTextureObject_t environment_map;
     bool use_environment_map;
@@ -55,7 +60,8 @@ struct launch_params_data
 
 struct triangle_geom_data
 {
-    int32_t matId{-1};
+    int32_t id{-1};
+    int32_t material_id{-1};
     ivec3* index{};
     vec3* vertex{};
     vec3* normal{};

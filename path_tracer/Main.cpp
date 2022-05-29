@@ -23,40 +23,6 @@ struct entity
     int32_t lightId{-1};
 };
 
-struct optix_data
-{
-    // make context and shader
-    OWLContext context;
-    OWLModule module;
-
-    // launchParams static accessible mem.
-    OWLLaunchParams launch_params;
-    uint32_t max_path_depth;
-    uint32_t max_samples;
-
-    // Programs
-    OWLRayGen ray_gen_program;
-    OWLMissProg miss_program;
-    OWLMissProg miss_shadow_program;
-
-    // link between host and device
-    ivec2 buffer_size{1024};
-    OWLBuffer frame_buffer;
-
-    // Geometry and mesh
-    OWLGeomType triangle_geom;
-    std::vector<OWLGeom> geoms;
-
-    // Group to handle geometry
-    OWLGroup world;
-
-    // Texture holding env. information
-    OWLTexture environment_map;
-    bool use_environment_map;
-};
-
-static optix_data od{};
-
 template<typename T>
 std::vector<T> to_vector(std::vector<std::tuple<std::string, T>> const* data)
 {
@@ -145,183 +111,6 @@ std::vector<entity> load_scene(std::vector<std::tuple<std::string, std::shared_p
     return entities;
 }
 
-void optix_init()
-{
-    /* ━━━━━━━━━ CREATE CONTEXT AND MODULE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    od.context = create_context(nullptr, 1);
-    od.module = create_module(od.context, device_ptx);
-
-
-    /* ━━━━━━━━━ CREATE RAY GEN PROGRAM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    var_decl ray_gen_vars
-            {
-                    {"fb_ptr",            OWL_BUFPTR, OWL_OFFSETOF(ray_gen_data, fb_ptr)},
-                    {"fb_size",           OWL_INT2,   OWL_OFFSETOF(ray_gen_data, fb_size)},
-                    {"camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.origin)},
-                    {"camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.llc)},
-                    {"camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.horizontal)},
-                    {"camera.vertical",   OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.vertical)},
-                    {nullptr}
-            };
-
-    od.ray_gen_program = create_ray_gen_program(od.context, od.module, "ray_gen", sizeof(ray_gen_data), ray_gen_vars);
-
-
-    /* ━━━━━━━━━ CREATE MISS PROGRAMS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    od.miss_program = create_miss_program(od.context, od.module, "miss", 0u, nullptr);
-    owlMissProgSet(od.context, 0, od.miss_program);
-
-    od.miss_shadow_program = create_miss_program(od.context, od.module, "miss_shadow", 0u, nullptr);
-    owlMissProgSet(od.context, 1, od.miss_shadow_program);
-
-
-    /* ━━━━━━━━━ CREATE LAUNCH PARAMS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    var_decl launchParamsVars
-            {
-                    {"max_path_depth", OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, max_path_depth)},
-                    {"max_samples",    OWL_USER_TYPE(uint32_t), OWL_OFFSETOF(launch_params_data, max_samples)},
-                    {"material_buffer",     OWL_BUFFER,         OWL_OFFSETOF(launch_params_data, material_buffer)},
-                    {"light_buffer",        OWL_BUFFER,         OWL_OFFSETOF(launch_params_data, light_buffer)},
-                    {"world",               OWL_GROUP,          OWL_OFFSETOF(launch_params_data, world)},
-                    {"environment_map",     OWL_TEXTURE,        OWL_OFFSETOF(launch_params_data, environment_map)},
-                    {"use_environment_map", OWL_BOOL,           OWL_OFFSETOF(launch_params_data, use_environment_map)},
-                    {nullptr}
-            };
-
-    od.launch_params = create_launch_params(od.context, sizeof(launch_params_data), launchParamsVars);
-
-
-    /* ━━━━━━━━━ CREATE TRIANGLE GEOM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-    var_decl triangles_geom_vars
-            {
-                    {"material_id", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, matId)},
-                    {"index",       OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index)},
-                    {"vertex",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex)},
-                    {"normal",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal)},
-                    {nullptr}
-            };
-
-    od.triangle_geom = create_geom_type(od.context, OWL_GEOM_TRIANGLES,
-            sizeof(triangle_geom_data), triangles_geom_vars);
-
-    geom_type_closest_hit_program(od.triangle_geom, od.module, "triangle_hit", 0);
-}
-
-void optix_destroy()
-{
-    destroy_context(od.context);
-}
-
-void optix_set_environment_map(image_buffer const& texture)
-{
-    if (!texture.buffer)
-        return;
-
-    if (od.environment_map != nullptr)
-        destroy_texture(od.environment_map);
-
-    od.environment_map = create_texture(
-            od.context,
-            {texture.width, texture.height},
-            texture.buffer
-    );
-}
-
-void optix_set_entities(std::vector<entity> entities)
-{
-    for (auto e: entities)
-    {
-        mesh& mesh{*e.mesh_ptr};
-
-        auto& vertices{mesh.vertices};
-        auto& indices{mesh.indices};
-        auto& normals{mesh.normals};
-
-        // set geometry in the buffers of the object
-        buffer vertex_buffer{
-                create_device_buffer(od.context, OWL_FLOAT3, vertices.size(), vertices.data())};
-
-        buffer normal_buffer{
-                create_device_buffer(od.context, OWL_FLOAT3, normals.size(), normals.data())};
-
-        buffer index_buffer{
-                create_device_buffer(od.context, OWL_INT3, indices.size(), indices.data())};
-
-        // prepare mesh for device
-        geom geom_data{
-                owlGeomCreate(od.context, od.triangle_geom)};
-
-        // set specific vertex/index buffer => required for build the accel.
-        set_triangle_vertices(geom_data, vertex_buffer,
-                vertices.size(), sizeof(owl::vec3f));
-
-        set_triangle_indices(geom_data, index_buffer,
-                indices.size(), sizeof(ivec3));
-
-        // set sbt data
-        set_field(geom_data, "material_id", e.materialId);
-        set_field(geom_data, "vertex", vertex_buffer);
-        set_field(geom_data, "normal", normal_buffer);
-        set_field(geom_data, "index", index_buffer);
-
-        od.geoms.push_back(geom_data);
-    }
-}
-
-void optix_render(camera_data const& camera,
-                  std::vector<std::tuple<std::string, material_data>> const* materials,
-                  std::vector<std::tuple<std::string, light_data>> const* lights)
-{
-    /* CREATE TRAVERSABLE (WORLD / IAS) */
-    if (od.geoms.empty())
-    {
-        od.world = create_instance_group(od.context, 0, nullptr);
-        build_group_acceleration_structure(od.world);
-    } else
-    {
-        auto triangles_group = owlTrianglesGeomGroupCreate(od.context, od.geoms.size(), od.geoms.data());
-        build_group_acceleration_structure(triangles_group);
-
-        od.world = create_instance_group(od.context, 1, &triangles_group);
-        build_group_acceleration_structure(od.world);
-    }
-
-    /* SET RAY GEN SBT DATA */
-
-    od.frame_buffer = create_pinned_host_buffer(od.context, OWL_INT, od.buffer_size.x * od.buffer_size.y);
-
-    set_field(od.ray_gen_program, "fb_ptr", od.frame_buffer);
-    set_field(od.ray_gen_program, "fb_size", od.buffer_size);
-    set_field(od.ray_gen_program, "camera.origin", camera.origin);
-    set_field(od.ray_gen_program, "camera.llc", camera.llc);
-    set_field(od.ray_gen_program, "camera.horizontal", camera.horizontal);
-    set_field(od.ray_gen_program, "camera.vertical", camera.vertical);
-
-    /* SET LAUNCH PARAMS SBT DATA */
-    auto const vec_material = to_vector(materials);
-    auto const vec_light = to_vector(lights);
-
-    auto material_buffer{create_device_buffer(od.context, OWL_USER_TYPE(material_data), vec_material.size(),
-            vec_material.data())};
-    auto light_buffer{create_device_buffer(od.context, OWL_USER_TYPE(light_data), vec_light.size(), vec_light.data())};
-
-    set_field(od.launch_params, "max_path_depth", reinterpret_cast<void*>(&od.max_path_depth));
-    set_field(od.launch_params, "max_samples", reinterpret_cast<void*>(&od.max_samples));
-    set_field(od.launch_params, "material_buffer", material_buffer);
-    set_field(od.launch_params, "light_buffer", light_buffer);
-    set_field(od.launch_params, "world", od.world);
-    set_field(od.launch_params, "environment_map", od.environment_map);
-    set_field(od.launch_params, "use_environment_map", od.use_environment_map);
-
-    /* BUILD PROGRAMS, PIPELINE AND SBT */
-    build_optix(od.context);
-
-    /* LAUNCH TRACING */
-    fmt::print(fg(color::start), "LAUNCH TRACER\n");
-    owlLaunch2D(od.ray_gen_program, od.buffer_size.x, od.buffer_size.y, od.launch_params);
-    fmt::print(fg(color::stop), "STOP TRACER\n");
-}
-
 int main(int argc, char** argv)
 {
     auto prefix_path{std::string{"."}};
@@ -339,23 +128,199 @@ int main(int argc, char** argv)
     auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "assets/", scene_name, ".obj.scene"))};
     auto const entities = load_scene(meshes, &materials);
 
-    optix_init();
-    optix_set_environment_map(environment);
-    optix_set_entities(entities);
+    auto const use_environment_map = true;
+    auto const buffer_size = ivec2{1024};
+    auto const max_samples = 2048;
+    auto const max_path_depth = 8;
+    auto const camera{to_camera_data(scene_camera, buffer_size)};
 
-    od.buffer_size = ivec2{1024};
-    od.use_environment_map = true;
-    od.max_samples = 2048;
-    od.max_path_depth = 8;
+#pragma region "OWL INIT"
 
-    optix_render(to_camera_data(scene_camera, od.buffer_size), &materials, &lights);
+    OWLContext owl_context = create_context(nullptr, 1);
+    OWLModule owl_module = create_module(owl_context, device_ptx);
 
-    // copy image buffer
+#pragma endregion
 
-    image_buffer result{od.buffer_size.x, od.buffer_size.y,
-                        reinterpret_cast<uint32_t const*>(buffer_to_pointer(od.frame_buffer, 0)),
+#pragma region "CREATE GEOMETRY TYPES"
+
+    var_decl triangles_geom_vars
+            {
+                    {"id",          OWL_INT,    OWL_OFFSETOF(triangle_geom_data, id)},
+                    {"material_id", OWL_INT,    OWL_OFFSETOF(triangle_geom_data, material_id)},
+                    {"index",       OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, index)},
+                    {"vertex",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, vertex)},
+                    {"normal",      OWL_BUFPTR, OWL_OFFSETOF(triangle_geom_data, normal)},
+                    {nullptr}
+            };
+
+    geom_type triangle_geom{create_geom_type(owl_context, OWL_GEOM_TRIANGLES,
+            sizeof(triangle_geom_data), triangles_geom_vars)};
+
+    geom_type_closest_hit_program(triangle_geom, owl_module, "triangle_hit", 0);
+
+    owlBuildPrograms(owl_context); // necessary for the building geometries
+
+#pragma endregion
+
+#pragma region "SET GEOMETRY DATA"
+
+    std::vector<geom> geoms{};
+    std::vector<buffer> indices_buffer_list{};
+    std::vector<buffer> vertices_buffer_list{};
+    std::vector<buffer> normals_buffer_list{};
+
+    int32_t mesh_id{0};
+    for (auto e: entities)
+    {
+        mesh& mesh{*e.mesh_ptr};
+
+        auto& vertices{mesh.vertices};
+        auto& indices{mesh.indices};
+        auto& normals{mesh.normals};
+
+        buffer vertex_buffer{create_device_buffer(owl_context, OWL_FLOAT3, vertices.size(), vertices.data())};
+        buffer normal_buffer{create_device_buffer(owl_context, OWL_FLOAT3, normals.size(), normals.data())};
+        buffer index_buffer{create_device_buffer(owl_context, OWL_INT3, indices.size(), indices.data())};
+
+        indices_buffer_list.push_back(index_buffer);
+        vertices_buffer_list.push_back(vertex_buffer);
+        normals_buffer_list.push_back(normal_buffer);
+
+        geom geom_data{owlGeomCreate(owl_context, triangle_geom)};
+        set_triangle_vertices(geom_data, vertex_buffer, vertices.size(), sizeof(vec3));
+        set_triangle_indices(geom_data, index_buffer, indices.size(), sizeof(ivec3));
+
+        set_field(geom_data, "id", mesh_id++);
+        set_field(geom_data, "material_id", e.materialId);
+        set_field(geom_data, "vertex", vertex_buffer);
+        set_field(geom_data, "normal", normal_buffer);
+        set_field(geom_data, "index", index_buffer);
+
+        geoms.push_back(geom_data);
+    }
+
+#pragma endregion
+
+#pragma region "CREATE IAS FROM GEOMETRY"
+
+    if (geoms.empty()) throw std::runtime_error("no geometries");
+
+    auto triangles_group{owlTrianglesGeomGroupCreate(owl_context, geoms.size(), geoms.data())};
+    build_group_acceleration_structure(triangles_group);
+
+    auto world{create_instance_group(owl_context, 1, &triangles_group)};
+    build_group_acceleration_structure(world);
+
+#pragma endregion
+
+#pragma region "SET MISS AND RAY GEN PROGRAM"
+
+    var_decl ray_gen_vars
+            {
+                    {"fb_ptr",            OWL_BUFPTR, OWL_OFFSETOF(ray_gen_data, fb_ptr)},
+                    {"fb_size",           OWL_INT2,   OWL_OFFSETOF(ray_gen_data, fb_size)},
+                    {"camera.origin",     OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.origin)},
+                    {"camera.llc",        OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.llc)},
+                    {"camera.horizontal", OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.horizontal)},
+                    {"camera.vertical",   OWL_FLOAT3, OWL_OFFSETOF(ray_gen_data, camera.vertical)},
+                    {nullptr}
+            };
+
+    ray_gen_program ray_gen_prog{create_ray_gen_program(owl_context, owl_module,
+            "ray_gen", sizeof(ray_gen_data), ray_gen_vars)};
+
+
+    miss_program miss_prog{create_miss_program(owl_context, owl_module, "miss", 0u, nullptr)};
+    miss_program miss_shadow_prog = create_miss_program(owl_context, owl_module, "miss_shadow", 0u, nullptr);
+    owlMissProgSet(owl_context, 0, miss_prog);
+    owlMissProgSet(owl_context, 1, miss_shadow_prog);
+
+#pragma endregion
+
+#pragma region "SET LAUNCH PARAMS"
+
+    var_decl launchParamsVars
+            {
+                    {"max_path_depth",      OWL_INT,     OWL_OFFSETOF(launch_params_data, max_path_depth)},
+                    {"max_samples",         OWL_INT,     OWL_OFFSETOF(launch_params_data, max_samples)},
+                    {"material_buffer",     OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, material_buffer)},
+                    {"light_buffer",        OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, light_buffer)},
+
+                    {"vertices_buffer",     OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, vertices_buffer)},
+                    {"indices_buffer",      OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, indices_buffer)},
+                    {"normals_buffer",      OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, normals_buffer)},
+
+                    {"world",               OWL_GROUP,   OWL_OFFSETOF(launch_params_data, world)},
+                    {"environment_map",     OWL_TEXTURE, OWL_OFFSETOF(launch_params_data, environment_map)},
+                    {"use_environment_map", OWL_BOOL,    OWL_OFFSETOF(launch_params_data, use_environment_map)},
+                    {nullptr}
+            };
+
+    launch_params lp{create_launch_params(owl_context, sizeof(launch_params_data), launchParamsVars)};
+
+#pragma endregion
+
+#pragma region "SET VARIABLES"
+
+    auto const environment_map{
+            create_texture(owl_context, {environment.width, environment.height}, environment.buffer)};
+    auto const frame_buffer{create_pinned_host_buffer(owl_context, OWL_INT, buffer_size.x * buffer_size.y)};
+
+    auto const vec_material = to_vector(&materials);
+    auto const vec_light = to_vector(&lights);
+
+    auto material_buffer{create_device_buffer(owl_context, OWL_USER_TYPE(material_data),
+            vec_material.size(), vec_material.data())};
+    auto light_buffer{create_device_buffer(owl_context, OWL_USER_TYPE(light_data),
+            vec_light.size(), vec_light.data())};
+
+    auto vertices_buffer{create_device_buffer(owl_context, OWL_BUFFER, vertices_buffer_list.size(),
+            vertices_buffer_list.data())};
+    auto indices_buffer{create_device_buffer(owl_context, OWL_BUFFER, indices_buffer_list.size(),
+            indices_buffer_list.data())};
+    auto normals_buffer{create_device_buffer(owl_context, OWL_BUFFER, normals_buffer_list.size(),
+            normals_buffer_list.data())};
+
+    set_field(ray_gen_prog, "fb_ptr", frame_buffer);
+    set_field(ray_gen_prog, "fb_size", buffer_size);
+    set_field(ray_gen_prog, "camera.origin", camera.origin);
+    set_field(ray_gen_prog, "camera.llc", camera.llc);
+    set_field(ray_gen_prog, "camera.horizontal", camera.horizontal);
+    set_field(ray_gen_prog, "camera.vertical", camera.vertical);
+
+    set_field(lp, "max_path_depth", max_path_depth);
+    set_field(lp, "max_samples", max_samples);
+    set_field(lp, "material_buffer", material_buffer);
+    set_field(lp, "light_buffer", light_buffer);
+    set_field(lp, "vertices_buffer", vertices_buffer);
+    set_field(lp, "indices_buffer", indices_buffer);
+    set_field(lp, "normals_buffer", normals_buffer);
+    set_field(lp, "world", world);
+    set_field(lp, "environment_map", environment_map);
+    set_field(lp, "use_environment_map", use_environment_map);
+
+    owlBuildPrograms(owl_context);
+    owlBuildPipeline(owl_context);
+    owlBuildSBT(owl_context);
+
+#pragma endregion
+
+#pragma region "LAUNCH RAY TRACING API"
+
+    fmt::print(fg(color::start), "LAUNCH TRACER\n");
+    owlLaunch2D(ray_gen_prog, buffer_size.x, buffer_size.y, lp);
+    fmt::print(fg(color::stop), "STOP TRACER\n");
+
+#pragma endregion
+
+#pragma region "WRITING HOST PINNED BUFFER TO FILE"
+
+    image_buffer result{buffer_size.x, buffer_size.y,
+                        reinterpret_cast<uint32_t const*>(buffer_to_pointer(frame_buffer, 0)),
                         image_buffer::tag::referenced};
     write_image(result, fmt::format("{}.png", scene_name), prefix_path);
 
-    optix_destroy();
+#pragma endregion
+
+    destroy_context(owl_context);
 }

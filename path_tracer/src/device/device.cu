@@ -9,6 +9,35 @@ inline __device__ vec3 pow(vec3 const& v, float const& p)
     return vec3{powf(v.x, p), powf(v.y, p), powf(v.z, p)};
 }
 
+__device__ void load_triangle_indices(int32_t const& mesh_id, int32_t const& primitive_id, ivec3& indices)
+{
+    get_data(auto indices_buffer, optixLaunchParams.indices_buffer, mesh_id, Buffer);
+    get_data(indices, indices_buffer, primitive_id, ivec3);
+}
+
+__device__ void load_triangle_vertices(int32_t const& mesh_id, ivec3 const& indices, vec2 const& barycentric,
+                                       vec3& position, vec3& geometric_normal)
+{
+    get_data(auto vertices_buffer, optixLaunchParams.vertices_buffer, mesh_id, Buffer);
+    get_data(auto p0, vertices_buffer, indices.x, vec3);
+    get_data(auto p1, vertices_buffer, indices.y, vec3);
+    get_data(auto p2, vertices_buffer, indices.z, vec3);
+
+    position = (1 - barycentric.x - barycentric.y) * p0 + barycentric.x * p1 + barycentric.y * p2;
+    geometric_normal = normalize(cross(p1 - p0, p2 - p0));
+}
+
+__device__ void load_triangle_normals(int32_t const& mesh_id, ivec3 const& indices, vec2 const& barycentric,
+                                      vec3& shading_normal)
+{
+    get_data(auto normals_buffer, optixLaunchParams.normals_buffer, mesh_id, Buffer);
+    get_data(auto n0, normals_buffer, indices.x, vec3);
+    get_data(auto n1, normals_buffer, indices.y, vec3);
+    get_data(auto n2, normals_buffer, indices.z, vec3);
+
+    shading_normal = normalize((1 - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2);
+}
+
 OPTIX_RAYGEN_PROGRAM(ray_gen)()
 {
     ray_gen_data const& self{owl::getProgramData<ray_gen_data>()};
@@ -70,31 +99,17 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
     prd.is->wo = -direction;
 
     // get geometric data:
-    triangle_geom_data const& self = owl::getProgramData<triangle_geom_data>();
+    auto const& self = owl::getProgramData<triangle_geom_data>();
     uint32_t const primID{optixGetPrimitiveIndex()};
-    ivec3 const index{self.index[primID]};
+    auto const mesh_id{self.id};
 
-    prd.is->material_id = self.matId;
+    ivec3 index{};
+    load_triangle_indices(mesh_id, primID, index);
+    load_triangle_vertices(mesh_id, index, prd.is->uv, prd.is->position, prd.is->normal_geometric);
+    load_triangle_normals(mesh_id, index, prd.is->uv, prd.is->normal);
+
+    prd.is->material_id = self.material_id;
     prd.is->prim = primID;
-
-    // vertices for P and normal_geometric
-    vec3 const& p0{self.vertex[index.x]};
-    vec3 const& p1{self.vertex[index.y]};
-    vec3 const& p2{self.vertex[index.z]};
-
-    prd.is->triangle_points[0] = vec3{p0};
-    prd.is->triangle_points[1] = vec3{p1};
-    prd.is->triangle_points[2] = vec3{p2};
-
-    prd.is->normal_geometric = normalize(cross(p1 - p0, p2 - p0));
-    prd.is->position = p0 * b0 + p1 * b1 + p2 * b2;
-
-    // vertex normals for N
-    vec3 const& n0{self.normal[index.x]};
-    vec3 const& n1{self.normal[index.y]};
-    vec3 const& n2{self.normal[index.z]};
-
-    prd.is->normal = normalize(n0 * b0 + n1 * b1 + n2 * b2);
 
     // scatter event type
     prd.scatter_event = scatter_event::bounced;
