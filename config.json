@@ -124,7 +124,7 @@
       "specular": 0.0,
       "specular_tint": 0.0,
       "roughness": 0.3,
-      "anisotropic": 1.0,
+      "anisotropic": 0.0,
       "sheen": 0.0,
       "sheen_tint": 0.0,
       "clearcoat": 0.0,
@@ -152,10 +152,10 @@
   ],
   "lights": [
     {
-      "name" : "point-light",
+      "name" : "area-light",
       "position" : [5.0, 5.0, 5.0],
       "color" : [1.0, 1.0, 1.0],
-      "intensity" : 10.0
+      "intensity" : 100.0
     }
   ]
 }

@@ -321,7 +321,7 @@ __both__ void sample_disney_transmission(material_data const& m, vec3 const& wo,
 //
 //  Specular BSDF ───────┐ Metallic BRDF ┐
 //                       │               │
-//  Dielectric BRDF ─── lerp ─────────── lerp ─── disney BSDF
+//  Dielectric BRDF ─── lerp ────────── lerp ─── disney BSDF
 //  + Subsurface
 //
 
@@ -339,7 +339,7 @@ __both__ vec3 f_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 const
         * (1.0f - mat.metallic) + clearcoat + specular);
 }
 
-__both__ float pdf_disney_pdf(material_data const& mat, vec3 const& wo, vec3 const &wi,
+__both__ float pdf_disney_bsdf(material_data const& mat, vec3 const& wo, vec3 const &wi,
                               material_type const &sampled_type)
 {
     auto const p_diffuse = pdf_cosine_hemisphere(wo, wi);
@@ -399,7 +399,7 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
     }
 
     f = f_disney_bsdf(mat, wo, wi, sampled_type);
-    pdf = pdf_disney_pdf(mat, wo, wi, sampled_type);
+    pdf = pdf_disney_bsdf(mat, wo, wi, sampled_type);
 }
 
 #endif // !DISNEY_BRDF_HPP

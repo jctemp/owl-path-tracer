@@ -3,11 +3,22 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+*.pdf
+*.aux
+*.fls
+*.lof
+*.out
+*.synctex.gz
+*.lot
+*.fdb_latexmk
+*.toc
+
 Folder.DotSettings.user
 *.png
-.idea
 .vscode
-cmake-build-*-visual-studio
+
+.idea
+cmake-build-*/
 
 # User-specific files
 *.rsuser
