@@ -110,7 +110,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         /// find closest intersection
         owl::traceRay(launch_params.world, ray, prd);
 
-
         /// miss then terminate the path and sample environment
         if (prd.scatter_event == scatter_event::miss)
         {
@@ -124,7 +123,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             radiance += li * beta;
             break;
         }
-
 
         /// load mesh for interaction calculations
         ivec3 indices{};
@@ -157,7 +155,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
         wi = to_world(T, B, v_n, local_wi);
 
-
         /// terminate or catching de-generate paths
         if (pdf < 1E-5f)
             break;
@@ -169,7 +166,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         }
 
         beta *= (f * owl::abs(owl::dot(wi, v_n))) / pdf;
-
 
         /// terminate path by random
         auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
@@ -214,9 +210,6 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
     // take the average of all samples per pixel and apply gamma correction
     color *= 1.0f / static_cast<float>(launch_params.max_samples);
     color = o_saturate(pow(color, 1.0f / 2.2f));
-
-    assert_condition(isinf(color.x) || isinf(color.y) || isinf(color.z), "inf detected\n")
-    assert_condition(isnan(color.x) || isnan(color.y) || isnan(color.z), "nan detected\n")
 
     // save result into the buffer
     const int fbOfs = pixelId.x + self.fb_size.x * (self.fb_size.y - 1 - pixelId.y);

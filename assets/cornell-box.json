@@ -19,22 +19,106 @@
     },
     "materials": [
         {
-            "name": "box"
+            "name": "box",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         },
         {
-            "name": "sphere"
+            "name": "sphere",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         },
         {
-            "name": "light"
+            "name": "light",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         },
         {
-            "name": "wall_left"
+            "name": "wall_left",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         },
         {
-            "name": "wall_right"
+            "name": "wall_right",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         },
         {
-            "name": "wall_tbb"
+            "name": "wall_tbb",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         }
     ]
 }

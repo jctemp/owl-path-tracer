@@ -19,13 +19,55 @@
     },
     "materials": [
         {
-            "name": "outside"
+            "name": "outside",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         },
         {
-            "name": "ground"
+            "name": "ground",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         },
         {
-            "name": "inside"
+            "name": "inside",
+            "base_color": [ 0.8, 0.8, 0.8 ],
+            "subsurface": 0.0,
+            "metallic": 0.0,
+            "specular": 0.0,
+            "specular_tint": 0.0,
+            "roughness": 1.0,
+            "anisotropic": 0.0,
+            "sheen": 0.0,
+            "sheen_tint": 0.0,
+            "clearcoat": 0.0,
+            "clearcoat_gloss": 0.0,
+            "ior": 1.5,
+            "specular_transmission": 0.0,
+            "specular_transmission_roughness": 0.0
         }
     ]
 }
