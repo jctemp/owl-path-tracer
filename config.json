@@ -20,6 +20,13 @@
       "look_at": [ 0.0, 0.5, 0.0 ],
       "look_up": [ 0.0, 1.0, 0.0 ],
       "vertical_fov": 50
+    },
+    {
+      "scene": "mitsuba-with-light",
+      "look_from": [ 4.0, 3.0, 0.0 ],
+      "look_at": [ 0.0, 0.5, 0.0 ],
+      "look_up": [ 0.0, 1.0, 0.0 ],
+      "vertical_fov": 50
     }
   ],
   "materials": [

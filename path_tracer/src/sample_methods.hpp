@@ -79,4 +79,10 @@ __both__ float pdf_uniform_hemisphere(vec3 const& w_o, vec3 const& w_i)
     return 0.5f * inv_pi;
 }
 
+__both__ vec2 uniform_sample_triangle(vec2 const& rand)
+{
+    float su0{owl::sqrt(rand.x)};
+    return vec2{1.0f - su0, rand.y * su0};
+}
+
 #endif //PATH_TRACER_SAMPLE_METHODS_HPP

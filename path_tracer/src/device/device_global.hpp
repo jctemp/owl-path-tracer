@@ -42,6 +42,19 @@ struct light_data
     float intensity{1.0f};
 };
 
+struct entity_data
+{
+    int32_t mesh_index{-1};
+    int32_t material_index{-1};
+    int32_t light_index{-1};
+};
+
+struct light_entity_data
+{
+    int32_t mesh_index{-1};
+    int32_t light_index{-1};
+};
+
 struct launch_params_data
 {
     int32_t max_path_depth;
@@ -53,17 +66,13 @@ struct launch_params_data
     Buffer indices_buffer;
     Buffer normals_buffer;
 
+    Buffer light_entity_buffer;
+
     OptixTraversableHandle world;
     cudaTextureObject_t environment_map;
     bool use_environment_map;
 };
 
-struct entity_data
-{
-    int32_t mesh_index{-1};
-    int32_t material_index{-1};
-    int32_t light_index{-1};
-};
 
 struct ray_gen_data
 {

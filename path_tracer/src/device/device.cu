@@ -1,8 +1,10 @@
-﻿#include "types.hpp"
+﻿#include <owl/owl_device.h>
+
+#include "types.hpp"
 #include "device.hpp"
-#include <owl/owl_device.h>
 #include "materials.hpp"
 #include "macros.hpp"
+#include "lights.hpp"
 
 using radiance_ray = owl::RayT<0, 2>;
 using shadow_ray = owl::RayT<1, 2>;
@@ -126,12 +128,12 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
 
         /// load mesh for interaction calculations
-        ivec3 index{};
+        ivec3 indices{};
         vec3 v_p{}, v_gn{}, v_n{};
 
-        load_triangle_indices(hd.mesh_index, hd.primitive_index, index);
-        load_triangle_vertices(hd.mesh_index, index, hd.barycentric, v_p, v_gn);
-        load_triangle_normals(hd.mesh_index, index, hd.barycentric, v_n);
+        load_triangle_indices(hd.mesh_index, hd.primitive_index, indices);
+        load_triangle_vertices(hd.mesh_index, indices, hd.barycentric, v_p, v_gn);
+        load_triangle_normals(hd.mesh_index, indices, hd.barycentric, v_n);
 
         vec3 wo{hd.wo}, wi{};
 
@@ -145,10 +147,10 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         vec3 f{};
 
         /// sample the bsdf lobes
+        material_data material{};
         if (hd.material_index >= 0)
         {
-            get_data(material_data material, launch_params.material_buffer, hd.material_index, material_data);
-
+            get_data(material, launch_params.material_buffer, hd.material_index, material_data);
             vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{}, local_wh{};
 
             sample_disney_bsdf(material, local_wo, prd.random,
@@ -172,6 +174,81 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
 
         /// sample direct lights
+
+        // vec3 light_position{5.0f}, light_normal{normalize(vec3{0.0f, 75.0f, 0.0f} - light_position)};
+        // vec3 light_tangent{}, light_bitangent{};
+        // onb(light_normal, light_tangent, light_bitangent);
+        // vec2 light_size{1.0f, 1.0f};
+
+
+        if (launch_params.light_entity_buffer.count > 0)
+        {
+            float random_max{static_cast<float>(launch_params.light_entity_buffer.count)};
+            int32_t random_index{static_cast<int32_t>(min(prd.random() * random_max, random_max - 1.0f))};
+            get_data(auto light, launch_params.light_entity_buffer, random_index, light_entity_data);
+
+            // randomly select triangle
+            random_max = static_cast<float>(launch_params.light_entity_buffer.count);
+            random_index = static_cast<int32_t>(min(prd.random() * random_max, random_max - 1.0f));
+
+            // load triangle
+            get_data(auto indices_buffer, launch_params.indices_buffer, light.mesh_index, Buffer);
+            get_data(auto vertices_buffer, launch_params.vertices_buffer, light.mesh_index, Buffer);
+            get_data(auto normals_buffer, launch_params.normals_buffer, light.mesh_index, Buffer);
+
+            get_data(indices, indices_buffer, random_index, ivec3);
+            get_data(auto p0, vertices_buffer, indices.x, vec3);
+            get_data(auto p1, vertices_buffer, indices.y, vec3);
+            get_data(auto p2, vertices_buffer, indices.z, vec3);
+
+            get_data(auto n0, normals_buffer, indices.x, vec3);
+            get_data(auto n1, normals_buffer, indices.y, vec3);
+            get_data(auto n2, normals_buffer, indices.z, vec3);
+
+            // load light data
+            vec3 light_target{0, 0.75f, 0};
+            vec3 light_intensity{1.0f};
+            float light_exposure{1.0f};
+            float light_falloff{1.0f};
+            int32_t triangle_count{2}; // TODO: make not hardcoded
+
+            // sample triangle
+            vec3 light_wi;
+            float light_distance{};
+            float light_pdf{};
+            vec2 light_barycentric{};
+
+            sample_triangle(p0, p1, p2, n0, n1, n2, light_target, prd.random,
+                    light_wi, light_distance, light_pdf, light_barycentric);
+
+            // get f and pdf
+            vec3 light_local_wo{to_local(T, B, v_n, wo)};
+            vec3 light_local_wi{light_wi};
+            vec3 surface_f{f_disney_bsdf(material, light_local_wo, light_local_wi, sampled_type)};
+            float surface_pdf{ pdf_disney_bsdf(material, light_local_wo, light_local_wi, sampled_type) };
+            float n_dot_i{cos_theta(light_local_wi)};
+
+            //
+            light_pdf *= 1.0f / static_cast<float>(triangle_count);
+
+            if (light_pdf > 1E-5f)
+            {
+                bool visible = visibiliy_test(v_p, light_wi, light_distance);
+                if (visible)
+                {
+                    float w = power_heuristic(1, light_pdf, 1, surface_pdf);
+                    vec3 Li{(light_intensity * w) / light_pdf};
+                    radiance += Li * surface_f;
+                }
+            }
+
+
+
+        }
+
+
+
+
         // shadow_ray light_ray{hit_p, light_wi, t_min, light_distance + t_min};
         // bool visible{false};
 

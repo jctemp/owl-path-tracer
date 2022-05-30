@@ -4,6 +4,7 @@
 
 #include "types.hpp"
 #include "macros.hpp"
+#include "sample_methods.hpp"
 
 /*
  * AREA LIGHTS
@@ -11,41 +12,38 @@
  * - pdf: 1 / (area)
  */
 
-float triangle_area(vec3 const& a, vec3 const& b, vec3 const& c)
+__both__ float triangle_area(vec3 const& a, vec3 const& b, vec3 const& c)
 {
     auto const ab{b - a};
     auto const ac{c - a};
     return 0.5f * length(cross(ab, ac));
 }
 
-interface_data triangle_sample(vec3 const& a, vec3 const& b, vec3 const& c,
-                               random& random, float& pdf)
+
+__both__ float pdf_area_to_solid_angle(float pdf_area, float dist_sqr_area, float cos_theta)
 {
-    auto const u{random()};
-    auto const v{random()};
-    auto const w{1.0f - u - v};
-    auto const barycentric{vec3{u, v, w}};
-    auto const p{a * barycentric.x + b * barycentric.y + c * barycentric.z};
-    auto const n{normalize(cross(b - a, c - a))};
-    auto const area{triangle_area(a, b, c)};
-    if (area == 0.0f) pdf = 0.0f;
-    else pdf = 1.0f / area;
+    float abs_cos_theta = abs(cos_theta);
+    if( abs_cos_theta < 1e-4f) return 0.0;
+    return pdf_area * dist_sqr_area / abs_cos_theta;
+}
 
-    interface_data is{};
-    is.triangle_points[0] = a;
-    is.triangle_points[1] = b;
-    is.triangle_points[2] = c;
-    is.position = p;
-    is.normal = n;
-    is.geometric_normal = n;
-    is.wo = -n;
-    is.uv = {u, v};
-    is.t = 0.0f;
-    is.prim = 0;
-    is.type = 0;
-    is.id = 0;
+__both__ void sample_triangle(vec3 const& p0, vec3 const& p1, vec3 const& p2,
+                              vec3 const& n0, vec3 const& n1, vec3 const& n2,
+                              vec3 const& target, random& random,
+                              vec3& direction, float& distance, float& pdf, vec2& barycentric)
+{
+    barycentric = {uniform_sample_triangle({random(), random()})};
+    auto position{(1.0f - barycentric.x - barycentric.y) * p0 + barycentric.x * p1 + barycentric.y * p2};
+    auto normal{(1.0f - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2};
 
-    return is;
+    auto area{triangle_area(p0, p1, p2)};
+    direction = {position - target};
+    auto distance_sqr{dot(direction, direction)};
+    distance = {owl::sqrt(distance_sqr)};
+    direction /= distance;
+
+    auto cos_theta{dot(-direction, normal)};
+    pdf = pdf_area_to_solid_angle(1.0f / area, distance_sqr, cos_theta);
 }
 
 __both__ float pdf_a_to_w(float pdf_a, float dist, float theta) {
