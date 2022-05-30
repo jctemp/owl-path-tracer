@@ -149,7 +149,7 @@ int main(int argc, char** argv)
 
     auto const use_environment_map = false;
     auto const buffer_size = ivec2{1024};
-    auto const max_samples = 2048;
+    auto const max_samples = 1024;
     auto const max_path_depth = 8;
     auto const camera{to_camera_data(scene_camera, buffer_size)};
 

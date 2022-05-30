@@ -30,11 +30,12 @@ __both__ float pdf_area_to_solid_angle(float pdf_area, float dist_sqr_area, floa
 __both__ void sample_triangle(vec3 const& p0, vec3 const& p1, vec3 const& p2,
                               vec3 const& n0, vec3 const& n1, vec3 const& n2,
                               vec3 const& target, random& random,
-                              vec3& direction, float& distance, float& pdf, vec2& barycentric)
+                              vec3& direction, float& distance, float& pdf, vec2& barycentric,
+                              vec3& normal)
 {
     barycentric = {uniform_sample_triangle({random(), random()})};
     auto position{(1.0f - barycentric.x - barycentric.y) * p0 + barycentric.x * p1 + barycentric.y * p2};
-    auto normal{(1.0f - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2};
+    normal = (1.0f - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2;
 
     auto area{triangle_area(p0, p1, p2)};
     direction = {position - target};

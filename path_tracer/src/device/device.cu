@@ -140,8 +140,13 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         vec3 T{}, B{};
         onb(v_n, T, B);
 
+        if (hd.light_index >= 0)
+        {
+            get_data(auto light, launch_params.light_buffer, hd.light_index, light_data);
+            radiance += light.intensity;
+            break;
+        }
 
-        // TODO: HANDLE LIGHT DIRECT HIT
 
         float pdf{};
         vec3 f{};
@@ -181,20 +186,21 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         // vec2 light_size{1.0f, 1.0f};
 
 
-        if (launch_params.light_entity_buffer.count > 0)
+        if (false && launch_params.light_entity_buffer.count > 0)
         {
             float random_max{static_cast<float>(launch_params.light_entity_buffer.count)};
             int32_t random_index{static_cast<int32_t>(min(prd.random() * random_max, random_max - 1.0f))};
-            get_data(auto light, launch_params.light_entity_buffer, random_index, light_entity_data);
+            
+            get_data(auto light_entity, launch_params.light_entity_buffer, random_index, light_entity_data);
 
             // randomly select triangle
             random_max = static_cast<float>(launch_params.light_entity_buffer.count);
             random_index = static_cast<int32_t>(min(prd.random() * random_max, random_max - 1.0f));
 
             // load triangle
-            get_data(auto indices_buffer, launch_params.indices_buffer, light.mesh_index, Buffer);
-            get_data(auto vertices_buffer, launch_params.vertices_buffer, light.mesh_index, Buffer);
-            get_data(auto normals_buffer, launch_params.normals_buffer, light.mesh_index, Buffer);
+            get_data(auto indices_buffer, launch_params.indices_buffer, light_entity.mesh_index, Buffer);
+            get_data(auto vertices_buffer, launch_params.vertices_buffer, light_entity.mesh_index, Buffer);
+            get_data(auto normals_buffer, launch_params.normals_buffer, light_entity.mesh_index, Buffer);
 
             get_data(indices, indices_buffer, random_index, ivec3);
             get_data(auto p0, vertices_buffer, indices.x, vec3);
@@ -206,10 +212,10 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             get_data(auto n2, normals_buffer, indices.z, vec3);
 
             // load light data
+            get_data(auto light, launch_params.light_buffer, light_entity.light_index, light_data);
+            
             vec3 light_target{0, 0.75f, 0};
-            vec3 light_intensity{1.0f};
-            float light_exposure{1.0f};
-            float light_falloff{1.0f};
+            vec3 light_intensity{light.intensity};
             int32_t triangle_count{2}; // TODO: make not hardcoded
 
             // sample triangle
@@ -217,20 +223,25 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             float light_distance{};
             float light_pdf{};
             vec2 light_barycentric{};
+            vec3 light_vn{};
 
             sample_triangle(p0, p1, p2, n0, n1, n2, light_target, prd.random,
-                    light_wi, light_distance, light_pdf, light_barycentric);
+                    light_wi, light_distance, light_pdf, light_barycentric, light_vn);
+
+            vec3 light_vnt, light_vnb;
+            onb(light_vn, light_vnt, light_vnb);
 
             // get f and pdf
             vec3 light_local_wo{to_local(T, B, v_n, wo)};
-            vec3 light_local_wi{light_wi};
+            vec3 light_local_wi{to_local(light_vnt, light_vnb, light_vn, light_wi)};
             vec3 surface_f{f_disney_bsdf(material, light_local_wo, light_local_wi, sampled_type)};
             float surface_pdf{ pdf_disney_bsdf(material, light_local_wo, light_local_wi, sampled_type) };
             float n_dot_i{cos_theta(light_local_wi)};
 
-            //
+            // adjust light pdf
             light_pdf *= 1.0f / static_cast<float>(triangle_count);
 
+            // => light importance sampling
             if (light_pdf > 1E-5f)
             {
                 bool visible = visibiliy_test(v_p, light_wi, light_distance);
@@ -241,6 +252,8 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
                     radiance += Li * surface_f;
                 }
             }
+
+            // => bsdf importance sampling
 
 
 
