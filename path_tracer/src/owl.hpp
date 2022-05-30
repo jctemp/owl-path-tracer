@@ -183,12 +183,14 @@ void set_field(launch_params destination, char const identifier[], V value)
         owlParamsSetTexture(destination, identifier, value);
     else if constexpr (std::is_same_v<V, bool>)
         owlParamsSet1b(destination, identifier, value);
+    else if constexpr (std::is_same_v<V, float>)
+        owlParamsSet1f(destination, identifier, value);
     else if constexpr (std::is_same_v<V, int32_t>)
         owlParamsSet1i(destination, identifier, value);
     else if constexpr (std::is_same_v<V, vec2>)
         owlParamsSet2f(destination, identifier, value);
     else if constexpr (std::is_same_v<V, vec3>)
-        owlParamsSet3f(destination, identifier, value);
+        owlParamsSet3f(destination, identifier, (owl3f const&) value);
     else if constexpr (std::is_same_v<V, ivec2>)
         owlParamsSet2i(destination, identifier, value);
     else if constexpr (std::is_same_v<V, ivec3>)

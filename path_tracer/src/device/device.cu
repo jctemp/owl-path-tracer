@@ -113,14 +113,12 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         /// miss then terminate the path and sample environment
         if (prd.scatter_event == scatter_event::miss)
         {
-            vec3 li{1.0f};
-            li = lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f));
-            if (!launch_params.use_environment_map)
-                li = 0.0f;
-            else if (launch_params.environment_map)
-                li = sample_environment(ray.direction);
-
-            radiance += li * beta;
+            if (launch_params.environment_use && launch_params.environment_map)
+                radiance += sample_environment(ray.direction) * beta;
+            else if (launch_params.environment_auto)
+                radiance += lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f)) * beta;
+            else
+                radiance += launch_params.environment_color * launch_params.environment_intensity * beta;
             break;
         }
 

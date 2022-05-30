@@ -50,8 +50,14 @@ struct launch_params_data
     Buffer normals_buffer;
 
     OptixTraversableHandle world;
+
     cudaTextureObject_t environment_map;
-    bool use_environment_map;
+    bool environment_use;
+    bool environment_auto;
+    vec3 environment_color;
+    float environment_intensity;
+
+
 };
 
 

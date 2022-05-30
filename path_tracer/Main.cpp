@@ -65,10 +65,9 @@ std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string,
 
 int main(int argc, char** argv)
 {
-    auto const use_environment_map = true;
     auto const buffer_size = ivec2{1024};
     auto const max_samples = 1024;
-    auto const max_path_depth = 8;
+    auto const max_path_depth = 64;
 
     std::string scene{"dragon"};
 
@@ -95,8 +94,13 @@ int main(int argc, char** argv)
         }
     }
 
-    auto environment{load_image("environment.hdr", prefix_path + "/assets/")};
-    environment.ptr_tag = image_buffer::tag::allocated;
+    image_buffer environment_map{load_image("environment.hdr", prefix_path + "/assets/")};
+    environment_map.ptr_tag = image_buffer::tag::allocated;
+    bool const environment_use = false;
+    bool const environment_auto = false;
+    vec3 const environment_color{vec3{1.0f, 0.0f, 1.0f}};
+    float const environment_intensity{1.0f};
+
 
 #pragma region "OWL INIT"
 
@@ -199,17 +203,18 @@ int main(int argc, char** argv)
 
     var_decl launchParamsVars
             {
-                    {"max_path_depth",      OWL_INT,     OWL_OFFSETOF(launch_params_data, max_path_depth)},
-                    {"max_samples",         OWL_INT,     OWL_OFFSETOF(launch_params_data, max_samples)},
-                    {"material_buffer",     OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, material_buffer)},
-
-                    {"vertices_buffer",     OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, vertices_buffer)},
-                    {"indices_buffer",      OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, indices_buffer)},
-                    {"normals_buffer",      OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, normals_buffer)},
-
-                    {"world",               OWL_GROUP,   OWL_OFFSETOF(launch_params_data, world)},
-                    {"environment_map",     OWL_TEXTURE, OWL_OFFSETOF(launch_params_data, environment_map)},
-                    {"use_environment_map", OWL_BOOL,    OWL_OFFSETOF(launch_params_data, use_environment_map)},
+                    {"max_path_depth",        OWL_INT,     OWL_OFFSETOF(launch_params_data, max_path_depth)},
+                    {"max_samples",           OWL_INT,     OWL_OFFSETOF(launch_params_data, max_samples)},
+                    {"material_buffer",       OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, material_buffer)},
+                    {"vertices_buffer",       OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, vertices_buffer)},
+                    {"indices_buffer",        OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, indices_buffer)},
+                    {"normals_buffer",        OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, normals_buffer)},
+                    {"world",                 OWL_GROUP,   OWL_OFFSETOF(launch_params_data, world)},
+                    {"environment_map",       OWL_TEXTURE, OWL_OFFSETOF(launch_params_data, environment_map)},
+                    {"environment_use",       OWL_BOOL,    OWL_OFFSETOF(launch_params_data, environment_use)},
+                    {"environment_auto",      OWL_BOOL,    OWL_OFFSETOF(launch_params_data, environment_auto)},
+                    {"environment_color",     OWL_FLOAT3,  OWL_OFFSETOF(launch_params_data, environment_color)},
+                    {"environment_intensity", OWL_FLOAT,   OWL_OFFSETOF(launch_params_data, environment_intensity)},
                     {nullptr}
             };
 
@@ -219,8 +224,8 @@ int main(int argc, char** argv)
 
 #pragma region "SET VARIABLES"
 
-    auto const environment_map{
-            create_texture(owl_context, {environment.width, environment.height}, environment.buffer)};
+    auto const environment_map_texture{
+            create_texture(owl_context, {environment_map.width, environment_map.height}, environment_map.buffer)};
     auto const frame_buffer{create_pinned_host_buffer(owl_context, OWL_INT, buffer_size.x * buffer_size.y)};
 
     auto const vec_material = to_vector(&materials);
@@ -249,8 +254,11 @@ int main(int argc, char** argv)
     set_field(lp, "indices_buffer", indices_buffer);
     set_field(lp, "normals_buffer", normals_buffer);
     set_field(lp, "world", world);
-    set_field(lp, "environment_map", environment_map);
-    set_field(lp, "use_environment_map", use_environment_map);
+    set_field(lp, "environment_map", environment_map_texture);
+    set_field(lp, "environment_use", environment_use);
+    set_field(lp, "environment_auto", environment_auto);
+    set_field(lp, "environment_color", environment_color);
+    set_field(lp, "environment_intensity", environment_intensity);
 
     owlBuildPrograms(owl_context);
     owlBuildPipeline(owl_context);
