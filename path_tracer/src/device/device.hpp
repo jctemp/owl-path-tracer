@@ -16,7 +16,6 @@ struct hit_data
     int32_t primitive_index;
     int32_t material_index;
     int32_t mesh_index;
-    int32_t light_index;
     vec2 barycentric;
     vec3 wo;
     float t;

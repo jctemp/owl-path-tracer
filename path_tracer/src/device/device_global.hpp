@@ -33,24 +33,10 @@ struct material_data
     float specular_transmission_roughness{0.0f};
 };
 
-struct light_data
-{
-    vec3 position{0.0f};
-    vec3 color{1.0f};
-    float intensity{1.0f};
-};
-
 struct entity_data
 {
     int32_t mesh_index{-1};
     int32_t material_index{-1};
-    int32_t light_index{-1};
-};
-
-struct light_entity_data
-{
-    int32_t mesh_index{-1};
-    int32_t light_index{-1};
 };
 
 struct launch_params_data
@@ -58,13 +44,10 @@ struct launch_params_data
     int32_t max_path_depth;
     int32_t max_samples;
     Buffer material_buffer;
-    Buffer light_buffer;
 
     Buffer vertices_buffer;
     Buffer indices_buffer;
     Buffer normals_buffer;
-
-    Buffer light_entity_buffer;
 
     OptixTraversableHandle world;
     cudaTextureObject_t environment_map;

@@ -4,7 +4,6 @@
 #include "device.hpp"
 #include "materials.hpp"
 #include "macros.hpp"
-#include "lights.hpp"
 
 using radiance_ray = owl::RayT<0, 2>;
 using shadow_ray = owl::RayT<1, 2>;
@@ -243,7 +242,6 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
     auto const& self = owl::getProgramData<entity_data>();
 
     prd.hd->material_index = self.material_index;
-    prd.hd->light_index = self.light_index;
     prd.hd->mesh_index = self.mesh_index;
 
     prd.scatter_event = scatter_event::hit;

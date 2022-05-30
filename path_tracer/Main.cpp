@@ -20,7 +20,6 @@ struct entity
 {
     mesh* mesh_ptr;
     int32_t materialId{-1};
-    int32_t lightId{-1};
 };
 
 template<typename T>
@@ -112,7 +111,6 @@ int main(int argc, char** argv)
             {
                     {"mesh_index",     OWL_INT,    OWL_OFFSETOF(entity_data, mesh_index)},
                     {"material_index", OWL_INT,    OWL_OFFSETOF(entity_data, material_index)},
-                    {"light_index",    OWL_INT,    OWL_OFFSETOF(entity_data, light_index)},
                     {nullptr}
             };
 
@@ -131,7 +129,6 @@ int main(int argc, char** argv)
     std::vector<buffer> indices_buffer_list{};
     std::vector<buffer> vertices_buffer_list{};
     std::vector<buffer> normals_buffer_list{};
-    std::vector<light_entity_data> lights_data{};
 
     int32_t mesh_id{0};
     for (auto e: entities)
@@ -154,12 +151,8 @@ int main(int argc, char** argv)
         set_triangle_vertices(geom_data, vertex_buffer, vertices.size(), sizeof(vec3));
         set_triangle_indices(geom_data, index_buffer, indices.size(), sizeof(ivec3));
 
-        if (e.lightId != -1)
-            lights_data.push_back(light_entity_data{mesh_id, e.lightId});
-
         set_field(geom_data, "mesh_index", mesh_id++);
         set_field(geom_data, "material_index", e.materialId);
-        set_field(geom_data, "light_index", e.lightId);
 
         geoms.push_back(geom_data);
     }
@@ -209,13 +202,10 @@ int main(int argc, char** argv)
                     {"max_path_depth",      OWL_INT,     OWL_OFFSETOF(launch_params_data, max_path_depth)},
                     {"max_samples",         OWL_INT,     OWL_OFFSETOF(launch_params_data, max_samples)},
                     {"material_buffer",     OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, material_buffer)},
-                    {"light_buffer",        OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, light_buffer)},
 
                     {"vertices_buffer",     OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, vertices_buffer)},
                     {"indices_buffer",      OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, indices_buffer)},
                     {"normals_buffer",      OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, normals_buffer)},
-
-                    {"light_entity_buffer", OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, light_entity_buffer)},
 
                     {"world",               OWL_GROUP,   OWL_OFFSETOF(launch_params_data, world)},
                     {"environment_map",     OWL_TEXTURE, OWL_OFFSETOF(launch_params_data, environment_map)},
@@ -245,9 +235,6 @@ int main(int argc, char** argv)
     auto normals_buffer{create_device_buffer(owl_context, OWL_BUFFER, normals_buffer_list.size(),
             normals_buffer_list.data())};
 
-    auto light_entity_buffer{create_device_buffer(owl_context, OWL_USER_TYPE(light_entity_data), lights_data.size(),
-            lights_data.data())};
-
     set_field(ray_gen_prog, "fb_ptr", frame_buffer);
     set_field(ray_gen_prog, "fb_size", buffer_size);
     set_field(ray_gen_prog, "camera.origin", camera.origin);
@@ -261,7 +248,6 @@ int main(int argc, char** argv)
     set_field(lp, "vertices_buffer", vertices_buffer);
     set_field(lp, "indices_buffer", indices_buffer);
     set_field(lp, "normals_buffer", normals_buffer);
-    set_field(lp, "light_entity_buffer", light_entity_buffer);
     set_field(lp, "world", world);
     set_field(lp, "environment_map", environment_map);
     set_field(lp, "use_environment_map", use_environment_map);
