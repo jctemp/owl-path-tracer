@@ -12,8 +12,10 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/camera.hpp"
         "src/camera.cpp"
 
-        # SRC/UTILS
+        "src/application.hpp"
+        "src/application.cpp"
 
+        # SRC/UTILS
         "src/utils/image_buffer.hpp"
         "src/utils/image_buffer.cpp"
 
@@ -26,19 +28,12 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         # SRC/DEVICE
         "src/device/materials.hpp"
         "src/device/bsdf_utils.hpp"
-
-        # ------------------------------
-
         "src/device/device.hpp"
-        "src/device/lights.hpp"
-
-
         "src/device/device_global.hpp")
 
 TARGET_LINK_LIBRARIES(lib${PROJECT_NAME} PUBLIC
         owl::owl
         fmt::fmt
-        cxxopts
         nlohmann_json
         tinyobjloader)
 
