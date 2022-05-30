@@ -116,7 +116,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         if (prd.scatter_event == scatter_event::miss)
         {
             vec3 li{1.0f};
-            // li = lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f));
+            li = lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f));
             if (!launch_params.use_environment_map)
                 li = 0.0f;
             else if (launch_params.environment_map)
@@ -140,29 +140,23 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         vec3 T{}, B{};
         onb(v_n, T, B);
 
-        if (hd.light_index >= 0)
-        {
-            get_data(auto light, launch_params.light_buffer, hd.light_index, light_data);
-            radiance += light.intensity;
-            break;
-        }
-
-
         float pdf{};
         vec3 f{};
 
-        /// sample the bsdf lobes
         material_data material{};
         if (hd.material_index >= 0)
         {
             get_data(material, launch_params.material_buffer, hd.material_index, material_data);
-            vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{}, local_wh{};
-
-            sample_disney_bsdf(material, local_wo, prd.random,
-                    local_wi, local_wh, f, pdf, sampled_type);
-
-            wi = to_world(T, B, v_n, local_wi);
         }
+
+        vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{}, local_wh{};
+
+        sample_lambert(material, local_wo, prd.random, local_wi, f, pdf, sampled_type);
+
+        //sample_disney_bsdf(material, local_wo, prd.random,
+        //        local_wi, local_wh, f, pdf, sampled_type);
+
+        wi = to_world(T, B, v_n, local_wi);
 
 
         /// terminate or catching de-generate paths
@@ -176,109 +170,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         }
 
         beta *= (f * owl::abs(owl::dot(wi, v_n))) / pdf;
-
-
-        /// sample direct lights
-
-        // vec3 light_position{5.0f}, light_normal{normalize(vec3{0.0f, 75.0f, 0.0f} - light_position)};
-        // vec3 light_tangent{}, light_bitangent{};
-        // onb(light_normal, light_tangent, light_bitangent);
-        // vec2 light_size{1.0f, 1.0f};
-
-
-        if (false && launch_params.light_entity_buffer.count > 0)
-        {
-            float random_max{static_cast<float>(launch_params.light_entity_buffer.count)};
-            int32_t random_index{static_cast<int32_t>(min(prd.random() * random_max, random_max - 1.0f))};
-            
-            get_data(auto light_entity, launch_params.light_entity_buffer, random_index, light_entity_data);
-
-            // randomly select triangle
-            random_max = static_cast<float>(launch_params.light_entity_buffer.count);
-            random_index = static_cast<int32_t>(min(prd.random() * random_max, random_max - 1.0f));
-
-            // load triangle
-            get_data(auto indices_buffer, launch_params.indices_buffer, light_entity.mesh_index, Buffer);
-            get_data(auto vertices_buffer, launch_params.vertices_buffer, light_entity.mesh_index, Buffer);
-            get_data(auto normals_buffer, launch_params.normals_buffer, light_entity.mesh_index, Buffer);
-
-            get_data(indices, indices_buffer, random_index, ivec3);
-            get_data(auto p0, vertices_buffer, indices.x, vec3);
-            get_data(auto p1, vertices_buffer, indices.y, vec3);
-            get_data(auto p2, vertices_buffer, indices.z, vec3);
-
-            get_data(auto n0, normals_buffer, indices.x, vec3);
-            get_data(auto n1, normals_buffer, indices.y, vec3);
-            get_data(auto n2, normals_buffer, indices.z, vec3);
-
-            // load light data
-            get_data(auto light, launch_params.light_buffer, light_entity.light_index, light_data);
-            
-            vec3 light_target{0, 0.75f, 0};
-            vec3 light_intensity{light.intensity};
-            int32_t triangle_count{2}; // TODO: make not hardcoded
-
-            // sample triangle
-            vec3 light_wi;
-            float light_distance{};
-            float light_pdf{};
-            vec2 light_barycentric{};
-            vec3 light_vn{};
-
-            sample_triangle(p0, p1, p2, n0, n1, n2, light_target, prd.random,
-                    light_wi, light_distance, light_pdf, light_barycentric, light_vn);
-
-            vec3 light_vnt, light_vnb;
-            onb(light_vn, light_vnt, light_vnb);
-
-            // get f and pdf
-            vec3 light_local_wo{to_local(T, B, v_n, wo)};
-            vec3 light_local_wi{to_local(light_vnt, light_vnb, light_vn, light_wi)};
-            vec3 surface_f{f_disney_bsdf(material, light_local_wo, light_local_wi, sampled_type)};
-            float surface_pdf{ pdf_disney_bsdf(material, light_local_wo, light_local_wi, sampled_type) };
-            float n_dot_i{cos_theta(light_local_wi)};
-
-            // adjust light pdf
-            light_pdf *= 1.0f / static_cast<float>(triangle_count);
-
-            // => light importance sampling
-            if (light_pdf > 1E-5f)
-            {
-                bool visible = visibiliy_test(v_p, light_wi, light_distance);
-                if (visible)
-                {
-                    float w = power_heuristic(1, light_pdf, 1, surface_pdf);
-                    vec3 Li{(light_intensity * w) / light_pdf};
-                    radiance += Li * surface_f;
-                }
-            }
-
-            // => bsdf importance sampling
-
-
-
-        }
-
-
-
-
-        // shadow_ray light_ray{hit_p, light_wi, t_min, light_distance + t_min};
-        // bool visible{false};
-
-        // owl::traceRay(launch_params.world, light_ray, visible,
-        //         OPTIX_RAY_FLAG_DISABLE_CLOSESTHIT
-        //         | OPTIX_RAY_FLAG_DISABLE_ANYHIT
-        //         | OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT);
-
-        // // compute bent normal
-        // vec3 r = reflect(world_wo, shading_n);
-        // float a = dot(geometric_n, r);
-        // vec3 bend_normal = shading_n;
-        // if (a < 0.f)
-        // {
-        //     float b = max(0.001f, dot(shading_n, geometric_n));
-        //     bend_normal = normalize(world_wo + normalize(r - shading_n * a / b));
-        // }
 
 
         /// terminate path by random

@@ -16,28 +16,6 @@ json load_json(std::string const& file_path)
     return config;
 }
 
-std::vector<std::tuple<std::string, light_data>> parse_lights(std::string const& config_path)
-{
-    fmt::print(fg(color::log), "Parsing lights\n");
-
-    auto config{load_json(config_path)};
-    auto lights{std::vector<std::tuple<std::string, light_data>>{}};
-
-    for (auto& light: config["lights"])
-    {
-        fmt::print(" - {}\n", light["name"]);
-        light_data data{};
-
-        data.position = {light["position"][0], light["position"][1], light["position"][2]};
-        data.color = {light["color"][0], light["color"][1], light["color"][2]};
-        data.intensity = light["intensity"];
-
-        lights.emplace_back(light["name"], data);
-    }
-
-    return lights;
-}
-
 std::vector<std::tuple<std::string, material_data>> parse_materials(std::string const& config_path)
 {
     fmt::print(fg(color::log), "Parsing materials\n");
@@ -50,22 +28,23 @@ std::vector<std::tuple<std::string, material_data>> parse_materials(std::string 
         fmt::print(" - {}\n", material["name"]);
         material_data data{};
 
-        data.base_color = {material["base_color"][0], material["base_color"][1], material["base_color"][2]};
-        data.subsurface = material["subsurface"];
-        data.subsurface_radius = {material["subsurface_radius"][0], material["subsurface_radius"][1],
-                                  material["subsurface_radius"][2]};
-        data.subsurface_color = {material["subsurface_color"][0], material["subsurface_color"][1],
-                                 material["subsurface_color"][2]};
-        data.metallic = material["metallic"];
-        data.specular = material["specular"];
-        data.specular_tint = material["specular_tint"];
-        data.roughness = material["roughness"];
-        data.anisotropic = material["anisotropic"];
-        data.sheen = material["sheen"];
-        data.sheen_tint = material["sheen_tint"];
-        data.clearcoat = material["clearcoat"];
-        data.clearcoat_gloss = material["clearcoat_gloss"];
-        data.ior = material["ior"];
+        data.base_color = {
+                material["base_color"][0].get<float>(),
+                material["base_color"][1].get<float>(),
+                material["base_color"][2].get<float>()};
+        data.subsurface = material["subsurface"].get<float>();
+        data.metallic = material["metallic"].get<float>();
+        data.specular = material["specular"].get<float>();
+        data.specular_tint = material["specular_tint"].get<float>();
+        data.roughness = material["roughness"].get<float>();
+        data.anisotropic = material["anisotropic"].get<float>();
+        data.sheen = material["sheen"].get<float>();
+        data.sheen_tint = material["sheen_tint"].get<float>();
+        data.clearcoat = material["clearcoat"].get<float>();
+        data.clearcoat_gloss = material["clearcoat_gloss"].get<float>();
+        data.ior = material["ior"].get<float>();
+        data.specular_transmission = material["specular_transmission"].get<float>();
+        data.specular_transmission_roughness = material["specular_transmission_roughness"].get<float>();
 
         materials.emplace_back(material["name"], data);
     }
@@ -73,25 +52,18 @@ std::vector<std::tuple<std::string, material_data>> parse_materials(std::string 
     return materials;
 }
 
-std::vector<std::tuple<std::string, camera>> parse_scenes(std::string const& config_path)
+camera_data parse_camera(std::string const& config_path, ivec2 framebuffer_size)
 {
-    fmt::print(fg(color::log), "Parsing scenes\n");
+    fmt::print(fg(color::log), "Parsing camera\n");
 
     auto config{load_json(config_path)};
-    auto scenes{std::vector<std::tuple<std::string, camera>>{}};
+    auto const cam{config["camera"]};
+    camera data{};
 
-    for (auto& scene: config["scenes"])
-    {
-        fmt::print(" - {}\n", scene["scene"]);
-        camera data{};
+    data.look_from = {cam["look_from"][0].get<float>(), cam["look_from"][1].get<float>(), cam["look_from"][2].get<float>()};
+    data.look_at = {cam["look_at"][0].get<float>(), cam["look_at"][1].get<float>(), cam["look_at"][2].get<float>()};
+    data.look_up = {cam["look_up"][0].get<float>(), cam["look_up"][1].get<float>(), cam["look_up"][2].get<float>()};
+    data.vertical_fov = cam["vertical_fov"].get<float>();
 
-        data.look_from = {scene["look_from"][0], scene["look_from"][1], scene["look_from"][2]};
-        data.look_at = {scene["look_at"][0], scene["look_at"][1], scene["look_at"][2]};
-        data.look_up = {scene["look_up"][0], scene["look_up"][1], scene["look_up"][2]};
-        data.vertical_fov = scene["vertical_fov"];
-
-        scenes.emplace_back(scene["scene"], data);
-    }
-
-    return scenes;
+    return to_camera_data(data, framebuffer_size);
 }

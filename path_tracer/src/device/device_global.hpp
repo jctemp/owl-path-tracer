@@ -19,8 +19,6 @@ struct material_data
 {
     vec3 base_color{0.8f, 0.8f, 0.8f};
     float subsurface{0.0f};
-    vec3 subsurface_radius{1.0f, 0.2f, 0.1f};
-    vec3 subsurface_color{0.8f, 0.8f, 0.8f};
     float metallic{0.0f};
     float specular{0.5f};
     float specular_tint{1.0f};

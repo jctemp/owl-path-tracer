@@ -23,8 +23,7 @@ __both__ float pdf_lambert(material_data const& m, vec3 const& wo, vec3 const& w
 __both__ void sample_lambert(material_data const& m, vec3 const& wo, random& rand,
                              vec3& wi, vec3& f, float& pdf, material_type& sampled_type)
 {
-    sampled_type = material_type::lambertian;
-    sample_cosine_hemisphere(rand.rng<vec2>());
+    wi = sample_cosine_hemisphere(rand.rng<vec2>());
     pdf = pdf_lambert(m, wo, wi);
     f = f_lambert(m, wo, wi);
 }

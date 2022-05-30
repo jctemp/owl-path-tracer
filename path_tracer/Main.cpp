@@ -64,94 +64,40 @@ std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string,
     return scenes[s];
 }
 
-std::vector<entity> load_scene(std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> const& meshes,
-                               std::vector<std::tuple<std::string, material_data>> const* materials,
-                               std::vector<std::tuple<std::string, light_data>> const* lights)
-{
-    std::vector<entity> entities{};
-    for (auto const& [name, mesh]: meshes)
-        entities.push_back(entity{.mesh_ptr = mesh.get(), .materialId = -1, .lightId = -1});
-
-    fmt::print(fg(color::log), "> MESH TYPE\n");
-    {
-        fmt::print(fg(color::log), "[0] object\n");
-        fmt::print(fg(color::log), "[1] light\n");
-
-        auto counter{0};
-        for (auto const& [name, mesh]: meshes)
-        {
-            fmt::print("Object: {}\n", name);
-            auto const s{get_input(0, 2)};
-            if (s == 0)
-                entities[counter].materialId = static_cast<int32_t>(materials->size());
-            else
-                entities[counter].lightId = static_cast<int32_t>(lights->size());
-            counter++;
-        }
-    }
-
-    fmt::print(fg(color::log), "> MATERIALS\n");
-    {
-        auto counter{0};
-        for (auto const& [name, material]: *materials)
-            fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
-
-        counter = 0;
-        for (auto const& [name, mesh]: meshes)
-        {
-            if (entities[counter].materialId != -1)
-            {
-                fmt::print("Object: {}\n", name);
-                auto const s{get_input(0, static_cast<int32_t>(materials->size()))};
-                entities[counter].materialId = s;
-            }
-            counter++;
-        }
-    }
-
-    fmt::print(fg(color::log), "> LIGHTS\n");
-    {
-        auto counter{0};
-        for (auto const& [name, light]: *lights)
-            fmt::print(fg(color::log), "[{}] {}\n", counter++, name);
-        counter = 0;
-        for (auto const& [name, mesh]: meshes)
-        {
-            if (entities[counter].lightId != -1)
-            {
-                fmt::print("Object: {}\n", name);
-                auto const s{get_input(0, static_cast<int32_t>(lights->size()))};
-                entities[counter].lightId = s;
-            }
-            counter++;
-        }
-    }
-
-    return entities;
-}
-
 int main(int argc, char** argv)
 {
-    auto prefix_path{std::string{"."}};
-    if (argc > 1) prefix_path = argv[1];
-    auto const config_file{prefix_path + "/config.json"};
-
-    auto const scenes{parse_scenes(config_file)};
-    auto const materials{parse_materials(config_file)};
-    auto const lights{parse_lights(config_file)};
-    auto const [scene_name, scene_camera] = select_scene(scenes);
-
-    auto environment{load_image("environment.hdr", prefix_path + "/assets/")};
-    environment.ptr_tag = image_buffer::tag::allocated;
-
-    auto const meshes{load_obj(fmt::format("{}/{}{}{}", prefix_path, "assets/", scene_name, ".obj.scene"))};
-    auto const entities = load_scene(meshes, &materials, &lights);
-
-    auto const use_environment_map = false;
+    auto const use_environment_map = true;
     auto const buffer_size = ivec2{1024};
     auto const max_samples = 1024;
     auto const max_path_depth = 8;
-    auto const camera{to_camera_data(scene_camera, buffer_size)};
+
+    std::string scene{"dragon"};
+
+    auto prefix_path{std::filesystem::current_path().string()};
+    if (argc > 1) prefix_path = argv[1];
+    auto const config_file{fmt::format("{}/assets/{}.json", prefix_path, scene)};
+
+    auto const camera{parse_camera(config_file, buffer_size)};
+    auto const materials{parse_materials(config_file)};
+    auto const meshes{load_obj(fmt::format("{}/assets/{}.obj.scene", prefix_path, scene))};
+
+    std::vector<entity> entities{};
+    for (auto const& [name, mesh]: meshes)
+    {
+        int32_t position{0};
+        for (auto const& [material_name, material]: materials)
+        {
+            if (material_name == name)
+            {
+                entities.push_back({.mesh_ptr = mesh.get(), .materialId = position});
+                break;
+            }
+            ++position;
+        }
+    }
+
+    auto environment{load_image("environment.hdr", prefix_path + "/assets/")};
+    environment.ptr_tag = image_buffer::tag::allocated;
 
 #pragma region "OWL INIT"
 
@@ -288,12 +234,9 @@ int main(int argc, char** argv)
     auto const frame_buffer{create_pinned_host_buffer(owl_context, OWL_INT, buffer_size.x * buffer_size.y)};
 
     auto const vec_material = to_vector(&materials);
-    auto const vec_light = to_vector(&lights);
 
     auto material_buffer{create_device_buffer(owl_context, OWL_USER_TYPE(material_data),
             vec_material.size(), vec_material.data())};
-    auto light_buffer{create_device_buffer(owl_context, OWL_USER_TYPE(light_data),
-            vec_light.size(), vec_light.data())};
 
     auto vertices_buffer{create_device_buffer(owl_context, OWL_BUFFER, vertices_buffer_list.size(),
             vertices_buffer_list.data())};
@@ -315,7 +258,6 @@ int main(int argc, char** argv)
     set_field(lp, "max_path_depth", max_path_depth);
     set_field(lp, "max_samples", max_samples);
     set_field(lp, "material_buffer", material_buffer);
-    set_field(lp, "light_buffer", light_buffer);
     set_field(lp, "vertices_buffer", vertices_buffer);
     set_field(lp, "indices_buffer", indices_buffer);
     set_field(lp, "normals_buffer", normals_buffer);
@@ -343,7 +285,7 @@ int main(int argc, char** argv)
     image_buffer result{buffer_size.x, buffer_size.y,
                         reinterpret_cast<uint32_t const*>(buffer_to_pointer(frame_buffer, 0)),
                         image_buffer::tag::referenced};
-    write_image(result, fmt::format("{}.png", scene_name), prefix_path);
+    write_image(result, fmt::format("{}.png", scene), prefix_path);
 
 #pragma endregion
 
