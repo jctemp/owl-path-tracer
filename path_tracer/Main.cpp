@@ -65,19 +65,23 @@ std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string,
 
 int main(int argc, char** argv)
 {
+    std::string scene{"dragon"};
+    auto const config_file{fmt::format("{}/assets/{}.json", std::filesystem::current_path().string(), scene)};
+
     auto const buffer_size = ivec2{1024};
     auto const max_samples = 1024;
     auto const max_path_depth = 64;
 
-    std::string scene{"dragon"};
+    bool const environment_use = false;
+    bool const environment_auto = false;
+    vec3 const environment_color{vec3{1.0f, 0.0f, 1.0f}};
+    float const environment_intensity{1.0f};
 
-    auto prefix_path{std::filesystem::current_path().string()};
-    if (argc > 1) prefix_path = argv[1];
-    auto const config_file{fmt::format("{}/assets/{}.json", prefix_path, scene)};
+    /// PREPARE RENDERING
 
     auto const camera{parse_camera(config_file, buffer_size)};
     auto const materials{parse_materials(config_file)};
-    auto const meshes{load_obj(fmt::format("{}/assets/{}.obj.scene", prefix_path, scene))};
+    auto const meshes{load_obj(fmt::format("{}/assets/{}.obj.scene", std::filesystem::current_path().string(), scene))};
 
     std::vector<entity> entities{};
     for (auto const& [name, mesh]: meshes)
@@ -94,13 +98,8 @@ int main(int argc, char** argv)
         }
     }
 
-    image_buffer environment_map{load_image("environment.hdr", prefix_path + "/assets/")};
+    image_buffer environment_map{load_image("environment.hdr", std::filesystem::current_path().string() + "/assets/")};
     environment_map.ptr_tag = image_buffer::tag::allocated;
-    bool const environment_use = false;
-    bool const environment_auto = false;
-    vec3 const environment_color{vec3{1.0f, 0.0f, 1.0f}};
-    float const environment_intensity{1.0f};
-
 
 #pragma region "OWL INIT"
 
@@ -268,6 +267,8 @@ int main(int argc, char** argv)
 
 #pragma region "LAUNCH RAY TRACING API"
 
+    // TODO: make materials updateable and re-launch ray tracing
+
     fmt::print(fg(color::start), "LAUNCH TRACER\n");
     owlLaunch2D(ray_gen_prog, buffer_size.x, buffer_size.y, lp);
     fmt::print(fg(color::stop), "STOP TRACER\n");
@@ -279,7 +280,7 @@ int main(int argc, char** argv)
     image_buffer result{buffer_size.x, buffer_size.y,
                         reinterpret_cast<uint32_t const*>(buffer_to_pointer(frame_buffer, 0)),
                         image_buffer::tag::referenced};
-    write_image(result, fmt::format("{}.png", scene), prefix_path);
+    write_image(result, fmt::format("{}.png", scene), std::filesystem::current_path().string());
 
 #pragma endregion
 
