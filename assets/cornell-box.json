@@ -1,0 +1,40 @@
+{
+    "camera": {
+        "look_from": [
+            3.0,
+            1.0,
+            0.0
+        ],
+        "look_at": [
+            0.0,
+            1.0,
+            0.0
+        ],
+        "look_up": [
+            0.0,
+            1.0,
+            0.0
+        ],
+        "vertical_fov": 50
+    },
+    "materials": [
+        {
+            "name": "box"
+        },
+        {
+            "name": "sphere"
+        },
+        {
+            "name": "light"
+        },
+        {
+            "name": "wall_left"
+        },
+        {
+            "name": "wall_right"
+        },
+        {
+            "name": "wall_tbb"
+        }
+    ]
+}

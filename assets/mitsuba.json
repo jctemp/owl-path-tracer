@@ -1,0 +1,31 @@
+{
+    "camera": {
+        "look_from": [
+            4.0,
+            2.5,
+            0.0
+        ],
+        "look_at": [
+            0.0,
+            0.75,
+            0.0
+        ],
+        "look_up": [
+            0.0,
+            1.0,
+            0.0
+        ],
+        "vertical_fov": 50
+    },
+    "materials": [
+        {
+            "name": "outside"
+        },
+        {
+            "name": "ground"
+        },
+        {
+            "name": "inside"
+        }
+    ]
+}
