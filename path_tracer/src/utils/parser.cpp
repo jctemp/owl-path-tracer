@@ -75,9 +75,22 @@ fmt::print(fg(color::log), "Parsing settings\n");
     auto config{load_json(config_path)};
     settings_data data{};
 
-    data.scene = config["scene"].get<std::string>();
-    data.test_name = config["test_name"].get<std::string>();
+    auto test{config["test"]};
+    data.test.name = test["name"].get<std::string>();
+    data.test.material_name = test["material_name"].get<std::string>();
+    data.test.attribute_name = test["attribute_name"].get<std::string>();
 
+    data.test.interpolate = test["interpolate"].get<bool>();
+    data.test.step_size = test["step_size"].get<float>();
+    for (auto& value: test["values"])
+    {
+        if (value.is_array())
+            data.test.vec_values.emplace_back(value[0].get<float>(), value[1].get<float>(), value[2].get<float>());
+        else
+            data.test.flt_values.emplace_back(value.get<float>());
+    }
+
+    data.scene = config["scene"].get<std::string>();
     data.buffer_size = {config["buffer_size"][0].get<int>(), config["buffer_size"][1].get<int>()};
     data.max_path_depth = config["max_path_depth"].get<int32_t>();
     data.max_samples = config["max_samples"].get<int32_t>();

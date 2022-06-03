@@ -60,6 +60,8 @@ struct program_data
     std::vector<buffer> vertices_buffer_list{};
     std::vector<buffer> normals_buffer_list{};
 
+    buffer framebuffer;
+
     buffer material_buffer;
     buffer vertices_buffer;
     buffer indices_buffer;
@@ -70,6 +72,37 @@ void init_owl_data(owl_data& data);
 
 void init_owl_world(owl_data& data, std::vector<geom>& geoms);
 
-void init_program_data(program_data& data, std::string const& assets_path);
+void init_program_data(program_data& pdata, test_data& tdata, std::string const& assets_path);
+
+void bind_sbt_data(program_data& pdata, owl_data& data);
+
+void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data>> &materials,
+                test_data const &test, float value);
+
+void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data>> &materials,
+                test_data const &test, vec3 value);
+
+void render_frame(owl_data& data, program_data& pdata, test_data& tdata, std::string const& values);
+
+template<typename T>
+void test_loop(owl_data& data, program_data& pdata, test_data& tdata, std::vector<T> const& values)
+{
+    auto vstart(values[0]);
+    auto vend(values[1]);
+    auto vstep{static_cast<int32_t>(tdata.step_size * 100)};
+    for (int32_t i{0}; i <= 100; i += vstep)
+    {
+        auto c{i / 100.0f};
+        auto value{vstart + (vend - vstart) * c};
+        modify_sbt(data, pdata, pdata.materials, tdata, value);
+
+        if constexpr(std::is_same_v<T, vec3>)
+            render_frame(data, pdata, tdata, fmt::format("{:.1f}", fmt::join(std::vector<float>{
+                    value.x, value.y, value.z}, ",")));
+        else if constexpr(std::is_same_v<T, float>)
+            render_frame(data, pdata, tdata, fmt::format("{:.1f}", value));
+    }
+
+}
 
 #endif //APPLICATION_HPP

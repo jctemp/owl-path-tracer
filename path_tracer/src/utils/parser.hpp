@@ -9,10 +9,21 @@
 #include <string>
 #include <tuple>
 
+struct test_data
+{
+    std::string name{};
+    std::string material_name{};
+    std::string attribute_name{};
+
+    std::string interpolate{};
+    std::vector<vec3> vec_values{};
+    std::vector<float> flt_values{};
+    float step_size{};
+};
+
 struct settings_data
 {
     std::string scene{};
-    std::string test_name{};
     ivec2 buffer_size{};
     int32_t max_samples{};
     int32_t max_path_depth{};
@@ -20,6 +31,8 @@ struct settings_data
     bool environment_auto{};
     vec3 environment_color{};
     float environment_intensity{};
+
+    test_data test{};
 };
 
 std::vector<std::tuple<std::string, material_data>> parse_materials(std::string const& config_path);
