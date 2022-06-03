@@ -1,9 +1,17 @@
+
+#include "utils/image_buffer.hpp"
+#include "utils/mesh_loader.hpp"
+#include "utils/parser.hpp"
+
 #include "application.hpp"
+
+#include <fmt/core.h>
+#include <fmt/color.h>
 
 extern "C" char device_ptx[];
 
 /// prepare all owl components
-void init_data(owl_data& data)
+void init_owl_data(owl_data& data)
 {
     /// create context and module to prepare different components
     data.owl_context = create_context(nullptr, 1);
@@ -72,7 +80,7 @@ void init_data(owl_data& data)
 }
 
 /// create IAS acceleration structure based on geoms
-void init_world(owl_data& data, std::vector<geom>& geoms)
+void init_owl_world(owl_data& data, std::vector<geom>& geoms)
 {
     if (geoms.empty()) throw std::runtime_error("no geometries");
 
@@ -83,3 +91,38 @@ void init_world(owl_data& data, std::vector<geom>& geoms)
     build_group_acceleration_structure(data.world);
 }
 
+void init_program_data(program_data& data, std::string assets_path, std::string scene)
+{
+    auto const config_file{ fmt::format("{}/{}.json", assets_path, scene) };
+    
+    data.buffer_size = ivec2{1024};
+    data.max_samples = 128;
+    data.max_path_depth = 16;
+
+    data.environment_use = false;
+    data.environment_auto = false;
+    data.environment_color = vec3{0.0f};
+    data.environment_intensity = 1.0f;
+    data.environment_map = load_image("environment.hdr", assets_path);
+    data.environment_map.ptr_tag = image_buffer::tag::allocated;
+
+    data.camera = parse_camera(config_file, data.buffer_size);
+    data.materials = parse_materials(config_file);
+    data.meshes = load_obj(fmt::format("{}/{}.obj.scene", assets_path, scene));
+    
+    data.entities = std::vector<entity>{};
+    for (auto const &[name, mesh] : data.meshes)
+    {
+        int32_t position{0};
+        for (auto const &[material_name, material] : data.materials)
+        {
+            if (material_name == name)
+            {
+                data.entities.push_back({.mesh_ptr = mesh.get(), .materialId = position});
+                break;
+            }
+            ++position;
+        }
+    }
+
+}

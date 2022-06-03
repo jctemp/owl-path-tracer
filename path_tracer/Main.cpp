@@ -17,11 +17,7 @@ using namespace owl;
 
 extern "C" char device_ptx[];
 
-struct entity
-{
-    mesh *mesh_ptr;
-    int32_t materialId{-1};
-};
+
 
 template <typename T>
 std::vector<T> to_vector(std::vector<std::tuple<std::string, T>> const *data)
@@ -69,51 +65,15 @@ std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string,
 int main(int argc, char **argv)
 {
     std::string scene{"dragon"};
-    auto const config_file{fmt::format("{}/assets/{}.json", std::filesystem::current_path().string(), scene)};
 
-    auto const buffer_size = ivec2{1024};
-    auto const max_samples = 128;
-    auto const max_path_depth = 16;
-
-    bool const environment_use = false;
-    bool const environment_auto = false;
-    vec3 const environment_color{vec3{1.0f, 1.0f, 1.0f}};
-    float const environment_intensity{1.0f};
-
-    /// PREPARE RENDERING
-
-    auto const camera{parse_camera(config_file, buffer_size)};
-    auto const materials{parse_materials(config_file)};
-    auto const meshes{load_obj(fmt::format("{}/assets/{}.obj.scene", std::filesystem::current_path().string(), scene))};
-
-    std::vector<entity> entities{};
-    for (auto const &[name, mesh] : meshes)
-    {
-        int32_t position{0};
-        for (auto const &[material_name, material] : materials)
-        {
-            if (material_name == name)
-            {
-                entities.push_back({.mesh_ptr = mesh.get(), .materialId = position});
-                break;
-            }
-            ++position;
-        }
-    }
-
-    image_buffer environment_map{load_image("environment.hdr", std::filesystem::current_path().string() + "/assets/")};
-    environment_map.ptr_tag = image_buffer::tag::allocated;
+    program_data pdata;
+    init_program_data(pdata, std::filesystem::current_path().string() + "/assets", scene);
 
     owl_data data{};
-    init_data(data);
-
-    std::vector<geom> geoms{};
-    std::vector<buffer> indices_buffer_list{};
-    std::vector<buffer> vertices_buffer_list{};
-    std::vector<buffer> normals_buffer_list{};
+    init_owl_data(data);
 
     int32_t mesh_id{0};
-    for (auto e : entities)
+    for (auto e : pdata.entities)
     {
         mesh &mesh{*e.mesh_ptr};
 
@@ -121,13 +81,13 @@ int main(int argc, char **argv)
         auto &indices{mesh.indices};
         auto &normals{mesh.normals};
 
-        buffer vertex_buffer{create_device_buffer(data.owl_context, OWL_FLOAT3, vertices.size(), vertices.data())};
-        buffer normal_buffer{create_device_buffer(data.owl_context, OWL_FLOAT3, normals.size(), normals.data())};
-        buffer index_buffer{create_device_buffer(data.owl_context, OWL_INT3, indices.size(), indices.data())};
+        buffer vertex_buffer = create_device_buffer(data.owl_context, OWL_FLOAT3, vertices.size(), vertices.data());
+        buffer normal_buffer = create_device_buffer(data.owl_context, OWL_FLOAT3, normals.size(), normals.data());
+        buffer index_buffer = create_device_buffer(data.owl_context, OWL_INT3, indices.size(), indices.data());
 
-        indices_buffer_list.push_back(index_buffer);
-        vertices_buffer_list.push_back(vertex_buffer);
-        normals_buffer_list.push_back(normal_buffer);
+        pdata.indices_buffer_list.push_back(index_buffer);
+        pdata.vertices_buffer_list.push_back(vertex_buffer);
+        pdata.normals_buffer_list.push_back(normal_buffer);
 
         geom geom_data{owlGeomCreate(data.owl_context, data.triangle_geom)};
         set_triangle_vertices(geom_data, vertex_buffer, vertices.size(), sizeof(vec3));
@@ -136,46 +96,46 @@ int main(int argc, char **argv)
         set_field(geom_data, "mesh_index", mesh_id++);
         set_field(geom_data, "material_index", e.materialId);
 
-        geoms.push_back(geom_data);
+        pdata.geoms.push_back(geom_data);
     }
 
-    init_world(data, geoms);
+    init_owl_world(data, pdata.geoms);
 
     auto const environment_map_texture{
-        create_texture(data.owl_context, {environment_map.width, environment_map.height}, environment_map.buffer)};
-    auto const frame_buffer{create_pinned_host_buffer(data.owl_context, OWL_INT, buffer_size.x * buffer_size.y)};
+        create_texture(data.owl_context, {pdata.environment_map.width, pdata.environment_map.height}, pdata.environment_map.buffer)};
+    auto const frame_buffer{create_pinned_host_buffer(data.owl_context, OWL_INT, pdata.buffer_size.x * pdata.buffer_size.y)};
 
-    auto vec_material = to_vector(&materials);
+    auto vec_material = to_vector(&pdata.materials);
 
-    auto material_buffer{create_device_buffer(data.owl_context, OWL_USER_TYPE(material_data),
+    pdata.material_buffer = {create_device_buffer(data.owl_context, OWL_USER_TYPE(material_data),
                                               vec_material.size(), vec_material.data())};
 
-    auto vertices_buffer{create_device_buffer(data.owl_context, OWL_BUFFER, vertices_buffer_list.size(),
-                                              vertices_buffer_list.data())};
-    auto indices_buffer{create_device_buffer(data.owl_context, OWL_BUFFER, indices_buffer_list.size(),
-                                             indices_buffer_list.data())};
-    auto normals_buffer{create_device_buffer(data.owl_context, OWL_BUFFER, normals_buffer_list.size(),
-                                             normals_buffer_list.data())};
+    pdata.vertices_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER, pdata.vertices_buffer_list.size(),
+                                              pdata.vertices_buffer_list.data())};
+    pdata.indices_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER, pdata.indices_buffer_list.size(),
+                                             pdata.indices_buffer_list.data())};
+    pdata.normals_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER,pdata.normals_buffer_list.size(),
+                                             pdata.normals_buffer_list.data())};
 
     set_field(data.ray_gen_prog, "fb_ptr", frame_buffer);
-    set_field(data.ray_gen_prog, "fb_size", buffer_size);
-    set_field(data.ray_gen_prog, "camera.origin", camera.origin);
-    set_field(data.ray_gen_prog, "camera.llc", camera.llc);
-    set_field(data.ray_gen_prog, "camera.horizontal", camera.horizontal);
-    set_field(data.ray_gen_prog, "camera.vertical", camera.vertical);
+    set_field(data.ray_gen_prog, "fb_size", pdata.buffer_size);
+    set_field(data.ray_gen_prog, "camera.origin", pdata.camera.origin);
+    set_field(data.ray_gen_prog, "camera.llc", pdata.camera.llc);
+    set_field(data.ray_gen_prog, "camera.horizontal", pdata.camera.horizontal);
+    set_field(data.ray_gen_prog, "camera.vertical", pdata.camera.vertical);
 
-    set_field(data.lp, "max_path_depth", max_path_depth);
-    set_field(data.lp, "max_samples", max_samples);
-    set_field(data.lp, "material_buffer", material_buffer);
-    set_field(data.lp, "vertices_buffer", vertices_buffer);
-    set_field(data.lp, "indices_buffer", indices_buffer);
-    set_field(data.lp, "normals_buffer", normals_buffer);
+    set_field(data.lp, "max_path_depth", pdata.max_path_depth);
+    set_field(data.lp, "max_samples", pdata.max_samples);
+    set_field(data.lp, "material_buffer", pdata.material_buffer);
+    set_field(data.lp, "vertices_buffer", pdata.vertices_buffer);
+    set_field(data.lp, "indices_buffer", pdata.indices_buffer);
+    set_field(data.lp, "normals_buffer", pdata.normals_buffer);
     set_field(data.lp, "world", data.world);
     set_field(data.lp, "environment_map", environment_map_texture);
-    set_field(data.lp, "environment_use", environment_use);
-    set_field(data.lp, "environment_auto", environment_auto);
-    set_field(data.lp, "environment_color", environment_color);
-    set_field(data.lp, "environment_intensity", environment_intensity);
+    set_field(data.lp, "environment_use", pdata.environment_use);
+    set_field(data.lp, "environment_auto", pdata.environment_auto);
+    set_field(data.lp, "environment_color", pdata.environment_color);
+    set_field(data.lp, "environment_intensity", pdata.environment_intensity);
 
     owlBuildPrograms(data.owl_context);
     owlBuildPipeline(data.owl_context);
@@ -199,14 +159,14 @@ int main(int argc, char **argv)
     {
         vec_material[0].base_color = grey;
 
-        owlBufferRelease(material_buffer);
-        material_buffer = create_device_buffer(data.owl_context, OWL_USER_TYPE(material_data),
+        owlBufferRelease(pdata.material_buffer);
+        pdata.material_buffer = create_device_buffer(data.owl_context, OWL_USER_TYPE(material_data),
                                               vec_material.size(), vec_material.data());
-        set_field(data.lp, "material_buffer", material_buffer);
+        set_field(data.lp, "material_buffer", pdata.material_buffer);
 
         fmt::print(fg(color::start), "TRACING\n");
-        owlLaunch2D(data.ray_gen_prog, buffer_size.x, buffer_size.y, data.lp);
-        image_buffer result{buffer_size.x, buffer_size.y,
+        owlLaunch2D(data.ray_gen_prog, pdata.buffer_size.x, pdata.buffer_size.y, data.lp);
+        image_buffer result{pdata.buffer_size.x, pdata.buffer_size.y,
                             reinterpret_cast<uint32_t const *>(buffer_to_pointer(frame_buffer, 0)),
                             image_buffer::tag::referenced};
         write_image(result, fmt::format("{}-{}.png", grey.x, scene), std::filesystem::current_path().string());
