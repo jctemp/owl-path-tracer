@@ -1,0 +1,11 @@
+{
+    "scene": "dragon",
+    "test_name": "lambert_diffuse",
+    "buffer_size": [1024, 1024],
+    "max_samples": 512,
+    "max_path_depth": 16,
+    "environment_use": false,
+    "environment_auto": false,
+    "environment_color": [1, 1, 1],
+    "environment_intensity": 1
+}

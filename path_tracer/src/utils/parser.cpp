@@ -67,3 +67,28 @@ camera_data parse_camera(std::string const& config_path, ivec2 framebuffer_size)
 
     return to_camera_data(data, framebuffer_size);
 }
+
+settings_data parse_settings(std::string const& config_path)
+{
+fmt::print(fg(color::log), "Parsing settings\n");
+
+    auto config{load_json(config_path)};
+    settings_data data{};
+
+    data.scene = config["scene"].get<std::string>();
+    data.test_name = config["test_name"].get<std::string>();
+
+    data.buffer_size = {config["buffer_size"][0].get<int>(), config["buffer_size"][1].get<int>()};
+    data.max_path_depth = config["max_path_depth"].get<int32_t>();
+    data.max_samples = config["max_samples"].get<int32_t>();
+    data.environment_use = config["environment_use"].get<bool>();
+    data.environment_auto = config["environment_auto"].get<bool>();
+    data.environment_color = {
+            config["environment_color"][0].get<float>(),
+            config["environment_color"][1].get<float>(),
+            config["environment_color"][2].get<float>()};
+    data.environment_intensity = config["environment_intensity"].get<float>();
+
+    return data;
+}
+

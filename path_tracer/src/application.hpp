@@ -14,7 +14,7 @@
 
 struct entity
 {
-    mesh* mesh_ptr;
+    mesh* mesh_ptr{};
     int32_t materialId{ -1 };
 };
 
@@ -36,6 +36,9 @@ struct owl_data
 
 struct program_data
 {
+    std::string scene;
+    std::string test_name;
+
     ivec2 buffer_size;
     int32_t max_samples;
     int32_t max_path_depth;
@@ -67,6 +70,6 @@ void init_owl_data(owl_data& data);
 
 void init_owl_world(owl_data& data, std::vector<geom>& geoms);
 
-void init_program_data(program_data& data, std::string assets_path, std::string scene);
+void init_program_data(program_data& data, std::string const& assets_path);
 
-#endif APPLICATION_HPP
+#endif //APPLICATION_HPP

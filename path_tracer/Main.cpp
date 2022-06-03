@@ -10,6 +10,7 @@
 
 #include <fmt/core.h>
 #include <fmt/color.h>
+#include <fmt/ranges.h>
 
 #include <filesystem>
 
@@ -62,16 +63,29 @@ std::tuple<std::string, camera> select_scene(std::vector<std::tuple<std::string,
     return scenes[s];
 }
 
+std::vector<float> to_vector(vec3 const &data)
+{
+    std::vector<float> result{};
+    result.reserve(3);
+
+    result.push_back(data.x);
+    result.push_back(data.y);
+    result.push_back(data.z);
+
+    return result;
+}
+
 int main(int argc, char **argv)
 {
-    std::string scene{"dragon"};
+    /// Load program data from settings file in assets folder
+    program_data pdata{};
+    init_program_data(pdata, std::filesystem::current_path().string() + "/assets");
 
-    program_data pdata;
-    init_program_data(pdata, std::filesystem::current_path().string() + "/assets", scene);
-
+    /// Load owl data to prepare optix rendering
     owl_data data{};
     init_owl_data(data);
 
+    /// Create sbt data for renderer
     int32_t mesh_id{0};
     for (auto e : pdata.entities)
     {
@@ -109,7 +123,6 @@ int main(int argc, char **argv)
 
     pdata.material_buffer = {create_device_buffer(data.owl_context, OWL_USER_TYPE(material_data),
                                               vec_material.size(), vec_material.data())};
-
     pdata.vertices_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER, pdata.vertices_buffer_list.size(),
                                               pdata.vertices_buffer_list.data())};
     pdata.indices_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER, pdata.indices_buffer_list.size(),
@@ -117,6 +130,7 @@ int main(int argc, char **argv)
     pdata.normals_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER,pdata.normals_buffer_list.size(),
                                              pdata.normals_buffer_list.data())};
 
+    /// bind sbt data
     set_field(data.ray_gen_prog, "fb_ptr", frame_buffer);
     set_field(data.ray_gen_prog, "fb_size", pdata.buffer_size);
     set_field(data.ray_gen_prog, "camera.origin", pdata.camera.origin);
@@ -169,7 +183,7 @@ int main(int argc, char **argv)
         image_buffer result{pdata.buffer_size.x, pdata.buffer_size.y,
                             reinterpret_cast<uint32_t const *>(buffer_to_pointer(frame_buffer, 0)),
                             image_buffer::tag::referenced};
-        write_image(result, fmt::format("{}-{}.png", grey.x, scene), std::filesystem::current_path().string());
+        write_image(result, fmt::format("{}-{}({:.1f}).png", pdata.scene, pdata.test_name, fmt::join(to_vector(grey), ",")), std::filesystem::current_path().string());
 
     }
 

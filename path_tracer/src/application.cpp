@@ -91,24 +91,29 @@ void init_owl_world(owl_data& data, std::vector<geom>& geoms)
     build_group_acceleration_structure(data.world);
 }
 
-void init_program_data(program_data& data, std::string assets_path, std::string scene)
+void init_program_data(program_data& data, std::string const& assets_path)
 {
-    auto const config_file{ fmt::format("{}/{}.json", assets_path, scene) };
-    
-    data.buffer_size = ivec2{1024};
-    data.max_samples = 128;
-    data.max_path_depth = 16;
+    auto const settings{parse_settings(fmt::format("{}/{}", assets_path, "settings.json"))};
 
-    data.environment_use = false;
-    data.environment_auto = false;
-    data.environment_color = vec3{0.0f};
-    data.environment_intensity = 1.0f;
+    auto const config_file{ fmt::format("{}/{}.json", assets_path, settings.scene) };
+
+    data.scene = settings.scene;
+    data.test_name = settings.test_name;
+
+    data.buffer_size = settings.buffer_size;
+    data.max_path_depth = settings.max_path_depth;
+    data.max_samples = settings.max_samples;
+    data.environment_use = settings.environment_use;
+    data.environment_auto = settings.environment_auto;
+    data.environment_color = settings.environment_color;
+    data.environment_intensity = settings.environment_intensity;
+
     data.environment_map = load_image("environment.hdr", assets_path);
     data.environment_map.ptr_tag = image_buffer::tag::allocated;
 
     data.camera = parse_camera(config_file, data.buffer_size);
     data.materials = parse_materials(config_file);
-    data.meshes = load_obj(fmt::format("{}/{}.obj.scene", assets_path, scene));
+    data.meshes = load_obj(fmt::format("{}/{}.obj.scene", assets_path, settings.scene));
     
     data.entities = std::vector<entity>{};
     for (auto const &[name, mesh] : data.meshes)
