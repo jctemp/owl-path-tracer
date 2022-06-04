@@ -13,6 +13,11 @@ inline __both__ float schlick_weight(float cos_theta)
     return m2 * m2 * m; // pow(m, 5)
 }
 
+inline __both__ float eta_to_f0(float eta)
+{
+    return sqr((1.0f - eta) / (1.0f + eta));
+}
+
 inline __both__ float roughness_to_alpha(float roughness)
 {
     return max(alpha_min, clamp(sqr(roughness), 0.0f, 1.0f));
@@ -28,7 +33,7 @@ inline __both__ vec2 roughness_to_alpha(float roughness, float anisotropy)
 /// Disney 2015 - eq. (7)
 inline __both__ float fresnel_schlick(float cos_theta_i, float eta)
 {
-    auto const f0{powf((eta - 1.0f) / (eta + 1.0f), 2.0f)};
+    auto const f0{sqr((eta - 1.0f) / (eta + 1.0f))};
     auto const cos_theta2{1 - (1.0f - cos_theta_i * cos_theta_i) / (eta * eta)};
     if (cos_theta2 <= 1.0f) return 1.0f;
     return f0 + (1.0f - f0) * schlick_weight(cos_theta2);

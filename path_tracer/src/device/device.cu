@@ -137,7 +137,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         vec3 wo{hd.wo}, wi{};
 
         vec3 T{}, B{};
-        onb(v_n, T, B);
+        onb(v_gn, T, B);
 
 
         material_data material{};
@@ -146,21 +146,21 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             get_data(material, launch_params.material_buffer, hd.material_index, material_data);
         }
 
-        vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{}, local_wh{};
+        vec3 local_wo{to_local(T, B, v_gn, wo)}, local_wi{}, local_wh{};
 
         float pdf{};
         vec3 f{};
 
-        f = disney_diffuse_sample(material, local_wo, prd.random,
+
+        f = disney_specular_brdf_sample(material, local_wo, prd.random,
                 local_wi, pdf);
 
         // sample_lambert(material, local_wo, prd.random, local_wi, f, pdf, sampled_type);
 
-        //sample_disney_bsdf(material, local_wo, prd.random,
-        //        local_wi, local_wh, f, pdf, sampled_type);
+        // sample_disney_bsdf(material, local_wo, prd.random,
+        //       < local_wi, local_wh, f, pdf, sampled_type);
 
-        wi = to_world(T, B, v_n, local_wi);
-
+        wi = to_world(T, B, v_gn, local_wi);
         /// terminate or catching de-generate paths
         if (pdf < 1E-5f)
             break;

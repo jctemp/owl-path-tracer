@@ -89,7 +89,7 @@ inline __both__ float g_smith_lambda(vec3 const& w, float ax, float ay)
 }
 
 // Understanding Masking-Shadowing Functions for Microfacet-Based BRDFs (Heitz, 2017) equ. (43)
-inline __both__ float g1_smith(vec3 const& w, float ax, float ay)
+inline __both__ float g1_smith_legacy(vec3 const& w, float ax, float ay)
 {
     return 1.0f / (1.0f + g_smith_lambda(w, ax, ay));
 }
@@ -103,7 +103,7 @@ inline __both__ float g2_smith_correlated(vec3 const& wo, vec3 const& wi, vec3 c
 }
 
 // Sampling the GGX Distribution of visible normals - listing 1. complete implementation
-inline __both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, const vec2& u)
+inline __both__ vec3 sample_gtr2_vndf_legacy(vec3 const& wo, float ax, float ay, const vec2& u)
 {
     auto const wh{normalize(vec3(ax * wo.x, ay * wo.y, wo.z))};
     auto const length_sqr = sqr(wh.x) + sqr(wh.y);
