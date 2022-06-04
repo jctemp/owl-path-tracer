@@ -15,7 +15,8 @@ struct test_data
     std::string material_name{};
     std::string attribute_name{};
 
-    std::string interpolate{};
+    material_type material_type{};
+
     std::vector<vec3> vec_values{};
     std::vector<float> flt_values{};
     float step_size{};

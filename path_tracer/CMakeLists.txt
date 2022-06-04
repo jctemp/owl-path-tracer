@@ -26,6 +26,11 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/utils/parser.cpp"
 
         # SRC/DEVICE
+        "src/device/disney/disney_helper.cuh"
+        "src/device/disney/disney_diffuse.cuh"
+        "src/device/disney/disney_specular.cuh"
+        "src/device/disney/disney_sheen.cuh"
+
         "src/device/materials.hpp"
         "src/device/bsdf_utils.hpp"
         "src/device/device.hpp"

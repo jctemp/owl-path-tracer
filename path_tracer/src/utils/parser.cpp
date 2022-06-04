@@ -80,7 +80,8 @@ fmt::print(fg(color::log), "Parsing settings\n");
     data.test.material_name = test["material_name"].get<std::string>();
     data.test.attribute_name = test["attribute_name"].get<std::string>();
 
-    data.test.interpolate = test["interpolate"].get<bool>();
+    data.test.material_type = static_cast<material_type>(test["material_type"].get<int32_t>());
+
     data.test.step_size = test["step_size"].get<float>();
     for (auto& value: test["values"])
     {

@@ -377,7 +377,6 @@ __both__ void sample_disney_bsdf(material_data const& mat, vec3 const& wo, rando
     }
     else if (r1 < cdf[1]) // specular reflective
     {
-        sampled_type = material_type::specular;
 
         auto const alpha{to_alpha(mat.roughness, mat.anisotropic)};
         wh = sample_gtr2_vndf(wo, alpha.x, alpha.y, rand.rng<vec2>());

@@ -10,8 +10,9 @@ enum class material_type
 {
     none = 0 << 0,
     lambertian = 1 << 0,
-    diffuse = 1 << 2,
-    specular = 1 << 3,
+    diffuse = 1 << 1,
+    specular_reflectance = 1 << 2,
+    specular_transmission = 1 << 3,
     clearcoat = 1 << 4
 };
 

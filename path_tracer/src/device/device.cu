@@ -5,6 +5,10 @@
 #include "materials.hpp"
 #include "macros.hpp"
 
+#include "device/disney/disney_diffuse.cuh"
+#include "device/disney/disney_specular.cuh"
+#include "device/disney/disney_sheen.cuh"
+
 using radiance_ray = owl::RayT<0, 2>;
 using shadow_ray = owl::RayT<1, 2>;
 
@@ -135,8 +139,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         vec3 T{}, B{};
         onb(v_n, T, B);
 
-        float pdf{};
-        vec3 f{};
 
         material_data material{};
         if (hd.material_index >= 0)
@@ -146,7 +148,13 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
         vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{}, local_wh{};
 
-        sample_lambert(material, local_wo, prd.random, local_wi, f, pdf, sampled_type);
+        float pdf{};
+        vec3 f{};
+
+        f = disney_diffuse_sample(material, local_wo, prd.random,
+                local_wi, pdf);
+
+        // sample_lambert(material, local_wo, prd.random, local_wi, f, pdf, sampled_type);
 
         //sample_disney_bsdf(material, local_wo, prd.random,
         //        local_wi, local_wh, f, pdf, sampled_type);
@@ -163,15 +171,15 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             continue;
         }
 
-        beta *= (f * owl::abs(owl::dot(wi, v_n))) / pdf;
+        beta *= f * owl::abs(cos_theta(local_wi)) / pdf;
 
         /// terminate path by random
-        auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
-        if (depth > 3)
-        {
-            float q{owl::max(.05f, 1 - beta_max)};
-            if (prd.random() > q) break;
-        }
+        // auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
+        // if (depth > 3)
+        // {
+        //     float q{owl::max(.05f, 1 - beta_max)};
+        //     if (prd.random() > q) break;
+        // }
 
         ray = radiance_ray{v_p, wi, t_min, t_max};
     }
