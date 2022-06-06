@@ -57,7 +57,23 @@ inline __both__ vec3 to_sphere_coordinates(float sin_theta, float cos_theta, flo
 
 inline __both__ vec3 reflect(vec3 const& w, vec3 const& n)
 {
-    return (2.0f * owl::dot(w, n)) * n - w;
+    return 2.0f * (dot(w, n) * n) - w;
+}
+
+inline __both__ bool refract(vec3 const& w, vec3 const& n, float eta, vec3& wi)
+{
+    if (eta == 1.0f)
+    {
+        wi = -w;
+        return true;
+    }
+    auto const cos_theta_i = dot(w, n);
+    auto const sin2_theta_i = max(0.0f, 1.0f - sqr(cos_theta_i));
+    auto const sin2_theta_t = eta * eta * sin2_theta_i;
+    if (sin2_theta_t > 1.0f) return false;
+    auto const cos_theta_t = sqrt(1.0f - sin2_theta_t);
+    wi = eta * -w + (eta * cos_theta_i - cos_theta_t) * n;
+    return true;
 }
 
 inline __both__ bool same_hemisphere(vec3 const& w_o, vec3 const& w_i)

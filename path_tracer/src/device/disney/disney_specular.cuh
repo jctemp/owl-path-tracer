@@ -11,6 +11,7 @@
 // - Average irregularity representation of a rough surface for ray reflection [1]
 // - Sampling the GGX Distribution of Visible Normals [2]
 // - Physically Based Shading at Disney [3]
+// - Microfacet Models for Refraction through Rough Surfaces [4]
 
 /// eq. (86) from [0]
 __both__ float lambda(vec3 const& w, float ax, float ay)
@@ -18,8 +19,7 @@ __both__ float lambda(vec3 const& w, float ax, float ay)
     auto const abs_tan_theta{tan_theta(w)};
     if (isinf(abs_tan_theta)) return 0.0f;
 
-    // eq. (80) from [0] // TODO: CHECK IF COS_PHI IS CORRECT
-    // auto const alpha0{sqrt(sqr(w.x * ax) + sqr(w.y * ay))};
+    // eq. (80) from [0]
     auto const alpha0{sqrt(sqr(cos_phi(w) * ax) + sqr(sin_phi(w) * ay))};
     auto const a{1.0f / (alpha0 * abs_tan_theta)};
     return (-1.0f + sqrt(1.0f + 1.0f / sqr(a))) / 2.0f;
@@ -75,7 +75,7 @@ __both__ vec3 sample_gtr2_ndf(vec3 const& wo, float ax, float ay, const vec2& u)
 
 /// Sampling the Trowbridge-Reitz distribution of visible normals [2]
 /// it allows for better sampling only relevant normals for the microfacet
-__both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, const vec2& u)
+__both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, vec2 const& u)
 {
     // transforming the view direction to the hemisphere configuration
     auto const N{normalize(vec3(ax * wo.x, ay * wo.y, wo.z))};
@@ -100,6 +100,13 @@ __both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, const vec2& u
 
     // transforming the normal back to the ellipsoid configuration
     return normalize(vec3{ax * nh.x, ay * nh.y, max(0.0f, nh.z)});
+}
+
+__both__ vec3 sample_gtr2_bsdf(float a, vec2 const& u)
+{
+    auto const theta{atan((a * sqrt(u[0])) / sqrt(1.0f - u[0]))};
+    auto const phi{two_pi * u[1]};
+    return to_sphere_coordinates(theta, phi);
 }
 
 /// \brief Specular lobe describe with mircofacets using Trowbridge-Reitz distribution [0][2][3]
@@ -164,6 +171,92 @@ inline __both__ vec3 disney_specular_brdf_sample(material_data const& m, vec3 co
     wi = reflect(wo, wh);
     pdf = disney_specular_brdf_pdf(m, wo, wh);
     return disney_specular_brdf_lobe(m, wo, wi);
+}
+
+/// \brief Specular lobe describe the transmission using Trowbridge-Reitz distribution [0][2][3]
+/// \details
+///     In 2015 Disney explained that the BRDF model is being extended with a BTDF lobe. For this
+///     they used Microfacet to model transmissions.
+///
+__both__ vec3 disney_specular_bsdf_lobe(material_data const& m, vec3 const& wo, vec3 const& wi)
+{
+    if (same_hemisphere(wo, wi)) return 0;  // transmission only
+
+    auto const cosThetaO = cos_theta(wo);
+    auto const cosThetaI = cos_theta(wi);
+    if (cosThetaI == 0 || cosThetaO == 0) return vec3{0.0f};
+
+    // Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
+    auto const eta{cos_theta(wo) > 0.0f ? m.ior : 1.0f / m.ior};
+    auto wh = normalize(wo + wi * eta);
+    if (wh.z < 0) wh = -wh;
+
+    // Same side?
+    if (dot(wo, wh) * dot(wi, wh) > 0) return vec3{0.0f};
+
+    auto const F = 1.0f;
+
+    auto const sqrtDenom = dot(wo, wh) + eta * dot(wi, wh);
+    auto const factor = 1.0f / eta;
+
+    auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
+
+    return (vec3 (1.f) - F) *
+           abs(d_gtr_2(wh, a.x, a.y) * g2_smith_correlated(wo, wi, wh, a.x, a.y) * eta * eta *
+                   abs(dot(wi, wh)) * abs(dot(wo, wh)) * factor * factor /
+                    (cosThetaI * cosThetaO * sqrtDenom * sqrtDenom));
+}
+
+inline __both__ float disney_specular_bsdf_pdf(material_data const& m, vec3 const& wo, vec3 const& wi)
+{
+    if (same_hemisphere(wo, wi)) return 0;
+    // Compute $\wh$ from $\wo$ and $\wi$ for microfacet transmission
+    auto const eta{cos_theta(wo) > 0.0f ? 1.0f / m.ior : m.ior};
+    auto const wh = normalize(wo + wi * eta);
+
+    if (dot(wo, wh) * dot(wi, wh) > 0) return 0;
+
+    auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
+    // Compute change of variables _dwh\_dwi_ for microfacet transmission
+    float sqrtDenom = dot(wo, wh) + eta * dot(wi, wh);
+    float dwh_dwi =
+            std::abs((eta * eta * dot(wi, wh)) / (sqrtDenom * sqrtDenom));
+    return dwh_dwi * d_gtr_2(wh, a.x, a.y);
+}
+
+inline __both__ vec3 disney_specular_bsdf_sample(material_data const& m, vec3 const& wo, random& random,
+                                                 vec3& wi, float& pdf)
+{
+    if (wo.z == 0.0f)
+    {
+        wi = vec3{0.0f};
+        pdf = 0.0f;
+        return vec3{0.0f};
+    }
+
+    // Sampling the specular bsdf lobe requires a different strategy than the brdf specular lobe.
+    // Using the VNDF is strangely insufficient for the transmission lobe. One has to use the
+    // eq. (35) and (36) from [4] in order to get correct results.
+
+    // auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
+    // auto wh = sample_gtr2_vndf(wo, a.x, a.y, random.rng<vec2>());
+    // printf("%f %f %f\n", test.x, test.y, test.z);
+
+    // auto wh = vec3{0,0,1};
+    auto wh = sample_gtr2_bsdf(roughness_to_alpha(m.roughness), random.rng<vec2>());
+    if (!same_hemisphere(wo, wh)) wh = -wh;
+
+    auto const eta_i{cos_theta(wo) > 0.0f ? 1.0f : m.ior};
+    auto const eta_t{cos_theta(wo) > 0.0f ? m.ior : 1.0f};
+    auto const eta = eta_i / eta_t;
+    auto const f = fresnel_equation(wo, wh, eta_i, eta_t);
+
+    if (!refract(wo, wh, eta, wi) || f > random())
+        return disney_specular_brdf_sample(m, wo, random, wi, pdf);
+    wi = normalize(wi);
+
+    pdf = 1.0f;
+    return 1.0f;
 }
 
 #endif //PATH_TRACER_DISNEY_SPECULAR_CUH
