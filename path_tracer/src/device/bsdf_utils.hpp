@@ -48,7 +48,7 @@ inline __both__ float fr_schlick(float r0, float cos_theta)
 }
 
 // Physically Based Shading at Disney 2012 - B.2 GTR equ. (4)
-inline __both__ float d_gtr1(vec3 const& wh, float alpha)
+inline __both__ float d_gtr1_legacy(vec3 const& wh, float alpha)
 {
     if (alpha >= 1.0f) return inv_pi;
     auto const alpha2{sqr(alpha)};

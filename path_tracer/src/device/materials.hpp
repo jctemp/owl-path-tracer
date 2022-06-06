@@ -164,7 +164,7 @@ __both__ vec3 f_disney_clearcoat(material_data const& m, vec3 const& wo, vec3 co
     // (which is GTR2). The geometric term always based on alpha = 0.25
 
     auto const alpha_g{ lerp(0.1f, .001f, m.clearcoat_gloss) };
-    auto const d{d_gtr1(wh, alpha_g)};
+    auto const d{d_gtr1_legacy(wh, alpha_g)};
 	auto const f{fr_schlick(.04f, owl::dot(wi, wh))};
     //auto const g{g2_smith_correlated(wo, wi, wh, .25f,.25f)};
 	auto const g1i{g1_smith_legacy(wi, .25, .25)};
@@ -186,7 +186,7 @@ __both__ float pdf_disney_clearcoat(material_data const& m, vec3 const& wo, vec3
     // surface normal.
 
     auto const alpha_g{ lerp(0.1f, .001f, m.clearcoat_gloss) };
-    auto const d{d_gtr1(wh, alpha_g)};
+    auto const d{d_gtr1_legacy(wh, alpha_g)};
     return d * cos_theta(wh) / (4.0f * owl::dot(wo, wh));
 }
 

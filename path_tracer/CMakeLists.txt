@@ -30,6 +30,7 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/device/disney/disney_diffuse.cuh"
         "src/device/disney/disney_specular.cuh"
         "src/device/disney/disney_sheen.cuh"
+        "src/device/disney/disney_clearcoat.cuh"
 
         "src/device/materials.hpp"
         "src/device/bsdf_utils.hpp"

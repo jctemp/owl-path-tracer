@@ -8,6 +8,7 @@
 #include "device/disney/disney_diffuse.cuh"
 #include "device/disney/disney_specular.cuh"
 #include "device/disney/disney_sheen.cuh"
+#include "device/disney/disney_clearcoat.cuh"
 
 using radiance_ray = owl::RayT<0, 2>;
 using shadow_ray = owl::RayT<1, 2>;
@@ -107,7 +108,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
     hit_data hd;
     material_data ms;
     per_ray_data prd{random, scatter_event::none, &hd, &ms};
-    material_type sampled_type{};
 
     for (int32_t depth{0}; depth < launch_params.max_path_depth; ++depth)
     {
@@ -146,14 +146,19 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             get_data(material, launch_params.material_buffer, hd.material_index, material_data);
         }
 
-        vec3 local_wo{to_local(T, B, v_gn, wo)}, local_wi{}, local_wh{};
+        vec3 local_wo{to_local(T, B, v_gn, wo)}, local_wi{};
 
         float pdf{};
         vec3 f{};
 
-
-        f = disney_specular_brdf_sample(material, local_wo, prd.random,
+        f = disney_specular_bsdf_sample(material, local_wo, prd.random,
                 local_wi, pdf);
+
+        // f = disney_clearcoat_sample(material, local_wo, prd.random,
+        //                             local_wi, pdf);
+
+        // f = disney_specular_brdf_sample(material, local_wo, prd.random,
+        //         local_wi, pdf);
 
         // sample_lambert(material, local_wo, prd.random, local_wi, f, pdf, sampled_type);
 
@@ -167,6 +172,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
         if (has_inf(f) || has_nan(f))
         {
+            printf("f has nan or inf\n");
             --depth; // invalid path and re-sample
             continue;
         }

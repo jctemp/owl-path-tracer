@@ -18,6 +18,24 @@ inline __both__ float eta_to_f0(float eta)
     return sqr((1.0f - eta) / (1.0f + eta));
 }
 
+inline __both__ bool relative_eta(vec3 const& wo, vec3 const& wh, float ior,
+                                  float& eta_o, float& eta_i)
+{
+    bool entering{same_hemisphere(wo, wh)};
+    eta_o = entering ? ior : 1.0f;
+    eta_i = entering ? 1.0f : ior;
+    return entering;
+}
+
+inline __both__ float relative_eta(vec3 const& wo, float ior)
+{
+    float eta_o{}, eta_i{};
+    bool entering{cos_theta(wo) > 0.0f};
+    eta_o = entering ? ior : 1.0f;
+    eta_i = entering ? 1.0f : ior;
+    return eta_o / eta_i;
+}
+
 inline __both__ float roughness_to_alpha(float roughness)
 {
     return max(alpha_min, clamp(sqr(roughness), 0.0f, 1.0f));
@@ -41,16 +59,14 @@ inline __both__ float fresnel_schlick(float cos_theta_i, float eta)
 
 /// used for bsdf specular lobe
 /// Disney 2015 - eq. (8)
-inline __both__ float fresnel_equation(float cos_theta_i, float eta)
+inline __both__ float fresnel_equation(vec3 const& i, vec3 const& m, float eta_i, float eta_t)
 {
-    auto const cos_theta2{1 - (1.0f - cos_theta_i * cos_theta_i) / (eta * eta)};
-    if (cos_theta2 <= 1.0f) return 1.0f;
-    auto const cos_theta_t{owl::sqrt(cos_theta2)};
-    auto s {(cos_theta_i - eta * cos_theta_t) / (cos_theta_i + eta * cos_theta_t)};
-    auto t {(cos_theta_t - eta * cos_theta_i) / (cos_theta_t + eta * cos_theta_i)};
-    s = s * s;
-    t = t * t;
-    return 0.5f * (s + t);
+    auto const c{abs(dot(i, m))};
+    auto const denominator{sqr(eta_t / eta_i) - 1.0f + sqr(c)};
+    if (denominator < 0.0f) return 1.0f; // total internal reflection
+    auto const g{sqrt(denominator)};
+    return 0.5f * sqr((g - c) / (g + c)) *
+        (1.0f + sqr((c * (g + c) - 1.0f) / (c * (g - c) + 1.0f)));
 }
 
 #endif //PATH_TRACER_DISNEY_HELPER_CUH
