@@ -50,7 +50,7 @@ __both__ vec3 disney_clearcoat_lobe(material_data const& m, vec3 const& wo, vec3
     auto const f_term{fresnel_schlick(cos_theta(wi), 1.5f)};
     auto const g_term{g2_smith_separable(wo, wi, .25f, .25f)};
 
-    return m.clearcoat * d_term * g_term * f_term /
+    return d_term * g_term * f_term /
            (4.0f * abs(cos_theta(wo)) * abs(cos_theta(wi)));
 }
 
