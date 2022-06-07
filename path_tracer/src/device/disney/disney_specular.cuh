@@ -130,9 +130,12 @@ __both__ vec3 disney_specular_brdf_lobe(material_data const& m, vec3 const& wo, 
     return d_term * g_term * f_term / (4.0f * abs(cos_theta(wo)));
 }
 
-inline __both__ float disney_specular_brdf_pdf(material_data const& m, vec3 const& wo,
-                                               vec3 const& wh)
+inline __both__ float disney_specular_brdf_pdf(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
+    auto wh{wi + wo};
+    if (all_zero(wh)) return 0.0f;
+    wh = owl::normalize(wh);
+
     auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
     auto const ax{a.x}, ay{a.y};
     return d_gtr_2(wh, ax, ay) * g1_smith(wo, ax, ay) * max(0.0f, dot(wo, wh)) /
@@ -149,7 +152,7 @@ inline __both__ vec3 disney_specular_brdf_sample(material_data const& m, vec3 co
     auto const ax{a.x}, ay{a.y};
     auto const wh = sample_gtr2_vndf(wo, ax, ay, random.rng<vec2>());
     wi = reflect(wo, wh);
-    pdf = disney_specular_brdf_pdf(m, wo, wh);
+    pdf = disney_specular_brdf_pdf(m, wo, wi);
     return disney_specular_brdf_lobe(m, wo, wi);
 }
 
@@ -173,6 +176,8 @@ __both__ vec3 sample_gtr2_bsdf(float a, vec2 const& u)
 ///     term instead of an approximation. However this differs from the [4] described formula.
 __both__ vec3 disney_specular_bsdf_lobe(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
+    return 1.0f;
+
     float eta_i{}, eta_t{};
     auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
 
@@ -194,6 +199,8 @@ __both__ vec3 disney_specular_bsdf_lobe(material_data const& m, vec3 const& wo, 
 
 inline __both__ float disney_specular_bsdf_pdf(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
+    return 1.0f;
+
     float eta_i{}, eta_t{};
     auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
 
@@ -233,8 +240,8 @@ inline __both__ vec3 disney_specular_bsdf_sample(material_data const& m, vec3 co
         return disney_specular_brdf_sample(m, wo, random, wi, pdf);
     wi = normalize(wi);
 
-    pdf = 1.0f;
-    return 1.0f;
+    pdf = disney_specular_bsdf_pdf(m, wo, wi);
+    return disney_specular_bsdf_lobe(m, wo, wi);
 }
 
 #endif //PATH_TRACER_DISNEY_SPECULAR_CUH

@@ -54,8 +54,12 @@ __both__ vec3 disney_clearcoat_lobe(material_data const& m, vec3 const& wo, vec3
            (4.0f * abs(cos_theta(wo)) * abs(cos_theta(wi)));
 }
 
-inline __both__ float disney_clearcoat_pdf(vec3 const& wh, vec3 const& wi, float a)
+inline __both__ float disney_clearcoat_pdf(vec3 const& wo, vec3 const& wi, float a)
 {
+    auto wh{wi + wo};
+    if (all_zero(wh)) return 0.0f;
+    wh = owl::normalize(wh);
+
     return d_gtr1(wh, a) * cos_theta(wh) / (4.0f * dot(wh, wi));
 }
 
@@ -66,7 +70,7 @@ inline __both__ vec3 disney_clearcoat_sample(material_data const& m, vec3 const&
     auto const wh{sample_gtr1_ndf(wo, wi, a, random.rng<vec2>())};
     wi = reflect(wo, wh);
     if (!same_hemisphere(wo, wi)) return vec3{0.0f};
-    pdf = disney_clearcoat_pdf(wh, wi, a);
+    pdf = disney_clearcoat_pdf(wo, wi, a);
     return disney_clearcoat_lobe(m, wo, wi);
 }
 

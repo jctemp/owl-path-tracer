@@ -32,7 +32,7 @@ __both__ vec3 disney_sheen_component(material_data const& m, vec3 const& wo, vec
     auto const cos_theta_d{owl::dot(wi, wh)};
     auto const tint{(lum > 0.0f) ? m.base_color / lum : vec3{1.0f}};
 
-    return lerp(vec3{1.0f}, tint, m.sheen_tint) * m.sheen * schlick_weight(cos_theta_d);
+    return lerp(vec3{1.0f}, tint, m.sheen_tint) * schlick_weight(cos_theta_d);
 }
 
 
