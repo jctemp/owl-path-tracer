@@ -214,13 +214,6 @@ inline __both__ float disney_specular_bsdf_pdf(material_data const& m, vec3 cons
 inline __both__ vec3 disney_specular_bsdf_sample(material_data const& m, vec3 const& wo, random& random,
                                                  vec3& wi, float& pdf)
 {
-    if (wo.z == 0.0f)
-    {
-        wi = vec3{0.0f};
-        pdf = 0.0f;
-        return vec3{0.0f};
-    }
-
     // Sampling the specular bsdf lobe requires a different strategy than the brdf specular lobe.
     // Using the VNDF is strangely insufficient for the transmission lobe. One has to use the
     // eq. (35) and (36) from [4] in order to get correct results.
@@ -237,11 +230,7 @@ inline __both__ vec3 disney_specular_bsdf_sample(material_data const& m, vec3 co
     auto const f = fresnel_equation(wo, wh, eta_i, eta_t);
 
     if (!refract(wo, wh, eta, wi) || f > random())
-    {
-        auto const a = roughness_to_alpha(m.roughness);
-        pdf = d_gtr_2(wh, a, a) * cos_theta(wh) / (4.0f * dot(wh, wi));
-        return disney_specular_brdf_lobe(m, wo, wi);
-    }
+        return disney_specular_brdf_sample(m, wo, random, wi, pdf);
     wi = normalize(wi);
 
     pdf = 1.0f;

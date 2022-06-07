@@ -5,10 +5,7 @@
 #include "materials.hpp"
 #include "macros.hpp"
 
-#include "device/disney/disney_diffuse.cuh"
-#include "device/disney/disney_specular.cuh"
-#include "device/disney/disney_sheen.cuh"
-#include "device/disney/disney_clearcoat.cuh"
+#include "device/disney/disney.cuh"
 
 using radiance_ray = owl::RayT<0, 2>;
 using shadow_ray = owl::RayT<1, 2>;
