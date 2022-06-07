@@ -18,22 +18,12 @@ inline __both__ float eta_to_f0(float eta)
     return sqr((1.0f - eta) / (1.0f + eta));
 }
 
-inline __both__ bool relative_eta(vec3 const& wo, vec3 const& wh, float ior,
-                                  float& eta_o, float& eta_i)
+inline __both__ float relative_eta(vec3 const& wo, float ior,
+                                  float& eta_i, float& eta_t)
 {
-    bool entering{same_hemisphere(wo, wh)};
-    eta_o = entering ? ior : 1.0f;
-    eta_i = entering ? 1.0f : ior;
-    return entering;
-}
-
-inline __both__ float relative_eta(vec3 const& wo, float ior)
-{
-    float eta_o{}, eta_i{};
-    bool entering{cos_theta(wo) > 0.0f};
-    eta_o = entering ? ior : 1.0f;
-    eta_i = entering ? 1.0f : ior;
-    return eta_o / eta_i;
+    eta_i = cos_theta(wo) > 0.0f ? 1.0f : ior;
+    eta_t = cos_theta(wo) > 0.0f ? ior : 1.0f;
+    return eta_i / eta_t;
 }
 
 inline __both__ float roughness_to_alpha(float roughness)
