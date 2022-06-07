@@ -103,57 +103,48 @@ __both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, vec2 const& u
 ///     differs in implementation that one uses the visible normals and correlated geometric attenuation.
 ///     The two reasons are: the modern version are faster and better explained in [0] and [2].
 /// \return reflectance
-__both__ vec3 disney_specular_brdf_lobe(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 eval_disney_specular_brdf(material_data const& m, vec3 const& wo, vec3 const& wh, vec3 const& wi,
+                                        float& pdf)
 {
-    auto wh{wi + wo};
-    if (all_zero(wh)) return vec3{0.0f};
-    wh = owl::normalize(wh);
-
     // this part was only briefly mentioned but never really shown in the paper
     auto const lum = luminance(m.base_color);
     auto const c_tint = lum > 0.0f ? m.base_color / lum : vec3{1.0f};
     // 2015 paper Disney mentioned that the F0 is 0.08 * specular
     // this implied an ior for common materials in the range between [1, 1.8]
     // to calculate the used the impl. in brdf explorer
-    auto const c_spec = lerp(m.specular * .08f * lerp(vec3{1.0f}, c_tint, m.specular_tint),
+    // NOTE: removed the .08 factor because it was not visible
+
+    auto const c_spec = lerp(m.specular * lerp(vec3{1.0f}, c_tint, m.specular_tint),
             m.base_color, m.metallic);
 
     auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
     auto const ax{a.x}, ay{a.y};
 
-    auto const d_term{d_gtr_2(wh, ax, ay)};
-    auto const g_term{g2_smith_correlated(wo, wi, ax, ay)};
+    auto const d{d_gtr_2(wh, ax, ay)};
+    auto const g{g2_smith_correlated(wo, wi, ax, ay)};
+    auto const f{lerp(0.2f * c_spec, {1.0f}, schlick_weight(dot(wi, wh)))};
 
-    auto const f_term{lerp(c_spec, {1.0f}, schlick_weight(dot(wo, wh)))};
+    pdf = d * g1_smith(wo, ax, ay) * max(0.0f, dot(wo, wh)) / (4.0f * cos_theta(wo));
 
     // not using cos_theta(wi) because one multiplies later the love with it
-    return d_term * g_term * f_term / (4.0f * abs(cos_theta(wo)));
+    return d * g * f / (4.0f * abs(cos_theta(wo)));
 }
 
-inline __both__ float disney_specular_brdf_pdf(material_data const& m, vec3 const& wo, vec3 const& wi)
-{
-    auto wh{wi + wo};
-    if (all_zero(wh)) return 0.0f;
-    wh = owl::normalize(wh);
-
-    auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
-    auto const ax{a.x}, ay{a.y};
-    return d_gtr_2(wh, ax, ay) * g1_smith(wo, ax, ay) * max(0.0f, dot(wo, wh)) /
-           (4.0f * cos_theta(wo));
-    // used for ndf sampling
-    // return d_gtr_2(wh, ax, ay) * abs(cos_theta(wh));
-}
-
-inline __both__ vec3 disney_specular_brdf_sample(material_data const& m, vec3 const& wo, random& random,
+inline __both__ vec3 sample_disney_specular_brdf(material_data const& m, vec3 const& wo, random& random,
                                                  vec3& wi, float& pdf)
 {
-    // TODO: CHECK ANISOTROPY BECAUSE OF SKEWED ROTATION
     auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
     auto const ax{a.x}, ay{a.y};
     auto const wh = sample_gtr2_vndf(wo, ax, ay, random.rng<vec2>());
     wi = reflect(wo, wh);
-    pdf = disney_specular_brdf_pdf(m, wo, wi);
-    return disney_specular_brdf_lobe(m, wo, wi);
+
+    if (cos_theta(wi) <= 0.0f)
+    {
+        pdf = 0.0f;
+        return vec3{0.0f};
+    }
+
+    return eval_disney_specular_brdf(m, wo, wh, wi, pdf);
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -174,51 +165,14 @@ __both__ vec3 sample_gtr2_bsdf(float a, vec2 const& u)
 ///     The most difficult part here is the sampling as in the Disney paper it was not really explained
 ///     where to go for this information. Besides that Disney uses the Fresnel Equation for the fresnel
 ///     term instead of an approximation. However this differs from the [4] described formula.
-__both__ vec3 disney_specular_bsdf_lobe(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 eval_disney_specular_bsdf(material_data const& m, vec3 const& wo, vec3 const& wh, vec3 const& wi,
+                                        float& pdf)
 {
+    pdf = 1.0f;
     return 1.0f;
-
-    float eta_i{}, eta_t{};
-    auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
-
-    // half-vector for transmission [4] eq. (16)
-    auto wh = normalize(wo + wi * eta);
-    if (wh.z < 0) wh = -wh;
-
-    auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
-    auto const f = fresnel_equation(wo, wh, eta_i, eta_t);
-    auto const d = d_gtr_2(wh, a.x, a.y);
-    auto const g = g2_smith_correlated(wo, wi, wh, a.x, a.y);
-
-    auto const denom2 = sqr(eta * dot(wo, wh) + dot(wi, wh));
-    auto const eta2 = sqr(eta);
-    auto const jacobian = abs(dot(wi, wh)) / denom2;
-
-    return sqrt(m.base_color) * (1.0f - f) * d * g * abs(dot(wo, wh)) * jacobian * eta2 / abs(dot(wi, wh));
 }
 
-inline __both__ float disney_specular_bsdf_pdf(material_data const& m, vec3 const& wo, vec3 const& wi)
-{
-    return 1.0f;
-
-    float eta_i{}, eta_t{};
-    auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
-
-    // half-vector for transmission [4] eq. (16)
-    auto wh = normalize(wo + wi * eta);
-    if (wh.z < 0) wh = -wh;
-
-    auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
-    auto const g1o = g1_smith(wo, a.x, a.y);
-    auto const d = d_gtr_2(wh, a.x, a.y);
-
-    auto const denom2 = sqr(eta * dot(wo, wh) + dot(wi, wh));
-    auto const jacobian = abs(dot(wi, wh)) / denom2;
-
-    return g1o * max(.0f, dot(wi, wh)) * d * jacobian / cos_theta(wi);
-}
-
-inline __both__ vec3 disney_specular_bsdf_sample(material_data const& m, vec3 const& wo, random& random,
+inline __both__ vec3 sample_disney_specular_bsdf(material_data const& m, vec3 const& wo, random& random,
                                                  vec3& wi, float& pdf)
 {
     // Sampling the specular bsdf lobe requires a different strategy than the brdf specular lobe.
@@ -228,20 +182,23 @@ inline __both__ vec3 disney_specular_bsdf_sample(material_data const& m, vec3 co
     // auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
     // auto wh = sample_gtr2_vndf(wo, a.x, a.y, random.rng<vec2>());
     // auto wh = vec3{0,0,1};
+    auto wh = sample_gtr2_bsdf(roughness_to_alpha(m.specular_transmission_roughness), random.rng<vec2>());
 
-    auto wh = sample_gtr2_bsdf(roughness_to_alpha(m.roughness), random.rng<vec2>());
-    if (!same_hemisphere(wo, wh)) wh = -wh;
+    if (cos_theta(wo) < 0.0f) wh = -wh;
 
     float eta_i{}, eta_t{};
     auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
-    auto const f = fresnel_equation(wo, wh, eta_i, eta_t);
+    auto const f{fresnel_equation(wo, wh, eta_i, eta_t)};
 
     if (!refract(wo, wh, eta, wi) || f > random())
-        return disney_specular_brdf_sample(m, wo, random, wi, pdf);
+    {
+        material_data copy = m;
+        copy.roughness = 0.0f;
+        return sample_disney_specular_brdf(copy, wo, random, wi, pdf);
+    }
     wi = normalize(wi);
 
-    pdf = disney_specular_bsdf_pdf(m, wo, wi);
-    return disney_specular_bsdf_lobe(m, wo, wi);
+    return eval_disney_specular_bsdf(m, wo, wh, wi, pdf);
 }
 
 #endif //PATH_TRACER_DISNEY_SPECULAR_CUH

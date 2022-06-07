@@ -31,8 +31,10 @@ inline __both__ vec3 calculate_tint(const vec3& base_color)
 // Physically Based Shading at Disney 2012 - Section 5.1 page 15
 inline __both__ vec2 to_alpha(float roughness, float anisotopic = 0.0f)
 {
-    auto const aspect{owl::sqrt(1.0f - 0.9f * anisotopic)};
-    return vec2{owl::max(alpha_min, sqr(roughness) / aspect), owl::max(alpha_min, sqr(roughness) * aspect)};
+    auto const aspect{sqrt(1.0f - 0.9f * anisotopic)};
+    return vec2{
+        max(alpha_min, sqr(roughness) / aspect),
+        max(alpha_min, sqr(roughness) * aspect)};
 }
 
 // An Inexpensive BRDF Model for Physically Based Rendering - Schlick - equ. (15)

@@ -23,7 +23,7 @@
 /// \param wo The outgoing direction.
 /// \param wi The sampled incident direction.
 /// \returns The reflectance of this lobe. Color is already accounted for.
-__both__ vec3 disney_diffuse_lobe(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 eval_disney_diffuse(material_data const& m, vec3 const& wo, vec3 const& wh, vec3 const& wi, float& pdf)
 {
     /// 2015 - refactored diffuse component                                         <br>
     ///                                                                             <br>
@@ -49,20 +49,16 @@ __both__ vec3 disney_diffuse_lobe(material_data const& m, vec3 const& wo, vec3 c
     auto const rr{m.roughness * (dot(wo, wi) + 1.0f)};
     auto const fr{rr * (fresnel_i + fresnel_o + fresnel_o * fresnel_i * (rr - 1.0f))};
 
+    pdf = pdf_cosine_hemisphere(wo, wi);
+
     return lambert * (fd + fr);
 }
 
-inline __both__ float disney_diffuse_pdf(material_data const& m, vec3 const& wo, vec3 const& wi)
-{
-    return pdf_cosine_hemisphere(wo, wi);
-}
-
-inline __both__ vec3 disney_diffuse_sample(material_data const& m, vec3 const& wo, random& random,
+inline __both__ vec3 sample_disney_diffuse(material_data const& m, vec3 const& wo, random& random,
                                            vec3& wi, float& pdf)
 {
     wi = sample_cosine_hemisphere(random.rng<vec2>());
-    pdf = disney_diffuse_pdf(m, wo, wi);
-    return disney_diffuse_lobe(m, wo, wi);
+    return eval_disney_diffuse(m, wo, {} ,wi, pdf);
 }
 
 #endif //PATH_TRACER_DISNEY_DIFFUSE_CUH

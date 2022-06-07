@@ -1,0 +1,109 @@
+#ifndef PATH_TRACER_DISNEY_CUH
+#define PATH_TRACER_DISNEY_CUH
+
+#include "device/disney/disney_diffuse.cuh"
+#include "device/disney/disney_specular.cuh"
+#include "device/disney/disney_sheen.cuh"
+#include "device/disney/disney_clearcoat.cuh"
+
+#define DISNEY_DIFFUSE_LOBE 0
+#define DISNEY_CLEARCOAT_LOBE 1
+#define DISNEY_METALLIC_LOBE 2
+#define DISNEY_GLASS_LOBE 3
+
+__both__ vec3 disney_f(material_data const& m, vec3 const& wo, vec3 const &wi, int32_t& sampled_lobe)
+{
+    auto diffuse_weight = (1.0f - m.specular_transmission) * (1.0f - m.metallic);
+    auto metallic_weight = m.metallic;
+    auto clearcoat_weight = .25f * m.clearcoat;
+    auto glass_weight = (1.0f - m.metallic) * m.specular_transmission;
+
+    auto const diffuse = disney_diffuse_lobe(m, wo, wi);
+    auto const metallic = disney_specular_brdf_lobe(m, wo, wi);
+    auto const clearcoat = disney_clearcoat_lobe(m, wo, wi);
+    auto const glass = disney_specular_bsdf_lobe(m, wo, wi);
+
+    return diffuse * diffuse_weight + clearcoat * clearcoat_weight +
+            metallic * metallic_weight + glass * glass_weight;
+}
+
+__both__ float disney_pdf(material_data const& m, vec3 const& wo, vec3 const &wi, int32_t& sampled_lobe)
+{
+    auto diffuse_weight = (1.0f - m.specular_transmission) * (1.0f - m.metallic);
+    auto metallic_weight = m.metallic;
+    auto clearcoat_weight = .25f * m.clearcoat;
+    auto glass_weight = (1.0f - m.metallic) * m.specular_transmission;
+
+    auto p_diffuse = pdf_cosine_hemisphere(wo, wi);
+    auto p_metallic = disney_specular_brdf_pdf(m, wo, wi);
+    auto p_glass = disney_specular_bsdf_pdf(m, wo, wi);
+    auto p_clearcoat = disney_clearcoat_pdf(m, wo, wi);
+
+    return (p_diffuse * diffuse_weight + p_clearcoat * clearcoat_weight +
+        p_metallic * metallic_weight + p_glass * glass_weight);
+}
+
+__both__ vec3 disney_sample(material_data const& m, vec3 const& wo, random& random,
+                             vec3& wi, float& pdf, int32_t& sampled_lobe)
+{
+    auto diffuse_weight = (1.0f - m.specular_transmission) * (1.0f - m.metallic);
+    auto metallic_weight = m.metallic;
+    auto clearcoat_weight = .25f * m.clearcoat;
+    auto glass_weight = (1.0f - m.metallic) * m.specular_transmission;
+
+    float weighted_sum = 1.0f / (diffuse_weight + metallic_weight + clearcoat_weight + glass_weight);
+
+    // printf("diffuse_weight=%f\nmetallic_weight=%f\nclearcoat_weight=%f\nglass_weight=%f\nweighted_sum=%f\n",
+    //         diffuse_weight, metallic_weight, clearcoat_weight, glass_weight, weighted_sum);
+
+    auto p_diffuse =  diffuse_weight * weighted_sum;
+    auto p_metallic =  metallic_weight * weighted_sum;
+    auto p_clearcoat =  clearcoat_weight * weighted_sum;
+    auto p_glass =  glass_weight * weighted_sum;
+
+    float cdf[4]{0};
+    cdf[0] = p_diffuse;
+    cdf[1] = p_clearcoat + cdf[0];
+    cdf[2] = p_metallic + cdf[1];
+    cdf[3] = p_glass + cdf[2];
+
+    vec3 f{0.0f};
+
+    float r = random();
+    if (r < cdf[0]) // sample diffuse lobe
+    {
+        wi = sample_cosine_hemisphere(random.rng<vec2>());
+        sampled_lobe = DISNEY_DIFFUSE_LOBE;
+    }
+    else if (r < cdf[1]) // sample clearcoat lobe
+    {
+        auto const a{lerp(0.1f, .001f, m.clearcoat_gloss)};
+        auto const wh{sample_gtr1_ndf(wi ,wi, a, random.rng<vec2>())};
+        wi = reflect(wo, wh);
+        sampled_lobe = DISNEY_CLEARCOAT_LOBE;
+    }
+    else if (r < cdf[2]) // sample specular reflective lobe
+    {
+        auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
+        auto const ax{a.x}, ay{a.y};
+        auto const wh = sample_gtr2_vndf(wo, ax, ay, random.rng<vec2>());
+        wi = reflect(wo, wh);
+        sampled_lobe = DISNEY_METALLIC_LOBE;
+    }
+    else if (r < cdf[3])
+    {
+        auto wh = sample_gtr2_bsdf(roughness_to_alpha(m.roughness), random.rng<vec2>());
+        if (!same_hemisphere(wo, wh)) wh = -wh;
+        wi = reflect(wo, wh);
+        sampled_lobe = DISNEY_GLASS_LOBE;
+    }
+
+    f = disney_f(m, wo, wi, sampled_lobe);
+    pdf = disney_pdf(m, wo, wi, sampled_lobe);
+
+    auto sheen_weight = (1.0f - m.metallic) * m.sheen;
+    f += sheen_weight * disney_sheen_component(m, wo, wi);
+    return f;
+}
+
+#endif //PATH_TRACER_DISNEY_CUH

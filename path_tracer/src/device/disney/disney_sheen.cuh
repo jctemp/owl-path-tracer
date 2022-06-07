@@ -12,7 +12,7 @@
 ///     This component is based on observations of fabric samples and should add a missing
 ///     effect of the diffuse and specular reflectance lobe at grazing angles.
 /// \returns Extra reflectance for grazing angles.
-__both__ vec3 disney_sheen_component(material_data const& m, vec3 const& wo, vec3 const& wi)
+__both__ vec3 eval_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
     if (m.sheen <= 0.0f) return vec3{0.0f};
 
@@ -32,7 +32,7 @@ __both__ vec3 disney_sheen_component(material_data const& m, vec3 const& wo, vec
     auto const cos_theta_d{owl::dot(wi, wh)};
     auto const tint{(lum > 0.0f) ? m.base_color / lum : vec3{1.0f}};
 
-    return lerp(vec3{1.0f}, tint, m.sheen_tint) * schlick_weight(cos_theta_d);
+    return lerp(vec3{1.0f}, tint, m.sheen_tint) * m.sheen * schlick_weight(cos_theta_d);
 }
 
 

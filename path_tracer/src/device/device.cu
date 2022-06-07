@@ -2,7 +2,6 @@
 
 #include "types.hpp"
 #include "device.hpp"
-#include "materials.hpp"
 #include "macros.hpp"
 
 #include "device/disney/disney.cuh"
@@ -148,14 +147,20 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         float pdf{};
         vec3 f{};
 
-        f = disney_specular_bsdf_sample(material, local_wo, prd.random,
-                local_wi, pdf);
+        f = sample_disney(material, local_wo, prd.random,
+                         local_wi, pdf);
+
+        // f = sample_disney_diffuse(material, local_wo, prd.random,
+        //         local_wi, pdf);
+
+        // f = sample_disney_specular_bsdf(material, local_wo, prd.random,
+        //         local_wi, pdf);
+
+        // f = sample_disney_specular_brdf(material, local_wo, prd.random,
+        //         local_wi, pdf);
 
         // f = disney_clearcoat_sample(material, local_wo, prd.random,
         //                             local_wi, pdf);
-
-        // f = disney_specular_brdf_sample(material, local_wo, prd.random,
-        //         local_wi, pdf);
 
         // sample_lambert(material, local_wo, prd.random, local_wi, f, pdf, sampled_type);
 
