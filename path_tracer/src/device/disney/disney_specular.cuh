@@ -112,9 +112,7 @@ __both__ vec3 eval_disney_specular_brdf(material_data const& m, vec3 const& wo, 
     // 2015 paper Disney mentioned that the F0 is 0.08 * specular
     // this implied an ior for common materials in the range between [1, 1.8]
     // to calculate the used the impl. in brdf explorer
-    // NOTE: removed the .08 factor because it was not visible
-
-    auto const c_spec = lerp(m.specular * lerp(vec3{1.0f}, c_tint, m.specular_tint),
+    auto c_spec = lerp(.08f * m.specular * lerp(vec3{1.0f}, c_tint, m.specular_tint),
             m.base_color, m.metallic);
 
     auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
@@ -122,7 +120,7 @@ __both__ vec3 eval_disney_specular_brdf(material_data const& m, vec3 const& wo, 
 
     auto const d{d_gtr_2(wh, ax, ay)};
     auto const g{g2_smith_correlated(wo, wi, ax, ay)};
-    auto const f{lerp(0.2f * c_spec, {1.0f}, schlick_weight(dot(wi, wh)))};
+    auto const f{lerp( c_spec, {1.0f}, schlick_weight(dot(wi, wh)))};
 
     pdf = d * g1_smith(wo, ax, ay) * max(0.0f, dot(wo, wh)) / (4.0f * cos_theta(wo));
 
@@ -135,7 +133,8 @@ inline __both__ vec3 sample_disney_specular_brdf(material_data const& m, vec3 co
 {
     auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
     auto const ax{a.x}, ay{a.y};
-    auto const wh = sample_gtr2_vndf(wo, ax, ay, random.rng<vec2>());
+    auto wh = sample_gtr2_vndf(wo, ax, ay, random.rng<vec2>());
+    if (dot(wo, wh) < 0.0f) wh = -wh;
     wi = reflect(wo, wh);
 
     if (cos_theta(wi) <= 0.0f)
@@ -165,11 +164,30 @@ __both__ vec3 sample_gtr2_bsdf(float a, vec2 const& u)
 ///     The most difficult part here is the sampling as in the Disney paper it was not really explained
 ///     where to go for this information. Besides that Disney uses the Fresnel Equation for the fresnel
 ///     term instead of an approximation. However this differs from the [4] described formula.
+/// \note
+///     For the pdf one uses the implementation in pbrt-v4. The implementation struggled with weired
+///     energy loss for a pdf of 1.0f. Other pdf did suffer form a similar issue.
 __both__ vec3 eval_disney_specular_bsdf(material_data const& m, vec3 const& wo, vec3 const& wh, vec3 const& wi,
                                         float& pdf)
 {
-    pdf = 1.0f;
-    return 1.0f;
+    float eta_i{}, eta_t{};
+    auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
+    auto const R{fresnel_equation(wo, wh, eta_i, eta_t)};
+    auto const T{1.0f - R};
+    auto const pr = R, pt = T;
+
+    // Importance sampling or reflectance not fully correct as it yields fireflys
+    // for rough transmission.
+    if (same_hemisphere(wo, wi))
+    {
+        pdf = pr / (pr + pt);
+        return m.base_color * R / abs(cos_theta(wi));
+    }
+
+    pdf = pt / (pr + pt);
+    // eta² is here a correction factor to restore reciprocity and to get
+    // the correct radiance value for light passing transmissive media.
+    return (sqrt(m.base_color) * T / abs(cos_theta(wi))) / sqr(eta);
 }
 
 inline __both__ vec3 sample_disney_specular_bsdf(material_data const& m, vec3 const& wo, random& random,
@@ -184,19 +202,16 @@ inline __both__ vec3 sample_disney_specular_bsdf(material_data const& m, vec3 co
     // auto wh = vec3{0,0,1};
     auto wh = sample_gtr2_bsdf(roughness_to_alpha(m.specular_transmission_roughness), random.rng<vec2>());
 
-    if (cos_theta(wo) < 0.0f) wh = -wh;
+    if (cos_theta(wo) < 0.0f && !same_hemisphere(wo, wh)) wh = -wh;
 
     float eta_i{}, eta_t{};
     auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
-    auto const f{fresnel_equation(wo, wh, eta_i, eta_t)};
+    auto const R{fresnel_equation(wo, wh, eta_i, eta_t)};
+    auto const T{1.0f - R};
+    auto const pr = R, pt = T;
 
-    if (!refract(wo, wh, eta, wi) || f > random())
-    {
-        material_data copy = m;
-        copy.roughness = 0.0f;
-        return sample_disney_specular_brdf(copy, wo, random, wi, pdf);
-    }
-    wi = normalize(wi);
+    if (!refract(wo, wh, eta, wi) || random() < pr / (pr + pt))
+        wi = normalize(reflect(wo, wh));
 
     return eval_disney_specular_bsdf(m, wo, wh, wi, pdf);
 }

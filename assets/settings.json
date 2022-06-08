@@ -1,20 +1,20 @@
 {
-    "scene": "dragon",
+    "scene": "sphere",
     "buffer_size": [1024, 1024],
-    "max_samples": 128,
-    "max_path_depth": 16,
+    "max_samples": 1024,
+    "max_path_depth": 64,
     "environment_use": true,
     "environment_auto": false,
     "environment_color": [1, 1, 1],
     "environment_intensity": 1,
     "test" : {
-        "name": "lambert_base_color",
-        "material_name" : "dragon",
-        "attribute_name" : "base_color",
-        "interpolate" : true,
+        "name": "disney",
+        "material_name" : "sphere",
+        "attribute_name" : "specular_transmission_roughness",
+        "material_type" : 2,
         "values" : [
-          [1.0,1.0,1.0],
-          [0.0,0.0,0.0]
+          1.0,
+          0.0
         ],
         "step_size" : 0.1
     }

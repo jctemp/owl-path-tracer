@@ -323,5 +323,5 @@ void render_frame(owl_data& data, program_data& pdata, test_data& tdata, std::st
     image_buffer result{pdata.buffer_size.x, pdata.buffer_size.y,
                         reinterpret_cast<uint32_t const *>(buffer_to_pointer(pdata.framebuffer, 0)),
                         image_buffer::tag::referenced};
-    write_image(result, fmt::format("{}-{}_{}({}).png", pdata.scene, tdata.name, tdata.attribute_name, values), std::filesystem::current_path().string());
+    write_image(result, fmt::format("{}_{}_{}({}).png", pdata.scene, tdata.name, tdata.attribute_name, values), std::filesystem::current_path().string());
 }

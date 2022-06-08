@@ -6,10 +6,11 @@
 #include "device/disney/disney_sheen.cuh"
 #include "device/disney/disney_clearcoat.cuh"
 
-#define DISNEY_DIFFUSE_LOBE 0
-#define DISNEY_CLEARCOAT_LOBE 1
-#define DISNEY_METALLIC_LOBE 2
-#define DISNEY_GLASS_LOBE 3
+#define DISNEY_SAMPLED_LOBE_NONE -1
+#define DISNEY_SAMPLED_LOBE_DIFFUSE 0
+#define DISNEY_SAMPLED_LOBE_CLEARCOAT 1
+#define DISNEY_SAMPLED_LOBE_METALLIC 2
+#define DISNEY_SAMPLED_LOBE_GLASS 3
 
 __both__ void calculate_pdf_of_lobes(material_data const& m, float& p_metallic, float& p_diffuse,
                                      float& p_clearcoat, float& p_glass)
@@ -28,7 +29,7 @@ __both__ void calculate_pdf_of_lobes(material_data const& m, float& p_metallic, 
 }
 
 __both__ vec3 sample_disney(material_data const& m, vec3 const& wo, random& random,
-                            vec3& wi, float& pdf)
+                            vec3& wi, float& pdf, int& sampled_lobe)
 {
     float p_metallic;
     float p_diffuse;
@@ -36,24 +37,32 @@ __both__ vec3 sample_disney(material_data const& m, vec3 const& wo, random& rand
     float p_glass;
     calculate_pdf_of_lobes(m, p_metallic, p_diffuse, p_clearcoat, p_glass);
 
+    bool force_btdf{cos_theta(wo) < 0.0f && sampled_lobe == DISNEY_SAMPLED_LOBE_GLASS};
+
     float p = random();
     vec3 f{};
-    if(p <= p_metallic) {
+    if(!force_btdf && p <= p_metallic)
+    {
         f = sample_disney_specular_brdf(m, wo, random, wi, pdf);
+        sampled_lobe = DISNEY_SAMPLED_LOBE_METALLIC;
     }
-    else if(p > p_metallic && p <= (p_metallic + p_clearcoat)) {
+    else if(!force_btdf && p > p_metallic && p <= (p_metallic + p_clearcoat))
+    {
         f = sample_disney_clearcoat(m, wo, random, wi, pdf);
+        sampled_lobe = DISNEY_SAMPLED_LOBE_CLEARCOAT;
     }
-    else if(p > p_metallic + p_clearcoat && p <= (p_metallic + p_clearcoat + p_diffuse)) {
+    else if(!force_btdf && p > p_metallic + p_clearcoat && p <= (p_metallic + p_clearcoat + p_diffuse))
+    {
         f = sample_disney_diffuse(m, wo, random, wi, pdf);
+        sampled_lobe = DISNEY_SAMPLED_LOBE_DIFFUSE;
     }
-    else if(p_glass >= 0.0f) {
+    else if(force_btdf || p_glass >= 0.0f)
+    {
         f = sample_disney_specular_bsdf(m, wo, random, wi, pdf);
+        sampled_lobe = DISNEY_SAMPLED_LOBE_GLASS;
     }
 
-    auto const shn{eval_disney_sheen(m, wo, wi)};
-
-    return f + shn;
+    return f + eval_disney_sheen(m, wo, wi);
 }
 
 

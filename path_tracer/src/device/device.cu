@@ -104,6 +104,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
     hit_data hd;
     material_data ms;
     per_ray_data prd{random, scatter_event::none, &hd, &ms};
+    int32_t sampled_lobe{DISNEY_SAMPLED_LOBE_NONE};
 
     for (int32_t depth{0}; depth < launch_params.max_path_depth; ++depth)
     {
@@ -135,51 +136,37 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         vec3 T{}, B{};
         onb(v_gn, T, B);
 
-
         material_data material{};
         if (hd.material_index >= 0)
         {
             get_data(material, launch_params.material_buffer, hd.material_index, material_data);
         }
 
-        vec3 local_wo{to_local(T, B, v_gn, wo)}, local_wi{};
+        vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{};
 
         float pdf{};
         vec3 f{};
 
         f = sample_disney(material, local_wo, prd.random,
-                         local_wi, pdf);
+                local_wi, pdf, sampled_lobe);
 
-        // f = sample_disney_diffuse(material, local_wo, prd.random,
-        //         local_wi, pdf);
-
-        // f = sample_disney_specular_bsdf(material, local_wo, prd.random,
-        //         local_wi, pdf);
-
-        // f = sample_disney_specular_brdf(material, local_wo, prd.random,
-        //         local_wi, pdf);
-
-        // f = disney_clearcoat_sample(material, local_wo, prd.random,
-        //                             local_wi, pdf);
-
-        // sample_lambert(material, local_wo, prd.random, local_wi, f, pdf, sampled_type);
-
-        // sample_disney_bsdf(material, local_wo, prd.random,
-        //       < local_wi, local_wh, f, pdf, sampled_type);
-
-        wi = to_world(T, B, v_gn, local_wi);
+        wi = to_world(T, B, v_n, local_wi);
         /// terminate or catching de-generate paths
         if (pdf < 1E-5f)
             break;
 
         if (has_inf(f) || has_nan(f))
         {
-            printf("f has nan or inf\n");
+            printf("f=%f %f %f\n", f.x, f.y, f.z);
             --depth; // invalid path and re-sample
             continue;
         }
 
+            //ray = radiance_ray{v_p, wi, t_min, t_max};
+
         beta *= f * owl::abs(cos_theta(local_wi)) / pdf;
+
+
 
         /// terminate path by random
         // auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
