@@ -1,0 +1,99 @@
+\chapter{Literature review}
+
+This chapter should give the reader an overview of the components required for a global illumination model.
+For the sake of the scope, one will briefly describe the different topics; therefore, if concepts or terms are unclear, one has to revise those accordingly.
+As a side note, the order of sections does not correspond to a linearity of the concepts.
+
+\section{Fundamentals of light}
+
+Physics is building the basis for computer graphics.
+In general, simulating natural processes requires understanding provided models describing these processes.
+
+For Ray-Tracing, one is curious about the natural process of light.
+Hence, physics supplies numerous models that have various benefits in explaining all types of phenomena concerning light, and over the past decades, these models advanced in complexity. 
+Luckily, most complex formulas are not needed, as it is possible to reduce light to a minimum by utilising the law of optics and radiometry for computer graphics.
+
+The goal is to simulate light propagation, which describes how light travels in a fixed amount of time through a scene and interacts with varied objects.
+Interactions often occur around an interface describing the boundary between two media.
+Different types of interaction can happen depending on the material and the state of the light.
+That means interactions determine how one perceives an environment.
+\cite{duin_beleuchtungsalgorithmen_nodate}
+
+Accordingly, in 1986, Kajiya introduced a generalised illumination model building the basis for modern Ray-Tracers.
+The so-called rendering equation is a model describing light propagation in an elegant recursive formula.
+
+$$
+L_o(p,\omega_o)=\int_{\Omega}f(p,\omega_o,\omega_i)\,L_i(p,\omega_i)\left(\cos\theta_i\right)\,d\omega_i
+$$
+
+The integral gives the out-going equilibrium radiance at a point $p$ as a product of a function $f$, the in-coming radiance $L_i$ and a cosine term.
+To evaluate the out-going radiance at the point, one has to integrate a hemisphere around this point, considering every possible contribution \cite{kajiya_rendering_1986}.
+
+However, the integral opposes a significant problem; therefore, one will introduce one essential concept that allows the computation of an approximate result.
+
+\section{Monte-Carlo Integration}
+
+In computer science, solving a mathematical equation containing complex operations as the integration is often not possible due to the limited resources computers provide.
+Thus, one must utilise numerical methods to determine an approximate solution for equations with integrals.
+The problem is that the integrated functions are often high dimensional or have discontinuities, making well-known methods like the midpoint method obsolete.
+\cite{pharr_physically_2017}
+
+The solution is to use the Monte-Carlo integration that utilises randomness to solve arbitrary mathematical problems.
+Conceptual, the technique only repeats random sampling and evaluating a given function to find a solution.
+The benefit is that the integration method is robust regarding high dimensions and discontinuities and can yield a more acceptable result with increasing samples. 
+However, it opposes the most significant drawback, where many samples are necessary to deduce low variance approximates, leading to a tremendous increase in time.
+
+Nonetheless, this is not fatal as many variance-reduction methods are available to make the algorithms sufficient.
+In optimisations, one will present "importance samples" as a method.
+\cite{kalos_monte_2008}
+
+Now, one familiarises the Monte-Carlo estimator, which allows for an approximation of arbitrary integrals.
+The goal is to estimate an integral of this form:
+
+$$
+F=\int_{a}^{b}f(x)\,dx
+$$
+
+The basic idea is that one chooses randomly a value $v$ in the interval $[a,b]$ and evaluates $f(v)$ which yields the height at $v$.
+Multiplying the height with the width of the interval $b-a$, one gets an area which is a highly simple approximation.
+Repeating this process for $N$ samples and constructing the mean of these values will give a far more acceptable result.
+One is formalising the depicted procedure.
+
+$$
+F_N=\frac{b-a}{N}\sum_{i=1}^{N}f(X_i)\quad\text{with}\quad\,X_i\in[a,b]
+$$
+
+A noteworthy fact is that the expected value of $F_N$ converges against the exact value of the integral.
+The current estimator is unflexible because the random variable $X_i$ must be from a uniform distribution.
+Therefore, one can generalise the estimator using the probability density function to weight the values $f(x)$.
+
+$$
+F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}
+$$
+
+The Monte-Carlo integration is the first part required for rendering using a global illumination model.
+\cite{veach_optimally_1995}
+
+\section{Path Tracing}
+
+Next, one presents Path Tracing, an image synthesis algorithm to simulate global illumination.
+
+
+Why is Path-Tracing required for global illumination models? -> Rendering Equation
+How does Path-Tracing fit into the framework of Monte-Carlo?
+\section{Light Interactions}
+calculating interactions
+principled models
+Disney BSDF
+Diffuse, Retro, Sheen
+Microfacet Models
+\section{Optimisations}
+monte-Carlo (Russian roulette and parallelisation)
+importance sampling
+Surface
+Light
+parallelisation
+Summary
+robustness of a path-tracer (different test scenes)
+visual fidelity => how accurate represent materials
+time vs variance
