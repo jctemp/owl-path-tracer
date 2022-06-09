@@ -1,0 +1,76 @@
+% <2022-04-09> Jamie Temple
+
+% ━━ Packages ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\documentclass[12pt, DIV=14, version=first, BCOR=10mm, a4paper, twoside, parskip=half-, headsepline, headinclude]{scrreprt}
+
+\usepackage[headsepline,automark]{scrlayer-scrpage}
+\usepackage[ngerman, english]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{blindtext}
+\usepackage{listings}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{scrhack}
+\usepackage{lmodern}
+\usepackage{xcolor}
+\usepackage{lipsum}
+
+% ━━  Global Variables   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\def \wordmark{logostaffel-wi/word-mark-wi-black.png}
+\def \logo{logostaffel-wi/h-wi-title.png}
+\def \firstname{Jamie}
+\def \surname{Temple}
+\def \papertitle{GPU Path Tracing}
+\def \papersubtitle{Bachelor-Arbeit im Studiengang "`Angewandte Informatik"'}
+
+\graphicspath{ {images/} }
+
+% ━━  Style Setting    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+
+\definecolor{MidnightBlue}{cmyk}{0.98,0.13,0,0.43}
+\hypersetup{
+	colorlinks,breaklinks=true, 
+	pdffitwindow=true,
+	pdfpagelayout=SinglePage,
+	linkcolor=blue,
+	pdfauthor={},
+	pdfdisplaydoctitle=true,
+	pdfsubject={\papertitle},
+	bookmarksnumbered,
+	citecolor=MidnightBlue,
+	urlcolor=MidnightBlue
+}
+
+% ━━ Document  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+\begin{document}
+
+\include{preamble/titlepage.tex}
+% \include{preamble/eidesstattliche-erklaerung.tex}
+\include{preamble/declaration-of-authorship.tex}
+
+
+\pdfbookmark[0]{Inhalt}{contents}
+\tableofcontents
+\listoffigures
+\listoftables
+% \blinddocument
+
+\include{chapters/introduction}
+\newpage
+\include{chapters/chapter01}
+\newpage
+\include{chapters/conclusion}
+\newpage
+
+% \bibliographystyle{alpha}  % Schlüssel als Buchstaben
+% \bibliography{references}      % Literaturverzeichnis
+
+\end{document}
+
+
