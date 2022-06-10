@@ -3,6 +3,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+*.png
+!thesis/**/*.png
+
 *.pdf
 *.aux
 *.fls
@@ -14,7 +17,6 @@
 *.toc
 
 Folder.DotSettings.user
-*.png
 .vscode
 
 .idea
