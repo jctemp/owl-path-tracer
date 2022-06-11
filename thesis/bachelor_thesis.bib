@@ -1,4 +1,12 @@
 
+@book{duin_beleuchtungsalgorithmen_nodate,
+	title = {Beleuchtungsalgorithmen in der {Computergrafik}},
+	isbn = {3-540-56284-2},
+	language = {Deutsch},
+	publisher = {Springer-Verlag},
+	author = {Duin, Heiko and Symanzik, Günter and Claussen, Ute},
+}
+
 @article{kajiya_rendering_1986,
 	title = {{THE} {RENDERING} {EQUATION}},
 	volume = {20},
@@ -10,12 +18,55 @@
 	file = {Kajiya - 1986 - THE RENDERING EQUATION.pdf:C\:\\Users\\jamie\\Zotero\\storage\\S9XQDHHI\\Kajiya - 1986 - THE RENDERING EQUATION.pdf:application/pdf},
 }
 
-@book{duin_beleuchtungsalgorithmen_nodate,
-	title = {Beleuchtungsalgorithmen in der {Computergrafik}},
-	isbn = {3-540-56284-2},
-	language = {Deutsch},
-	publisher = {Springer-Verlag},
-	author = {Duin, Heiko and Symanzik, Günter and Claussen, Ute},
+@article{burley_extending_nodate,
+	title = {Extending the {Disney} {BRDF} to a {BSDF} with {Integrated} {Subsurface} {Scattering}},
+	language = {en},
+	author = {Burley, Brent and Studios, Walt Disney Animation},
+	pages = {19},
+	file = {Burley and Studios - Extending the Disney BRDF to a BSDF with Integrate.pdf:C\:\\Users\\jamie\\Zotero\\storage\\5LSWJJS8\\Burley and Studios - Extending the Disney BRDF to a BSDF with Integrate.pdf:application/pdf},
+}
+
+@article{burley_physically_nodate,
+	title = {Physically {Based} {Shading} at {Disney}},
+	language = {en},
+	author = {Burley, Brent},
+	pages = {27},
+	file = {Burley - Physically Based Shading at Disney.pdf:C\:\\Users\\jamie\\Zotero\\storage\\RQRGL97Y\\Burley - Physically Based Shading at Disney.pdf:application/pdf},
+}
+
+@article{heitz_sampling_2018,
+	title = {Sampling the {GGX} {Distribution} of {Visible} {Normals}},
+	volume = {7},
+	abstract = {Importance sampling microfacet bidirectional scattering distribution functions (BSDFs) using their distribution of visible normals (VNDF) yields signiﬁcant variance reduction in Monte Carlo rendering. In this article, we describe an efﬁcient and exact sampling routine for the VNDF of the GGX microfacet distribution. This routine leverages the property that GGX is the distribution of normals of a truncated ellipsoid, and sampling the GGX VNDF is equivalent to sampling the 2D projection of this truncated ellipsoid. To do that, we simplify the problem by using the linear transformation that maps the truncated ellipsoid to a hemisphere. Since linear transformations preserve the uniformity of projected areas, sampling in the hemisphere conﬁguration and transforming the samples back to the ellipsoid conﬁguration yields valid samples from the GGX VNDF.},
+	language = {en},
+	number = {4},
+	author = {Heitz, Eric},
+	year = {2018},
+	pages = {13},
+	file = {Heitz - 2018 - Sampling the GGX Distribution of Visible Normals.pdf:C\:\\Users\\jamie\\Zotero\\storage\\7GX4UIKI\\Heitz - 2018 - Sampling the GGX Distribution of Visible Normals.pdf:application/pdf},
+}
+
+@article{schlick_inexpensive_1994,
+	title = {An {Inexpensive} {BRDF} {Model} for {Physically}-based {Rendering}},
+	volume = {13},
+	abstract = {: A new BRDF model is presented which can be viewed as an kind of intermediary model between empirism and theory. Main results of physics are observed (energy conservation, reciprocity rule, microfacet theory) and numerous phenomena involved in light reflection are accounted for, in a physically plausible way (incoherent and coherent reflection, spectrum modifications, anisotropy, self-shadowing, multiple surface and subsurface reflection, differences between homogeneous and heterogeneous materials). The model has been especially intended for computer graphics applications and therefore includes two main features : simplicity  (a small number of intuitively understandable parameters controls the model) and efficiency (the formulation provides adequation to Monte-Carlo rendering techniques and/or hardware implementations).  Keywords : Physically-Based Rendering, Bidirectional Reflectance Distribution Function, Optimization  1 Introduction  Computation of a reflectance model is the heart...},
+	journal = {Computer Graphics Forum},
+	author = {Schlick, Christophe},
+	year = {1994},
+	pages = {233--246},
+	file = {Citeseer - Full Text PDF:C\:\\Users\\jamie\\Zotero\\storage\\XYKASL83\\Schlick - 1994 - An Inexpensive BRDF Model for Physically-based Ren.pdf:application/pdf;Citeseer - Snapshot:C\:\\Users\\jamie\\Zotero\\storage\\ZY9QWDNA\\download.html:text/html},
+}
+
+@article{heitz_understanding_2014,
+	title = {Understanding the {Masking}-{Shadowing} {Function} in {Microfacet}-{Based} {BRDFs}},
+	volume = {3},
+	abstract = {We provide a new presentation of the masking-shadowing functions (or geometric attenuation factors) in microfacet-based BRDFs and answer some common questions about their applications. Our main motivation is to deﬁne a correct (geometrically indicated), physically based masking function for application in microfacet models, as well as the properties that function should exhibit. Indeed, several different masking functions are often presented in the literature and making the right choice is not always obvious. We start by showing that physically based masking functions are constrained by the projected area of the visible microsurface onto the outgoing direction. We use this property to derive the distribution of visible normals from the microsurface, whose normalization factor is the masking function. We then show how the common form of microfacet-based BRDFs emerges from this distribution. As a consequence, the masking function is related to the correct normalization of microfacetbased BRDFs. However, while the correct masking function satisﬁes these normalization constraints, its explicit form is can only be determined for a given microsurface proﬁle.},
+	language = {en},
+	number = {2},
+	author = {Heitz, Eric},
+	year = {2014},
+	pages = {60},
+	file = {Heitz - 2014 - Understanding the Masking-Shadowing Function in Mi.pdf:C\:\\Users\\jamie\\Zotero\\storage\\CIP7B29Y\\Heitz - 2014 - Understanding the Masking-Shadowing Function in Mi.pdf:application/pdf},
 }
 
 @inproceedings{hanrahan_reflection_1993,
@@ -35,57 +86,6 @@
 	annote = {Fake SSS ={\textgreater} SSS for dense materials
 },
 	file = {Hanrahan and Krueger - 1993 - Reflection from layered surfaces due to subsurface.pdf:C\:\\Users\\jamie\\Zotero\\storage\\TWJSCQHH\\Hanrahan and Krueger - 1993 - Reflection from layered surfaces due to subsurface.pdf:application/pdf},
-}
-
-@article{heitz_understanding_2014,
-	title = {Understanding the {Masking}-{Shadowing} {Function} in {Microfacet}-{Based} {BRDFs}},
-	volume = {3},
-	abstract = {We provide a new presentation of the masking-shadowing functions (or geometric attenuation factors) in microfacet-based BRDFs and answer some common questions about their applications. Our main motivation is to deﬁne a correct (geometrically indicated), physically based masking function for application in microfacet models, as well as the properties that function should exhibit. Indeed, several different masking functions are often presented in the literature and making the right choice is not always obvious. We start by showing that physically based masking functions are constrained by the projected area of the visible microsurface onto the outgoing direction. We use this property to derive the distribution of visible normals from the microsurface, whose normalization factor is the masking function. We then show how the common form of microfacet-based BRDFs emerges from this distribution. As a consequence, the masking function is related to the correct normalization of microfacetbased BRDFs. However, while the correct masking function satisﬁes these normalization constraints, its explicit form is can only be determined for a given microsurface proﬁle.},
-	language = {en},
-	number = {2},
-	author = {Heitz, Eric},
-	year = {2014},
-	pages = {60},
-	file = {Heitz - 2014 - Understanding the Masking-Shadowing Function in Mi.pdf:C\:\\Users\\jamie\\Zotero\\storage\\CIP7B29Y\\Heitz - 2014 - Understanding the Masking-Shadowing Function in Mi.pdf:application/pdf},
-}
-
-@article{schlick_inexpensive_1994,
-	title = {An {Inexpensive} {BRDF} {Model} for {Physically}-based {Rendering}},
-	volume = {13},
-	abstract = {: A new BRDF model is presented which can be viewed as an kind of intermediary model between empirism and theory. Main results of physics are observed (energy conservation, reciprocity rule, microfacet theory) and numerous phenomena involved in light reflection are accounted for, in a physically plausible way (incoherent and coherent reflection, spectrum modifications, anisotropy, self-shadowing, multiple surface and subsurface reflection, differences between homogeneous and heterogeneous materials). The model has been especially intended for computer graphics applications and therefore includes two main features : simplicity  (a small number of intuitively understandable parameters controls the model) and efficiency (the formulation provides adequation to Monte-Carlo rendering techniques and/or hardware implementations).  Keywords : Physically-Based Rendering, Bidirectional Reflectance Distribution Function, Optimization  1 Introduction  Computation of a reflectance model is the heart...},
-	journal = {Computer Graphics Forum},
-	author = {Schlick, Christophe},
-	year = {1994},
-	pages = {233--246},
-	file = {Citeseer - Full Text PDF:C\:\\Users\\jamie\\Zotero\\storage\\XYKASL83\\Schlick - 1994 - An Inexpensive BRDF Model for Physically-based Ren.pdf:application/pdf;Citeseer - Snapshot:C\:\\Users\\jamie\\Zotero\\storage\\ZY9QWDNA\\download.html:text/html},
-}
-
-@article{heitz_sampling_2018,
-	title = {Sampling the {GGX} {Distribution} of {Visible} {Normals}},
-	volume = {7},
-	abstract = {Importance sampling microfacet bidirectional scattering distribution functions (BSDFs) using their distribution of visible normals (VNDF) yields signiﬁcant variance reduction in Monte Carlo rendering. In this article, we describe an efﬁcient and exact sampling routine for the VNDF of the GGX microfacet distribution. This routine leverages the property that GGX is the distribution of normals of a truncated ellipsoid, and sampling the GGX VNDF is equivalent to sampling the 2D projection of this truncated ellipsoid. To do that, we simplify the problem by using the linear transformation that maps the truncated ellipsoid to a hemisphere. Since linear transformations preserve the uniformity of projected areas, sampling in the hemisphere conﬁguration and transforming the samples back to the ellipsoid conﬁguration yields valid samples from the GGX VNDF.},
-	language = {en},
-	number = {4},
-	author = {Heitz, Eric},
-	year = {2018},
-	pages = {13},
-	file = {Heitz - 2018 - Sampling the GGX Distribution of Visible Normals.pdf:C\:\\Users\\jamie\\Zotero\\storage\\7GX4UIKI\\Heitz - 2018 - Sampling the GGX Distribution of Visible Normals.pdf:application/pdf},
-}
-
-@article{burley_physically_nodate,
-	title = {Physically {Based} {Shading} at {Disney}},
-	language = {en},
-	author = {Burley, Brent},
-	pages = {27},
-	file = {Burley - Physically Based Shading at Disney.pdf:C\:\\Users\\jamie\\Zotero\\storage\\RQRGL97Y\\Burley - Physically Based Shading at Disney.pdf:application/pdf},
-}
-
-@article{burley_extending_nodate,
-	title = {Extending the {Disney} {BRDF} to a {BSDF} with {Integrated} {Subsurface} {Scattering}},
-	language = {en},
-	author = {Burley, Brent and Studios, Walt Disney Animation},
-	pages = {19},
-	file = {Burley and Studios - Extending the Disney BRDF to a BSDF with Integrate.pdf:C\:\\Users\\jamie\\Zotero\\storage\\5LSWJJS8\\Burley and Studios - Extending the Disney BRDF to a BSDF with Integrate.pdf:application/pdf},
 }
 
 @article{whitted_improved_1980,
@@ -145,26 +145,6 @@
 	file = {Malvin H. Kalos, Paula A. Whitlock - Monte Carlo Methods-Wiley-VCH (2008).pdf:C\:\\Users\\jamie\\Downloads\\Malvin H. Kalos, Paula A. Whitlock - Monte Carlo Methods-Wiley-VCH (2008).pdf:application/pdf},
 }
 
-@article{walter_microfacet_nodate,
-	title = {Microfacet {Models} for {Refraction} through {Rough} {Surfaces}},
-	abstract = {Microfacet models have proven very successful for modeling light reﬂection from rough surfaces. In this paper we review microfacet theory and demonstrate how it can be extended to simulate transmission through rough surfaces such as etched glass. We compare the resulting transmission model to measured data from several real surfaces and discuss appropriate choices for the microfacet distribution and shadowing-masking functions. Since rendering transmission through media requires tracking light that crosses at least two interfaces, good importance sampling is a practical necessity. Therefore, we also describe efﬁcient schemes for sampling the microfacet models and the corresponding probability density functions.},
-	language = {en},
-	author = {Walter, Bruce and Marschner, Stephen R and Li, Hongsong and Torrance, Kenneth E},
-	pages = {12},
-	file = {Walter et al. - Microfacet Models for Refraction through Rough Sur.pdf:C\:\\Users\\jamie\\Zotero\\storage\\7NPRCUVL\\Walter et al. - Microfacet Models for Refraction through Rough Sur.pdf:application/pdf},
-}
-
-@article{cook_reflectance_nodate,
-	title = {A {Reflectance} {Model} for {Computer} {Graphics}},
-	volume = {1},
-	language = {en},
-	number = {1},
-	journal = {ACM Transactions on Graphics},
-	author = {Cook, Robert L},
-	pages = {18},
-	file = {Cook - A Reflectance Model for Computer Graphics.pdf:C\:\\Users\\jamie\\Zotero\\storage\\JTSB7AZU\\Cook - A Reflectance Model for Computer Graphics.pdf:application/pdf},
-}
-
 @article{trowbridge_average_1975,
 	title = {Average irregularity representation of a rough surface for ray reflection},
 	volume = {65},
@@ -182,6 +162,26 @@
 	file = {Trowbridge and Reitz - 1975 - Average irregularity representation of a rough sur.pdf:C\:\\Users\\jamie\\Zotero\\storage\\9FQRJHIS\\Trowbridge and Reitz - 1975 - Average irregularity representation of a rough sur.pdf:application/pdf},
 }
 
+@article{cook_reflectance_nodate,
+	title = {A {Reflectance} {Model} for {Computer} {Graphics}},
+	volume = {1},
+	language = {en},
+	number = {1},
+	journal = {ACM Transactions on Graphics},
+	author = {Cook, Robert L},
+	pages = {18},
+	file = {Cook - A Reflectance Model for Computer Graphics.pdf:C\:\\Users\\jamie\\Zotero\\storage\\JTSB7AZU\\Cook - A Reflectance Model for Computer Graphics.pdf:application/pdf},
+}
+
+@article{walter_microfacet_nodate,
+	title = {Microfacet {Models} for {Refraction} through {Rough} {Surfaces}},
+	abstract = {Microfacet models have proven very successful for modeling light reﬂection from rough surfaces. In this paper we review microfacet theory and demonstrate how it can be extended to simulate transmission through rough surfaces such as etched glass. We compare the resulting transmission model to measured data from several real surfaces and discuss appropriate choices for the microfacet distribution and shadowing-masking functions. Since rendering transmission through media requires tracking light that crosses at least two interfaces, good importance sampling is a practical necessity. Therefore, we also describe efﬁcient schemes for sampling the microfacet models and the corresponding probability density functions.},
+	language = {en},
+	author = {Walter, Bruce and Marschner, Stephen R and Li, Hongsong and Torrance, Kenneth E},
+	pages = {12},
+	file = {Walter et al. - Microfacet Models for Refraction through Rough Sur.pdf:C\:\\Users\\jamie\\Zotero\\storage\\7NPRCUVL\\Walter et al. - Microfacet Models for Refraction through Rough Sur.pdf:application/pdf},
+}
+
 @book{pharr_physically_2017,
 	address = {Cambridge, MA},
 	edition = {Third edition},
@@ -195,4 +195,12 @@
 	keywords = {Computer graphics, Digital techniques, Dreidimensionale Computergrafik, Image processing, Realistische Computergrafik, Rendering, Three-dimensional display systems},
 	annote = {Index of notation on lining papers},
 	annote = {Introduction -- Geometry and transformations -- Shapes -- Primitives and intersection acceleration -- Color radiometry -- Camera models -- Sampling and reconstruction -- Reflection models -- Materials -- Texture -- Volume scattering -- Light sources -- Monte Carlo integration -- Light transport I : surface reflection -- Light transport II : volume rendering -- Light transport III : bidirectional methods -- Retrospective and the future},
+}
+
+@article{veach_robust_nodate,
+	title = {{ROBUST} {MONTE} {CARLO} {METHODS} {FOR} {LIGHT} {TRANSPORT} {SIMULATION}},
+	language = {en},
+	author = {Veach, Eric},
+	pages = {432},
+	file = {Veach - ROBUST MONTE CARLO METHODS FOR LIGHT TRANSPORT SIM.pdf:C\:\\Users\\jamie\\Zotero\\storage\\9DQ5SVFB\\Veach - ROBUST MONTE CARLO METHODS FOR LIGHT TRANSPORT SIM.pdf:application/pdf},
 }
