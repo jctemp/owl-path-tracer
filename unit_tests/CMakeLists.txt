@@ -9,8 +9,8 @@ FetchContent_MakeAvailable(googletest)
 
 enable_testing()
 
-add_executable(sample_methods_test
-        "sample_methods_test.cpp"
+add_executable(path_tracer_test
+        "path_tracer_test.cu"
         ${CMAKE_SOURCE_DIR}/path_tracer/src/sample_methods.hpp)
 
-target_link_libraries(sample_methods_test gtest_main)
+target_link_libraries(path_tracer_test gtest_main)
