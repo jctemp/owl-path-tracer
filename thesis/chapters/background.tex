@@ -16,27 +16,25 @@ As a side note, the order of sections does not correspond to the linearity of th
 
 \section{Monte Carlo Integration}
 
-One encounters complex mathematical operators in computer science, leading to numerous issues.
-Integrals do count to these operators bringing many challenges with their variety in form and dimensionality.
+In the book, \textit{Physically Based Rendering} \cite{pharr_physically_2017}, the authors explained that the integral, as a complex mathematical operator, opposes a challenge in computer science leading to numerous issues. 
+Furthermore, they described that traditional methods like trapezoidal integration and the midpoint method are sufficient for low-dimensional and differentiable functions; however, these methods show a poor convergence rate for functions not fulfilling the criteria.
 Hence, approximations with numerical methods are the only solution to evaluate such terms due to the finite resources computers have.
-The numerical method requires that it should be able to handle high dimensional and discontinuous functions as well as allow for modifications to make it more robust.
-\cite{pharr_physically_2017}
-The term robust will be defined later after the introduction of  Monte-Carlo integration.
 
-Path-Tracing uses the Monte-Carlo integration because it satisfies the previously mentioned requirements. 
-As with all Monte-Carlo techniques, it does use randomness for repeated random sampling to find an accurate solution on average.
+Path-Tracing uses the Monte-Carlo integration because it has many beneficial properties presented later.
+As with all Monte-Carlo techniques, illustrated by \cite{kalos_monte_2008}, it does use randomness for repeated random sampling to find an accurate solution on average.
+
 Therefore, one gives a quick overview of probability to understand how the integration method works.
 
 \subsection{Probability Theory}
 
-A \textbf{random variable} is a function that maps a random process to a number assumed to be real-valued, and one denotes it with a capitalised letter.
+A \textbf{random variable} is a function that maps a random process to a real-valued number, and one denotes it with a capitalised letter.
 The \textbf{cumulative distribution function} $F(x)$ gives the probability for a random variable $X$ that is less than or equal to a value $x$.
 
 \begin{align*}
 F(X)=Pr\{X\le x\}
 \end{align*}
 
-Using calculus, one can differentiate $F(x)$ yielding the \textbf{probability density function} $f(x)$, only if such solution exists.
+Using calculus, one can differentiate $F(x)$, if possible, yielding the \textbf{probability density function} $f(x)$.
 The density function describes the likelihood for a random variable to be in an interval $[a,b]$.
 
 \begin{align*}
@@ -56,9 +54,106 @@ The final metric is the variance which gives the mean squared deviation.
 V[X]=E\left[(x-E[x])^2\right]
 \end{align*}
 
-\subsection{Estimator}
+\subsection{Monte-Carlo Estimator}
+
+Given is:
+
+\begin{align*}
+F=\int f(x)\,dx\quad\text{where}\quad f:D \mapsto R
+\end{align*}
+
+The task is to find an answer for the integral where $f(x)$ can take on any form.
+The concept, as explained before, is to have a random variable $X:\Omega\rightarrow\mathbb{R}$ where $\Omega$ is a set of all possible outcomes mappable to a real-valued number.
+Additionally, one assumes that samples are uniformly distributed over an interval $[a,b]$, as the Monte-Carlo estimator gives.
+
+\begin{align*}
+F_N=\frac{b-a}{N}\sum_{i=1}^{N}f(X_i)
+\end{align*}
+
+Currently, the estimator allows only for uniform sample values in an interval.
+However, to generalise it, select a random variable with a probability density $p(x)$ that can weight the evaluated values at $f(x)$.
+
+\begin{align}
+F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}
+\end{align}
+
+Elaborating on $(1.1)$, one can identify $F_N$ as a random variable which depends on the size of $N$, and $N$ sets the number of samples.
+Note that $F_N \approx F$ and $F_N$ will be accurate on average.
+One can show the accuracy with the expected value.
+
+\begin{align*} 
+E[F_N] &=E\left[\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}\right]\\
+&=\frac{1}{N}\sum_{i=1}^{N}E\left[\frac{f(X_i)}{p(X_i)}\right]\\
+&=\frac{1}{N}\sum_{i=1}^{N}\int_{a}^{b}\frac{f(x)}{p(x)}\,p(x)\,dx\\ &=\int_{a}^{b}f(x)\,dx 
+\end{align*}
+
+Now, one gives a quick overview of the advantages the integrations offers and quickly explains why these are useful.
+
+In \cite{veach_robust_1997}, Veach pointed out essential advantages that the Monte-Carlo integrations offer.
+The first point mentioned was the convergence rate of the estimator with a derivation.
+He showed that the estimator converges with the rate of $O(N^{-1/2})$ for high dimensional integrals with discontinuities.
+A vital attribute pointed out in the thesis was that the convergence of an estimator with an infinity amount of variance is slow but guaranteed.
+The guaranteed convergence and the rate is something that is crucial properties.
+However, the problem that one might see is that reducing the error by half requires four times more samples.
+The second benefit is that the algorithm is simplistic.
+He explained that this simplicity qualifies for flexible design with an integrator that is a black box.
+This fact is crucial as one can separate function from technical details.
+The result is that the algorithm's implementation happens once, and the meaning of the data is unrelated, making it suitable for various problems requiring integrating a function.
+The last two attributes are that Monte-Carlo can theoretically handle any domain, even an infinite-dimensional space, and work with integrands with singularities.
+
+These benefits mentioned are the reason for the use of this method in computing light integrals.
 
 \subsection{Optimisation}
 
+The final part of the Monte-Carlo integration is about optimisations, as these play a considerable part in making this technique feasible for multiple applications.
 
-\cite{veach_robust_nodate}
+The drawback of this technique is random sampling because the result depends on the number of drawn samples.
+Consequently, a large sample count will produce more accurate results with a minor variance but increasing runtime.
+The goal is to increase the efficiency of an estimator by reducing variance or runtime.
+
+Before exploring techniques for variance reduction, one must clarify what efficiency means.
+
+\begin{align}
+\epsilon[F]=\frac{1}{V[F]\,T[F]}
+\end{align}
+
+Veach explained that one tries to find an estimator where variance and runtime are neglectable, and the equation $(1.2)$ describes this as a trade-off with $V[F]$ being the variance and $T[F]$ time required to determine $F$; \cite{veach_robust_1997}.
+Accordingly, an estimator can become more efficient if it reduces runtime or variance.
+
+\paragraph{Importance Sampling} has the principle to find a probability density function $p(x)$ which is similar to the integrand $f(x)$.
+Optimally, the $p(x) \propto f(x)$ and considering equation $(1.1)$ it would give this configuration.
+
+\begin{align*}
+\frac{f(X_i)}{p(X_i)}=\frac{f(X_i)}{c\,f(X_i)}=\frac{1}{c} \Rightarrow F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{1}{c}
+\end{align*}
+
+Leftover is a constant of proportionality $c$.
+The proportionality of $p(x)$ and the current configuration of the summation demands that the normalisation must be the integral's value; \cite{veach_robust_1997}.
+
+\begin{align*}
+c=\frac{1}{\int\,f(x)\,dx}
+\end{align*}
+
+Based on that, the authors of the book \cite{kalos_monte_2008} conclude that a $p(x)$ similar to $f(x)$ will lead to a tremendous variance reduction.
+The decrease is due to increasing the likelihood of sampling areas where the integrand is large, contributing more to the final result.
+There are some constraints for $p(x)$ where it must match the behaviour of the integrand and its upper bound with $\forall x : p(x) > f(x)$.
+Caution, selecting an incorrect $p(x)$ can have the opposite effect leading to more variance.
+
+\paragraph{Adaptive sample placement} is another option to increase the efficiency of an estimator.
+The basic idea is to sample more complicated or contributing regions based on previous samples.
+However, the main disadvantage pointed out by \cite{veach_robust_1997} is the introduction of bias to the estimator that could lead, as an example, to image artefacts.
+
+A quick excurse to elaborate on the problem of bias.
+
+\begin{align*}
+\beta = E[F]-\int f(x)\,dx
+\end{align*}
+
+It describes the difference between the expected value and the exact value of the integral; recall the original estimator fulfilled the property $E[F]=\int\,f(x)\,dx$ and is therefore unbias.
+Nonetheless, as pointed out in \cite{kalos_monte_2008}, it does not matter if an estimator is biased if it helps by a significant amount with variance.
+
+Russian roulette is one possible technique that can be incorporated well.
+The technique intends to reduce sampling regions where the integrand is low as these contribute less to the final result.
+
+In \cite{pharr_physically_2017} the authors elaborated that skipping low values does not matter because the expected value is still correct on average.
+Another fact they explained is that Russian roulette does not reduce variance (it can even increase it), but it improves efficiency by not evaluating less important regions; hence runtime improves.
