@@ -162,19 +162,19 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             continue;
         }
 
-            //ray = radiance_ray{v_p, wi, t_min, t_max};
+        //ray = radiance_ray{v_p, wi, t_min, t_max};
 
         beta *= f * owl::abs(cos_theta(local_wi)) / pdf;
 
 
 
         /// terminate path by random
-        // auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
-        // if (depth > 3)
-        // {
-        //     float q{owl::max(.05f, 1 - beta_max)};
-        //     if (prd.random() > q) break;
-        // }
+        auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
+        if (sampled_lobe != DISNEY_SAMPLED_LOBE_GLASS && depth > 3 )
+        {
+            float q{owl::max(.05f, 1 - beta_max)};
+            if (prd.random() > q) break;
+        }
 
         ray = radiance_ray{v_p, wi, t_min, t_max};
     }
