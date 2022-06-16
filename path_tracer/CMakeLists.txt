@@ -1,6 +1,5 @@
 
 ADD_LIBRARY(lib${PROJECT_NAME}
-
         # SRC
         "src/owl.hpp"
         "src/math.hpp"
@@ -33,8 +32,6 @@ ADD_LIBRARY(lib${PROJECT_NAME}
         "src/device/disney/disney_specular.cuh"
         "src/device/disney/disney.cuh"
 
-        "src/device/materials.hpp"
-        "src/device/bsdf_utils.hpp"
         "src/device/device.hpp"
         "src/device/device_global.hpp")
 

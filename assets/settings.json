@@ -1,5 +1,5 @@
 {
-    "scene": "sphere",
+    "scene": "cornell-box",
     "buffer_size": [1024, 1024],
     "max_samples": 1024,
     "max_path_depth": 64,
@@ -8,9 +8,9 @@
     "environment_color": [1, 1, 1],
     "environment_intensity": 1,
     "test" : {
-        "name": "disney",
+        "name": "demo",
         "material_name" : "sphere",
-        "attribute_name" : "specular_transmission_roughness",
+        "attribute_name" : "specular_transmission",
         "material_type" : 2,
         "values" : [
           1.0,
