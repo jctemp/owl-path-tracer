@@ -32,6 +32,7 @@ struct material_data
     float ior{1.45f};
     float specular_transmission{0.0f};
     float specular_transmission_roughness{0.0f};
+    float emission{0.0f};
 };
 
 struct entity_data

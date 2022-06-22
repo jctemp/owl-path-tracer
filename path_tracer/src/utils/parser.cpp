@@ -45,6 +45,7 @@ std::vector<std::tuple<std::string, material_data>> parse_materials(std::string 
         data.ior = material["ior"].get<float>();
         data.specular_transmission = material["specular_transmission"].get<float>();
         data.specular_transmission_roughness = material["specular_transmission_roughness"].get<float>();
+        data.emission = material["emission"].get<float>();
 
         materials.emplace_back(material["name"], data);
     }

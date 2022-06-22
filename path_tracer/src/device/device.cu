@@ -123,6 +123,19 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             break;
         }
 
+        /// hit light?
+        material_data material{};
+        if (hd.material_index >= 0)
+        {
+            get_data(material, launch_params.material_buffer, hd.material_index, material_data);
+        }
+
+        if (material.emission > 0.0f)
+        {
+            radiance = material.emission * beta;
+            break;
+        }
+
         /// load mesh for interaction calculations
         ivec3 indices{};
         vec3 v_p{}, v_gn{}, v_n{};
@@ -135,12 +148,6 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
         vec3 T{}, B{};
         onb(v_gn, T, B);
-
-        material_data material{};
-        if (hd.material_index >= 0)
-        {
-            get_data(material, launch_params.material_buffer, hd.material_index, material_data);
-        }
 
         vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{};
 
@@ -164,7 +171,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
         //ray = radiance_ray{v_p, wi, t_min, t_max};
 
-        beta *= f * owl::abs(cos_theta(local_wi)) / pdf;
+        beta *= f * abs(cos_theta(local_wi)) * abs(cos_theta(local_wo)) / pdf;
 
 
 

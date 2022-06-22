@@ -1,12 +1,12 @@
 {
     "scene": "cornell-box",
     "buffer_size": [1024, 1024],
-    "max_samples": 1024,
+    "max_samples": 8196,
     "max_path_depth": 64,
-    "environment_use": true,
+    "environment_use": false,
     "environment_auto": false,
     "environment_color": [1, 1, 1],
-    "environment_intensity": 1,
+    "environment_intensity": 0,
     "test" : {
         "name": "demo",
         "material_name" : "sphere",
