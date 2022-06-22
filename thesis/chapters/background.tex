@@ -4,26 +4,16 @@ This chapter should give the reader an overview of the components required for a
 For the sake of the scope, one will briefly describe the different topics; therefore, if concepts or terms are unclear, one has to revise those accordingly.
 As a side note, the order of sections does not correspond to the linearity of the concepts.
 
-\section{Light Integrals}
-
-\subsection{Relevance of Physics}
-
-\subsection{Rendering Equation}
-
-\subsection{Lighting Equation}
-
-\subsection{Path Equation}
-
 \section{Monte Carlo Integration}
 
 In the book, \textit{Physically Based Rendering} \cite{pharr_physically_2017}, the authors explained that the integral, as a complex mathematical operator, opposes a challenge in computer science leading to numerous issues. 
 Furthermore, they described that traditional methods like trapezoidal integration and the midpoint method are sufficient for low-dimensional and differentiable functions; however, these methods show a poor convergence rate for functions not fulfilling the criteria.
-Hence, approximations with numerical methods are the only solution to evaluate such terms due to the finite resources computers have.
+Nonetheless, approximations with numerical methods are the only solution to evaluate such terms due to the finite resources computers have.
 
-Path-Tracing uses the Monte-Carlo integration because it has many beneficial properties presented later.
+Path-Tracing uses the Monte-Carlo integration because it has many practical properties presented later.
 As with all Monte-Carlo techniques, illustrated by \cite{kalos_monte_2008}, it does use randomness for repeated random sampling to find an accurate solution on average.
 
-Therefore, one gives a quick overview of probability to understand how the integration method works.
+Therefore, one gives a quick overview of probability theory to understand how the integration method works.
 
 \subsection{Probability Theory}
 
@@ -64,20 +54,21 @@ F=\int f(x)\,dx\quad\text{where}\quad f:D \mapsto R
 
 The task is to find an answer for the integral where $f(x)$ can take on any form.
 The concept, as explained before, is to have a random variable $X:\Omega\rightarrow\mathbb{R}$ where $\Omega$ is a set of all possible outcomes mappable to a real-valued number.
-Additionally, one assumes that samples are uniformly distributed over an interval $[a,b]$, as the Monte-Carlo estimator gives.
+Additionally, one assumes that samples are uniformly distributed over an interval $[a,b]$.
+This result in the following estimator.
 
 \begin{align*}
 F_N=\frac{b-a}{N}\sum_{i=1}^{N}f(X_i)
 \end{align*}
 
-Currently, the estimator allows only for uniform sample values in an interval.
-However, to generalise it, select a random variable with a probability density $p(x)$ that can weight the evaluated values at $f(x)$.
+Currently, the estimator allows only for uniformly sampled values in an interval.
+However, to generalise it, select a random variable with a probability density $p(x)$ that can weight $f(x)$.
 
 \begin{align}
-F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}
+F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)} \label{eq:mc-estimator}
 \end{align}
 
-Elaborating on $(1.1)$, one can identify $F_N$ as a random variable which depends on the size of $N$, and $N$ sets the number of samples.
+Elaborating on eq.~\ref{eq:mc-estimator}, one can identify $F_N$ as a random variable which depends on the size of $N$, and $N$ sets the number of samples.
 Note that $F_N \approx F$ and $F_N$ will be accurate on average.
 One can show the accuracy with the expected value.
 
@@ -89,17 +80,16 @@ E[F_N] &=E\left[\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}\right]\\
 
 Now, one gives a quick overview of the advantages the integrations offers and quickly explains why these are useful.
 
-In \cite{veach_robust_1997}, Veach pointed out essential advantages that the Monte-Carlo integrations offer.
-The first point mentioned was the convergence rate of the estimator with a derivation.
+In \cite{veach_robust_1997}, Veach pointed out essential advantages of the Monte-Carlo integration.
+The first point mentioned was the convergence rate of the estimator.
 He showed that the estimator converges with the rate of $O(N^{-1/2})$ for high dimensional integrals with discontinuities.
-A vital attribute pointed out in the thesis was that the convergence of an estimator with an infinity amount of variance is slow but guaranteed.
-The guaranteed convergence and the rate is something that is crucial properties.
-However, the problem that one might see is that reducing the error by half requires four times more samples.
-The second benefit is that the algorithm is simplistic.
-He explained that this simplicity qualifies for flexible design with an integrator that is a black box.
-This fact is crucial as one can separate function from technical details.
-The result is that the algorithm's implementation happens once, and the meaning of the data is unrelated, making it suitable for various problems requiring integrating a function.
-The last two attributes are that Monte-Carlo can theoretically handle any domain, even an infinite-dimensional space, and work with integrands with singularities.
+A vital attribute described in the thesis was that the convergence of an estimator with an infinity amount of variance is slow but guaranteed.
+However, reducing the error by half requires four times more samples which opposes a problematic concern.
+The second benefit is the simplicity of the algorithm.
+He explained that this qualifies for flexible design with an integrator that is a black box.
+This fact is essential as one can separate function from technical details.
+The result is that the algorithm's implementation happens once, and the meaning of the data is unrelated, making it suitable for various problems requiring integration.
+The last two traits are that Monte-Carlo can theoretically handle any domain, even an infinite-dimensional space, and work with integrands with singularities.
 
 These benefits mentioned are the reason for the use of this method in computing light integrals.
 
@@ -115,13 +105,14 @@ Before exploring techniques for variance reduction, one must clarify what effici
 
 \begin{align}
 \epsilon[F]=\frac{1}{V[F]\,T[F]}
+\label{eq:estimator-eff}
 \end{align}
 
-Veach explained that one tries to find an estimator where variance and runtime are neglectable, and the equation $(1.2)$ describes this as a trade-off with $V[F]$ being the variance and $T[F]$ time required to determine $F$; \cite{veach_robust_1997}.
+Veach explained that one tries to find an estimator where variance and runtime are neglectable, and the eq.~\ref{eq:estimator-eff} describes this as a trade-off with $V[F]$ being the variance and $T[F]$ time required to determine $F$; \cite{veach_robust_1997}.
 Accordingly, an estimator can become more efficient if it reduces runtime or variance.
 
 \paragraph{Importance Sampling} has the principle to find a probability density function $p(x)$ which is similar to the integrand $f(x)$.
-Optimally, the $p(x) \propto f(x)$ and considering equation $(1.1)$ it would give this configuration.
+Optimally, the $p(x) \propto f(x)$ and considering equation eq.~\ref{eq:mc-estimator} it would give this configuration.
 
 \begin{align*}
 \frac{f(X_i)}{p(X_i)}=\frac{f(X_i)}{c\,f(X_i)}=\frac{1}{c} \Rightarrow F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{1}{c}
@@ -150,10 +141,117 @@ A quick excurse to elaborate on the problem of bias.
 \end{align*}
 
 It describes the difference between the expected value and the exact value of the integral; recall the original estimator fulfilled the property $E[F]=\int\,f(x)\,dx$ and is therefore unbias.
-Nonetheless, as pointed out in \cite{kalos_monte_2008}, it does not matter if an estimator is biased if it helps by a significant amount with variance.
+Nonetheless, as explained in \cite{kalos_monte_2008}, it does not matter if an estimator is biased if it helps by a significant amount with variance.
 
 Russian roulette is one possible technique that can be incorporated well.
 The technique intends to reduce sampling regions where the integrand is low as these contribute less to the final result.
 
 In \cite{pharr_physically_2017} the authors elaborated that skipping low values does not matter because the expected value is still correct on average.
 Another fact they explained is that Russian roulette does not reduce variance (it can even increase it), but it improves efficiency by not evaluating less important regions; hence runtime improves.
+
+\section{Light Integrals}
+
+Performing light transport simulations requires a formalisation of light.
+For Path-Tracing, one utilises tools from physics to create a framework.
+Duin \cite{duin_beleuchtungsalgorithmen_1993} described different models of light and how each of them comes with particular strengths in modelling the light's behaviour.
+He elaborated that these models, like particle dualism, are outstanding in describing the nature of light but are not necessary for computer graphics where optics and radiometry are sufficient to model light at its core.
+Based on that, he stressed the idea of light propagation and explained how light traverses the scene and interacts with other objects.
+The scene is a formal description containing elements like an object, light rays, volumetrics and more. 
+
+\subsection{Rendering Equation}
+
+In 1986 Kajiya \cite{kajiya_rendering_1986} proposed the famous rendering equation that describes light propagation based on physics radiative heat transfer literature.
+As a general geometrical optics approximation, its purpose is to evaluate the leaving equilibrium radiance at a point $p$ in the direction $\omega_o$ from all in-coming directions $\omega_i$ with a cosine term and $f(p, \omega_o, \omega_i)$ as the reflectance function.
+
+\begin{align}
+L_o(x,\omega_o)=L_e(x,\omega_o)+\int_{S^2}f_r(x,\omega_o,\omega_i)\,L_i(x,\omega_i)\,\left|\cos\theta_i\right|\,d\omega_i
+\label{eq:rendering}
+\end{align}
+
+See that eq.~\ref{eq:rendering} is a recursive formulation where the in-coming directions are again integrals determined at other points in the scene.
+That is why there is no immediate solution to the rendering equation; however, Ray-Tracing with Monte-Carlo integration, known as Path-Tracing, builds the foundation to solve such a simulation problem.
+
+\subsection{Three-Point Form}
+
+The current rendering equation is not suitable for deriving the path integral.
+An additional step is needed to present an integral over areas, the so-called three-point form; \cite{veach_robust_1997}.
+Therefore, one replaces all terms in the eq.~\ref{eq:rendering} containing a direction $\omega$, recall that $\omega=\widehat{x'-x}$.
+
+\begin{align*}
+L(x,\omega)=L(x'\rightarrow x)\quad\wedge\quad f_r(x,\omega_o,\omega_i)=f_r(x''\rightarrow x'\rightarrow x)
+\end{align*}
+
+The arrow emphasises the direction of light flow; \cite{veach_robust_1997}.
+The next step is to change the integral domain over an area $A$, which also changes the integration variable, including the cosine term.
+In \cite{kajiya_rendering_1986}, there are self-describing figures that show the configuration of the points and directions.
+
+\begin{align*}
+d\omega=\frac{|\cos\theta'|}{x'-x}dA(x') \Rightarrow |\cos\theta|\,d\omega=\frac{|\cos\theta|\,|\cos\theta'|}{x'-x}dA(x')
+\end{align*}
+
+However, this is not yet correct because two points must be visible from each other.
+The function $V$ is a visibility function that verifies that two points are from each other visible.
+One utilises the visibility function and a factor of the previous equation for a geometry term $G$. If two points are not mutually visible, then the function is 0.
+
+\begin{align*}
+G(x'\leftrightarrow x)=V(x'\leftrightarrow x)\frac{|\cos\theta|\,|\cos\theta'|}{x'-x}
+\end{align*}
+
+If one substitutes all terms in eq.~\ref{eq:rendering} then one gets the three-point form.
+
+\begin{align}
+L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{S^2}L(x''\rightarrow x')\,f_r(x''\rightarrow x'\rightarrow x)\,G(x''\leftrightarrow x')\,dA(x')
+\label{eq:three-point}
+\end{align}
+
+\subsection{Path Integral}
+
+The path integral is an alternative representation of the rendering equation that comprehensively explains specific rendering aspects.
+Before introducing the equation, one will examine the benefits.
+
+Veach \cite{veach_robust_1997} provided a detailed overview of the path integral's advantages.
+The first point he described is that one can derive new rendering algorithms employing general-purpose integration techniques like importance sampling.
+The second benefit is a geometric primitive, the path, which makes computation more comfortable.
+Another benefit of working with paths is that they are more exact and complete regarding light transportations, as one uses the whole trajectory of light rather than distinct segments.
+The construction of such paths is not limited to local information. 
+That qualifies for an open selection process of path vertices.
+Last, it provides a framework to work with the probability density of paths.
+
+The following equation \ref{eq:path-integral} represents the path integral.
+It summates the radiance of all contributing paths, which delivers the value received by the camera plane.
+The summation is over an infinite domain where only the subset of paths with finite length is of interest.
+
+\begin{align}
+L(x_1\rightarrow x_0)=\sum_{n=1}^\infty P(\bar{x}_n)
+\label{eq:path-integral}
+\end{align}
+
+Consequentially, eq.~\ref{eq:path-radiance} is the amout of radiance of a path $\bar{x}_n=x_0,x_1,\dotso,x_n$ with $n+1$ vertices.
+It demands solving multiple nested integrals over areas.
+
+\begin{align}
+P(\bar{x}_n)=\underbrace{\int_A \int_A \dots \int_A}_{n-1}\left(L_e(x_n\rightarrow x_{n-1})\,T(\bar{x}_n) \right)dA(x_2)\dotso dA(x_n)
+\label{eq:path-radiance}
+\end{align}
+
+As explained by \cite{pharr_physically_2017}, the throughput describes the fraction of received radiance from a light source.
+This part is essential for the Monte-Carlo estimator as it explains how to keep track of the throughput state during the rendering process.
+
+\begin{align}
+T(\bar{x}_n)=\prod_{k=1}^{n-1}f(x_{k+1}\rightarrow x_k\rightarrow x_{k-1})G(x_{k+1}\leftrightarrow x_{k}))
+\label{eq:path-throughput}
+\end{align}
+
+The geometric term, see eq.~\ref{eq:path-geometric}, represents the geometric configuration of two related vertices.
+That is due to the prior projected solid angle in eq.~\ref{eq:rendering}, which enables one to change to a point-based area-related meaning.
+
+\begin{align}
+G(x_{k+1}\leftrightarrow x_{k})=V(x_{k+1}\leftrightarrow x_{k})\frac{\left|\cos\theta_{k+1}\right|\left|\cos\theta_k\right|}{\left\|x_{k+1}\rightarrow x_k\right\|^2}
+\label{eq:path-geometric}
+\end{align}
+
+$V(x_{k+1}\leftrightarrow x_{k})$ is a visibility term that yields one if two points are mutually visible; otherwise, zero.
+
+\subsection{Path Tracing}
+
+ABC
