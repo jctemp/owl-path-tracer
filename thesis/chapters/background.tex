@@ -186,21 +186,21 @@ The next step is to change the integral domain over an area $A$, which also chan
 In \cite{kajiya_rendering_1986}, there are self-describing figures that show the configuration of the points and directions.
 
 \begin{align*}
-d\omega=\frac{|\cos\theta'|}{x'-x}dA(x') \Rightarrow |\cos\theta|\,d\omega=\frac{|\cos\theta|\,|\cos\theta'|}{x'-x}dA(x')
+d\omega=\frac{|\cos\theta'|}{\|x'-x\|^2}dA(x') \Rightarrow |\cos\theta|\,d\omega=\frac{|\cos\theta|\,|\cos\theta'|}{\|x'-x\|^2}dA(x')
 \end{align*}
 
-However, this is not yet correct because two points must be visible from each other.
+However, this is not yet correct because two points must be visible.
 The function $V$ is a visibility function that verifies that two points are from each other visible.
 One utilises the visibility function and a factor of the previous equation for a geometry term $G$. If two points are not mutually visible, then the function is 0.
 
 \begin{align*}
-G(x'\leftrightarrow x)=V(x'\leftrightarrow x)\frac{|\cos\theta|\,|\cos\theta'|}{x'-x}
+G(x'\leftrightarrow x)=V(x'\leftrightarrow x)\frac{|\cos\theta|\,|\cos\theta'|}{\|x'-x\|^2}
 \end{align*}
 
 If one substitutes all terms in eq.~\ref{eq:rendering} then one gets the three-point form.
 
 \begin{align}
-L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{S^2}L(x''\rightarrow x')\,f_r(x''\rightarrow x'\rightarrow x)\,G(x''\leftrightarrow x')\,dA(x')
+L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{A}L(x''\rightarrow x')\,f_r(x''\rightarrow x'\rightarrow x)\,G(x''\leftrightarrow x')\,dA(x')
 \label{eq:three-point}
 \end{align}
 
@@ -248,7 +248,57 @@ The construction of such paths is not limited to local information.
 That qualifies for an open selection process of path vertices.
 Last, it provides a framework to work with the probability density of paths.
 
+\section{Path Tracing}
 
-\subsection{Path Tracing}
+Path tracing is a possible rendering algorithm to create synthetic images.
+It uses ray tracing and Monte-Carlo integration to compute photorealistic images.
+For this, it needs a formula that has to be solved.
+One has now covered both, which allows the introduction of a local sampling technique to compute images.
 
-ABC
+A \textit{local sampling technique} is a method that constructs vertices of the path one at a time based on local information; \cite{veach_robust_1997}.
+The easiest way is to sample directions regarding a probability density function.
+One uses ray tracing to find the next vertex position.
+This approach also solves the visibility problem, constructing only valid paths.
+Of course, this strategy to find paths is not ideal but sufficient, making it a good choice; \cite{pharr_physically_2017}.
+
+The only problem now is that one would sample paths using a solid angle and recollect that an angle's probability density is not the same as the probability density of an area.
+Therefore, one has to make the conversion to calculate the correct probability of a path.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.33\textwidth]{sampling-configuration.png}
+\caption[]{configuration of path vertices}
+\label{fig:path-vertices}
+\end{figure}
+
+The figure \ref{fig:path-vertices} depicts the configuration of path vertices.
+Vertex $x$ is the point of interest, and $x'$ is a potential successor.
+In the current framework, one does sample a direction $\omega$ and cast a ray from $x$ towards $x'$.
+Currently, one has only the probability of $\omega$. 
+However, the following conversion term is applied to find the probability of $x'$.
+
+\begin{align*}
+p(x')=p(\omega)\frac{|\cos\theta'|}{\|x'-x\|^2}
+\end{align*}
+
+The authors of \cite{pharr_physically_2017} illustrated how integrating the probability density function in eq.~\ref{eq:path-radiance} causes the geometry function $G$ to partially cancel out with mentioned conversion.
+However, be careful as the last vertex of a path is a light source.
+This vertex originates from a distribution over the surface of the light.
+
+\begin{align*}
+\frac{f(x_{n}\rightarrow x_{n-1}\rightarrow x_{n-2})G(x_n\leftrightarrow x_{n-1})}{p(x_n)}\,\left(\prod_{k=1}^{n-2}\frac{f(x_{k+1}\rightarrow x_{k}\rightarrow x_{k-1})|\cos\theta_{k}|}{p(\widehat{x_{k+1}-x_{k}})}\right)
+\end{align*}
+
+Using eq.~\ref{eq:path-throughput} gives the final throughput term for the current use sampling framework.
+Note that throughput is a combination of the reflectance function, the cosine and the probability of the incoming direction.
+
+\subsection{Limitations}
+
+As discussed in \cite{veach_robust_1997} path sampling is a simple and general method, but it has some limits.
+Some paths do not have a correct sampling option, and even advanced approaches like bi-direction path tracing struggle with these paths.
+There is also another category of ray tracing problems that are not solvable on Turing complete machines.
+
+However, this does not oppose any problems as most paths are possible for simple scenes.
+Nonetheless, see \cite{veach_robust_1997} for further details on that topic.
+
+
