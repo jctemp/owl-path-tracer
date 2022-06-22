@@ -206,8 +206,39 @@ L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{S^2}L(x''\rightarrow x')\,f_r(x''\
 
 \subsection{Path Integral}
 
-The path integral is an alternative representation of the rendering equation that comprehensively explains specific rendering aspects.
-Before introducing the equation, one will examine the benefits.
+The path integral is an alternative representation of the rendering equation that comprehensively explains detailed rendering characteristics.
+Its introduction aims to assemble the foundation for a local sampling technique used in the implementation of this thesis.
+
+Deriving the integral is intuitive as one can take the eq.~\ref{eq:three-point} and recursively replace the incoming radiance with the equation itself.
+The most challenging part is rearranging the equation so one conceptually shows the pattern.
+The next part will present the integral in multiple elements.
+
+\begin{align}
+L(x_1\rightarrow x_0)=\sum_{n=1}^\infty P(\bar{x}_n)
+\label{eq:path-integral}
+\end{align}
+
+The equation \ref{eq:path-integral} represents the path integral.
+It summates the radiance of all contributing paths, which gives the value obtained by the camera plane.
+The summation is over an infinite domain where only the subset of paths with finite length is of interest.
+
+\begin{align}
+P(\bar{x}_n)=\underbrace{\int_A \int_A \dots \int_A}_{n-1}\left(L_e(x_n\rightarrow x_{n-1})\,T(\bar{x}_n) \right)dA(x_2)\dotso dA(x_n)
+\label{eq:path-radiance}
+\end{align}
+
+Consequentially, eq.~\ref{eq:path-radiance} is the amount of radiance of a path $\bar{x}_n=x_0,x_1,\dotso,x_n$ with $n+1$ vertices.
+It demands solving multiple nested integrals over areas.
+
+\begin{align}
+T(\bar{x}_n)=\prod_{k=1}^{n-1}f(x_{k+1}\rightarrow x_k\rightarrow x_{k-1})G(x_{k+1}\leftrightarrow x_{k})
+\label{eq:path-throughput}
+\end{align}
+
+As explained by \cite{pharr_physically_2017}, the throughput expresses the fraction of received radiance from a light source.
+This part is essential for the Monte-Carlo estimator as it explains how to keep track of the throughput state during the rendering process.
+
+Now, one summarises the benefits before the subsequent section explains how the path integral incorporates the Monte-Carlo algorithm.
 
 Veach \cite{veach_robust_1997} provided a detailed overview of the path integral's advantages.
 The first point he described is that one can derive new rendering algorithms employing general-purpose integration techniques like importance sampling.
@@ -217,40 +248,6 @@ The construction of such paths is not limited to local information.
 That qualifies for an open selection process of path vertices.
 Last, it provides a framework to work with the probability density of paths.
 
-The following equation \ref{eq:path-integral} represents the path integral.
-It summates the radiance of all contributing paths, which delivers the value received by the camera plane.
-The summation is over an infinite domain where only the subset of paths with finite length is of interest.
-
-\begin{align}
-L(x_1\rightarrow x_0)=\sum_{n=1}^\infty P(\bar{x}_n)
-\label{eq:path-integral}
-\end{align}
-
-Consequentially, eq.~\ref{eq:path-radiance} is the amout of radiance of a path $\bar{x}_n=x_0,x_1,\dotso,x_n$ with $n+1$ vertices.
-It demands solving multiple nested integrals over areas.
-
-\begin{align}
-P(\bar{x}_n)=\underbrace{\int_A \int_A \dots \int_A}_{n-1}\left(L_e(x_n\rightarrow x_{n-1})\,T(\bar{x}_n) \right)dA(x_2)\dotso dA(x_n)
-\label{eq:path-radiance}
-\end{align}
-
-As explained by \cite{pharr_physically_2017}, the throughput describes the fraction of received radiance from a light source.
-This part is essential for the Monte-Carlo estimator as it explains how to keep track of the throughput state during the rendering process.
-
-\begin{align}
-T(\bar{x}_n)=\prod_{k=1}^{n-1}f(x_{k+1}\rightarrow x_k\rightarrow x_{k-1})G(x_{k+1}\leftrightarrow x_{k}))
-\label{eq:path-throughput}
-\end{align}
-
-The geometric term, see eq.~\ref{eq:path-geometric}, represents the geometric configuration of two related vertices.
-That is due to the prior projected solid angle in eq.~\ref{eq:rendering}, which enables one to change to a point-based area-related meaning.
-
-\begin{align}
-G(x_{k+1}\leftrightarrow x_{k})=V(x_{k+1}\leftrightarrow x_{k})\frac{\left|\cos\theta_{k+1}\right|\left|\cos\theta_k\right|}{\left\|x_{k+1}\rightarrow x_k\right\|^2}
-\label{eq:path-geometric}
-\end{align}
-
-$V(x_{k+1}\leftrightarrow x_{k})$ is a visibility term that yields one if two points are mutually visible; otherwise, zero.
 
 \subsection{Path Tracing}
 
