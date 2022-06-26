@@ -305,26 +305,71 @@ Nonetheless, see \cite{veach_robust_1997} for further details on that topic.
 
 In computer graphics, illumination models provide a specification to find the directional dependent radiance of a point; \cite{duin_beleuchtungsalgorithmen_1993}. 
 An alternative name is the shading model because the purpose of such a model is to describe how a surface responds to light.
-Due to that, it introduces multiple levels of darkness, colour and more which yields a three-dimensional-looking image.
 One got already acquainted with a general illumination model, the rendering equation.
 
 In \cite{duin_beleuchtungsalgorithmen_1993}, the authors mentioned three phases of shading models.
-The last phase is interesting because it covers global illumination effects using optics.
-Accordingly, models constructed based on optics are analytical models.
+The last phase is interesting because it covers global illumination effects using optics combined with rendering algorithms like ray tracing.
+One must choose an illumination model with path tracing as the selected rendering algorithm.
 
-Next, one will present the Disney shading model \cite{burley_physically_2012}, \cite{burley_extending_2015}.
-Burley and Walt Disney Animation Studios have designed a physically based shading model for the company's render with artistic controls in mind whilst preserving simplicity and robustness.
+There are many different approaches to creating an equation that resembles light interaction.
+Developing abstractions and categorising light behaviours is ideal for minimising the complexity.
+
+\subsection{Categories of light responses}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.66\textwidth]{bsdf-lobes.png}
+\caption[]{light reflection lobes}
+\label{fig:bsdf-lobes}
+\end{figure}
+
+The figure \ref{fig:bsdf-lobes} represents the various categories of behaviours that light exhibits: diffuse, retro-reflective, near-perfect specular and glossy.
+Conceptually it is easier to examine the different types separately.
+Regardless, natural materials often are a combination of all types; \cite{cook_reflectance_1982}.
+
+One will now familiarise with so-called light lobes.
+These show in which directions light scatters depending on the surface properties.
+
+Diffuse materials scatter light in all directions uniformly.
+However, a \textit{popular definition} is a Lambertian reflectance that defines ideal matte surfaces with a $\cos\theta$ distribution.
+Hence, the preferred technical model utilises Lambert's cosine law; (page 115, eq. 4a) \cite{lambert_lamberts_1892}.
+An addition to this lobe are retro-reflections describing reflected light along the incident direction; \cite{berns_event_2021}.
+These reflections are joint for rough materials at grazing angles or carefully constructed materials that are retro-reflective.
+The specularity of surfaces represents a preferable direction that light reflects; \cite{pharr_physically_2017}.
+Depending on the surface roughness, a material appears glossy, like brushed metal or mirror-like for perfect smooth materials.
+Accordingly, perfect smooth materials show near-perfect reflections where the reflected light is the outgoing direction.
+Transmission is self-explaining.
+Light penetrates the surface and passes through an optical medium with another density.
+Snell's law does describe the refraction process of two optical media.
+
+For this thesis, one will explore the Disney Bidirectional Scattering Distribution Function (BSDF); \cite{burley_physically_2012}, \cite{burley_extending_2015}.
+The shading model is a physically-based shading model for the company's render with artistic controls in mind whilst preserving simplicity and robustness.
 The motivation was to create numerous lighting options with correct surface responses across various environments and improve artist productivity.
 
 \subsection{Principled Matrials}
 
-Short overview of physically-based models.
--> What does this mean for modern illumination models.
+Creating a physically-based shading model intuitive for the artist will sacrifice some physical accuracy since not every possible parameter of a complex analytical model qualifies for abstractions.
 
-Explain how Disney approached the design process of the new BSDF.
-clarify what \textit{principle} means in the context of physically-based models
+However, this was no problem for Disney because they stated in \cite{burley_physically_2012} that a model should be art directable and not necessarily physically accurate.
+They elaborated that the philosophy is to develop a \textit{principled} and not a strictly physically correct model.
+Therefore, the Disney BSDF follows five principles.
+The model should be intuitive and have a minimal amount of parameters where each parameter ranges between zero and one.
+The parameters can go beyond the range, and a combination of all is robust and plausible to a certain extent.
 
-\subsection{Disney Bidirectional Scattering Distribution Function}
+In total, there are ten parameters in the first paper, but this changed with the addition of the second paper \cite{burley_extending_2015}, which introduced a transmissive behaviour and integrated subsurface scattering for the model.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{materials.png}
+\caption[]{Disney BSDF parameters with the left to right, increasing the influence of one parameter whilst others are constant}
+\label{fig:materials}
+\end{figure}
+
+\subsection{Disney BSDF}
+
+\cite{burley_physically_2012}
+
+
 
 introduce to different types of light interaction
 diffuse
@@ -333,3 +378,4 @@ microfacet
 Principled BSDF
 Philosophy
 construction of the shading model
+
