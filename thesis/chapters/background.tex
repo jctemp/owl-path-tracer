@@ -346,6 +346,26 @@ For this thesis, one will explore the Disney Bidirectional Scattering Distributi
 The shading model is a physically-based shading model for the company's render with artistic controls in mind whilst preserving simplicity and robustness.
 The motivation was to create numerous lighting options with correct surface responses across various environments and improve artist productivity.
 
+\subsection{Microfacet Theory}
+
+Towbridge and Reitz \cite{trowbridge_average_1975} presented a model for rough surfaces for the ray-tracing theory.
+Material surfaces consist of microscopic details where the structure and alignment of these details determine the appearance.
+A \textit{better name} is facet, which are flat shapes that reflect a portion of incoming light depending on the orientation of the facet.
+Research further refined the model because it produced \textit{realistic} results and accurately represented surface-light interactions.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.66\textwidth]{microfacet-model.png}
+\caption[]{Microfacet Model}
+\label{fig:microfacet-normal}
+\end{figure}
+
+On will now elaborate on the different parts of a surface model with microscopic details based on \cite{heitz_understanding_2014}.
+The macro-surface and macro-normal belong to a polygon, the actual geometry of a three-dimensional mesh.
+Now, one uses a normal distribution $D$ to represent the micro-surface surface and describe a microfacet-normal with a particular orientation.
+In addition, one requires a shadowing-masking function $G$, the dark shaded area, that describes the self-shadowing of the micro-surface and non-visible facets due to orientation.
+Accordingly, the projected area only includes the visible area of the micro-surface.
+
 \subsection{Principled Matrials}
 
 Creating a physically-based shading model intuitive for the artist will sacrifice some physical accuracy since not every possible parameter of a complex analytical model qualifies for abstractions.
@@ -367,11 +387,16 @@ In total, there are ten parameters in the first paper, but this changed with the
 
 \subsection{Disney BSDF}
 
-\cite{burley_physically_2012}
+For the Disney BSDF, one used captured data from sampled materials for different light-camera configurations known as the MERL BRDF database; \cite{matusik_data-driven_2003}, \cite{burley_physically_2012}.
+Burley gave an in-depth view of the collected observations as the decision-making process for models.
+One will summarise the different lobes and components Disney uses for their material.
 
 
 
-introduce to different types of light interaction
+
+
+
+
 diffuse
 specular
 microfacet
