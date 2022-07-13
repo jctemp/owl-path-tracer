@@ -210,7 +210,7 @@ The path integral is an alternative representation of the rendering equation tha
 Its introduction aims to assemble the foundation for a local sampling technique used in the implementation of this thesis.
 
 Deriving the integral is intuitive as one can take the eq.~\ref{eq:three-point} and recursively replace the incoming radiance with the equation itself.
-The most challenging part is rearranging the equation so one conceptually shows the pattern.
+The most challenging part is rearranging the equation, so one conceptually shows the pattern.
 The next part will present the integral in multiple elements.
 
 \begin{align}
@@ -295,13 +295,18 @@ Note that throughput is a combination of the reflectance function, the cosine an
 \subsection{Limitations}
 
 As discussed in \cite{veach_robust_1997} path sampling is a simple and general method, but it has some limits.
-Some paths do not have a correct sampling option, and even advanced approaches like bi-direction path tracing struggle with these paths.
+Some paths do not have a correct sampling option and even advanced approaches like bi-direction path tracing struggle with these paths.
 There is also another category of ray tracing problems that are not solvable on Turing complete machines.
 
 However, this does not oppose any problems as most paths are possible for simple scenes.
 Nonetheless, see \cite{veach_robust_1997} for further details on that topic.
 
-\section{Illumination Models}
+\section{Disney Illumination Model}
+
+Now, one will cover the Disney bidirectional distribution function (BSDF) resembling the illumination model.
+Before elaborating on this model, one will give a general overview of relevant topics.
+
+\subsection{Illumination Models}
 
 In computer graphics, illumination models provide a specification to find the directional dependent radiance of a point; \cite{duin_beleuchtungsalgorithmen_1993}. 
 An alternative name is the shading model because the purpose of such a model is to describe how a surface responds to light.
@@ -314,37 +319,14 @@ One must choose an illumination model with path tracing as the selected renderin
 There are many different approaches to creating an equation that resembles light interaction.
 Developing abstractions and categorising light behaviours is ideal for minimising the complexity.
 
-\subsection{Categories of light responses}
+\subsection{Conservation of Energy}
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.66\textwidth]{bsdf-lobes.png}
-\caption[]{light reflection lobes}
-\label{fig:bsdf-lobes}
-\end{figure}
-
-The figure \ref{fig:bsdf-lobes} represents the various categories of behaviours that light exhibits: diffuse, retro-reflective, near-perfect specular and glossy.
-Conceptually it is easier to examine the different types separately.
-Regardless, natural materials often are a combination of all types; \cite{cook_reflectance_1982}.
-
-One will now familiarise with so-called light lobes.
-These show in which directions light scatters depending on the surface properties.
-
-Diffuse materials scatter light in all directions uniformly.
-However, a \textit{popular definition} is a Lambertian reflectance that defines ideal matte surfaces with a $\cos\theta$ distribution.
-Hence, the preferred technical model utilises Lambert's cosine law; (page 115, eq. 4a) \cite{lambert_lamberts_1892}.
-An addition to this lobe are retro-reflections describing reflected light along the incident direction; \cite{berns_event_2021}.
-These reflections are joint for rough materials at grazing angles or carefully constructed materials that are retro-reflective.
-The specularity of surfaces represents a preferable direction that light reflects; \cite{pharr_physically_2017}.
-Depending on the surface roughness, a material appears glossy, like brushed metal or mirror-like for perfect smooth materials.
-Accordingly, perfect smooth materials show near-perfect reflections where the reflected light is the outgoing direction.
-Transmission is self-explaining.
-Light penetrates the surface and passes through an optical medium with another density.
-Snell's law does describe the refraction process of two optical media.
-
-For this thesis, one will explore the Disney Bidirectional Scattering Distribution Function (BSDF); \cite{burley_physically_2012}, \cite{burley_extending_2015}.
-The shading model is a physically-based shading model for the company's render with artistic controls in mind whilst preserving simplicity and robustness.
-The motivation was to create numerous lighting options with correct surface responses across various environments and improve artist productivity.
+In physics, light is a quantum object; hence the energy of such object is described by $E = h \cdot f$ where $E$ is energy, $h$ the Plank constant and $f$ is the frequency.
+Due to that, it requires working with energy appropriately as this is necessary to create physically accurate or even plausible images.
+The law states that a quantity, here energy, must stay constant in a closed system, which applies to a ray-tracing scene.
+Accordingly, if a light quantum hits an object, a part converts to other forms of energy like heat whilst keeping the rest for itself.
+Consequently, light appears darker for certain material traits.
+Therefore, considering light models that are energy conserving helps to create realistic images without ad hoc solutions.
 
 \subsection{Microfacet Theory}
 
@@ -366,7 +348,7 @@ Now, one uses a normal distribution $D$ to represent the micro-surface surface a
 In addition, one requires a shadowing-masking function $G$, the dark shaded area, that describes the self-shadowing of the micro-surface and non-visible facets due to orientation.
 Accordingly, the projected area only includes the visible area of the micro-surface.
 
-\subsection{Principled Matrials}
+\subsection{Philosophy}
 
 Creating a physically-based shading model intuitive for the artist will sacrifice some physical accuracy since not every possible parameter of a complex analytical model qualifies for abstractions.
 
@@ -380,27 +362,58 @@ In total, there are ten parameters in the first paper, but this changed with the
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.9\textwidth]{materials.png}
+\includegraphics[width=0.75\textwidth]{materials.png}
 \caption[]{Disney BSDF parameters with the left to right, increasing the influence of one parameter whilst others are constant}
 \label{fig:materials}
 \end{figure}
 
-\subsection{Disney BSDF}
-
-For the Disney BSDF, one used captured data from sampled materials for different light-camera configurations known as the MERL BRDF database; \cite{matusik_data-driven_2003}, \cite{burley_physically_2012}.
-Burley gave an in-depth view of the collected observations as the decision-making process for models.
+Disney used the MERL BRDF database to create the light responses which contains captured data of materials for different light-camera configurations; \cite{matusik_data-driven_2003}, \cite{burley_physically_2012}.
+Burley gave an in-depth view of the gathered observations to illustrate the decision-making process.
 One will summarise the different lobes and components Disney uses for their material.
 
+\subsection{Light Responses}
 
+This section will cover the different light responses and models incorporated into the Disney BSDF illumination model.
+Therefore, one will use the abstraction of light lobes that separate a response into categories.
+There are five categories present in the Disney model: diffuse, retro-reflective, specular and transmissive.
+See fig.~\ref{fig:lobes}.
 
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{bsdf-lobes.png}
+\caption[]{light lobes}
+\label{fig:lobes}
+\end{figure}
 
+The reason for this abstraction is the reduction of complexity that comes with the nature of light.
+Regardless, natural materials often are a combination of all categories; \cite{cook_reflectance_1982}.
 
+The approach presented in the 2012 paper \cite{burley_physically_2012} was to analyse measured data and compare the observations with widely acknowledged empirical and analytical models.
+Accordingly, they combined models describing a specific light lobe to create a shading model representing all lobes inherently.
+Because of this strategy, they were capable of changing parts of the shading model in the 2015 paper \cite{burley_extending_2015} without creating an entirely new one.
 
-
-diffuse
-specular
-microfacet
-Principled BSDF
-Philosophy
-construction of the shading model
-
+Next, one will summarise the observations and decisions presented by Burley and for a more in-depth understanding, see the papers \cite{burley_physically_2012}, \cite{burley_extending_2015}.
+The \textbf{diffuse} lobe represents a matte surface appearance.
+A commonly used model is the Lambertian reflectance which describes uniformly scattered light.
+A representation of this reflectance is a technical model utilising Lambert's cosine law; (page 115, eq. 4a) \cite{lambert_lamberts_1892}.
+However, natural materials do not show this behaviour in a pure form.
+Therefore, Burley added a Fresnel factor to control the light grazing angles.
+The result was a more physically plausible response, but the edges were too dark for smooth materials.
+Therefore, they developed their empirical model for the retro-reflections to re-create the response at grazing angles which describes reflected light along the incident direction; \cite{berns_event_2021}.
+However, in 2015 they refactored the diffuse and retro-reflection lobes due to the introduction of subsurface scattering.
+Another reason was to preserve the microfacet effects and increase the brightness of the retro-reflective response to avoid unnatural darkening.
+The other primary lobe is \textbf{specular}, where they utilised a microfacet model.
+Accordingly, based on the observations and a careful comparison of models, they settled down with General Trowbridge Reitz as their normal distribution $D$ based on the GGX model presented by Walter \cite{walter_microfacet_2007}.
+It was the only model that could generate high peaks and long tails for the specular lobe.
+Another motivation for this model was the support for importance sampling, which is crucial to converge faster with render and an existing closed-form solution to calculate the $D$ term.
+In 2015, they revisited the equation and accounted for anisotropic material behaviour; (Revision history) \cite{burley_physically_2012}.
+Now, one needs a geometric shadowing and masking function $G$ in addition to the normal distribution of the facet normals.
+They selected the Smith Masking function because it conforms to their needs sufficiently.
+Besides that, Heitz analysed shadowing functions and elaborated on the usage of the Smith Shadowing function and that the model is overestimating shadows, leading to a darker appearance. \cite{heitz_understanding_2014}.
+The last part is the Fresnel term $F$ modelling light responses at grazing angles and handling refractions.
+Burley decided that the Schlick Approximation \cite{schlick_inexpensive_1994} of the Fresnel term is enough for light responses at grazing angles as the error was neglectable. 
+However, this changed with the introduction of the transmissive lobe.
+The inaccuracies for low values for the index of refraction caused the non-plausible refraction.
+Nonetheless, the Fresnel term is expensive to calculate; therefore, only the primary specular lobes utilise the more accurate term.
+Burley also supplemented the specular part with a secondary lobe.
+Its purpose is to overlay a clearcoat layer for non-metallic materials. 
