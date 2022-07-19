@@ -1,8 +1,26 @@
 \chapter{Literature review}
 
-This chapter should give the reader an overview of the components required for a global illumination model.
-For the sake of the scope, one will briefly describe the different topics; therefore, if concepts or terms are unclear, one has to revise those accordingly.
-As a side note, the order of sections does not correspond to the linearity of the concepts.
+This chapter should give the reader an overview of the components required for global illumination.
+One will give an introduction to all required topics for path tracing. Nonetheless, for the sake of the scope, it is not as detailed as technical literature. 
+Hence, if concepts or terms are unclear, one has to revise those accordingly.
+
+\section{Rendering}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.9\textwidth]{rendering.png}
+\caption[]{rendering composition \cite{duin_beleuchtungsalgorithmen_1993}}
+\label{fig:rendering}
+\end{figure}
+
+Rendering is the process of synthesising images. 
+It consists of an illumination model and a rendering algorithm.
+Together they enable one to synthesise images with different properties depending on the selected model or algorithm.
+Thus, one has to be careful when selecting these components because, depending on the use case, less or more sophisticated components are desirable.
+
+For this thesis, one wants to create realistic images regarding surface responses.
+A possible procedure is path tracing (section \ref{sec:path-tracing}) in combination with the Disney illumination model (section \ref{sec:disney-illumination-model}).
+The following sections will elaborate on these components.
 
 \section{Monte Carlo Integration}
 
@@ -10,12 +28,12 @@ In the book, \textit{Physically Based Rendering} \cite{pharr_physically_2017}, t
 Furthermore, they described that traditional methods like trapezoidal integration and the midpoint method are sufficient for low-dimensional and differentiable functions; however, these methods show a poor convergence rate for functions not fulfilling the criteria.
 Nonetheless, approximations with numerical methods are the only solution to evaluate such terms due to the finite resources computers have.
 
-Path-Tracing uses the Monte-Carlo integration because it has many practical properties presented later.
+Path Tracing uses the Monte-Carlo integration because it has many practical properties presented later.
 As with all Monte-Carlo techniques, illustrated by \cite{kalos_monte_2008}, it does use randomness for repeated random sampling to find an accurate solution on average.
 
 Therefore, one gives a quick overview of probability theory to understand how the integration method works.
 
-\subsection{Probability Theory}
+\subsection*{Probability Theory}
 
 A \textbf{random variable} is a function that maps a random process to a real-valued number, and one denotes it with a capitalised letter.
 The \textbf{cumulative distribution function} $F(x)$ gives the probability for a random variable $X$ that is less than or equal to a value $x$.
@@ -31,20 +49,20 @@ The density function describes the likelihood for a random variable to be in an 
 f(x)=\frac{dF(x)}{dx}
 \end{align*}
 
-The expected value is a weighted average, which is evaluable for a random variable.
+The \textbf{expected value} is a weighted average, which is evaluable for a random variable.
 This requires the cumulative distribution $F(x)$ and corresponding density function $f(x)$.
 
 \begin{align*}
 E[X]=\int_{\Omega}F(x)\,f(x)\,dx
 \end{align*}
 
-The final metric is the variance which gives the mean squared deviation.
+The final metric is the \textbf{variance} which gives the mean squared deviation.
 
 \begin{align*}
 V[X]=E\left[(x-E[x])^2\right]
 \end{align*}
 
-\subsection{Monte-Carlo Estimator}
+\subsection*{Monte-Carlo Estimator}
 
 Given is:
 
@@ -52,10 +70,11 @@ Given is:
 F=\int f(x)\,dx\quad\text{where}\quad f:D \mapsto R
 \end{align*}
 
-The task is to find an answer for the integral where $f(x)$ can take on any form.
-The concept, as explained before, is to have a random variable $X:\Omega\rightarrow\mathbb{R}$ where $\Omega$ is a set of all possible outcomes mappable to a real-valued number.
+The task is to find an answer for the integral where $f(x)$ is a function that can take on any form.
+The concept, as explained before, is to have a random variable $X:\Omega\mapsto\mathbb{R}$ where $\Omega$ is a set of all possible outcomes mappable to a real-valued number.
 Additionally, one assumes that samples are uniformly distributed over an interval $[a,b]$.
-This result in the following estimator.
+Now, one uses the random variable $X$ as an input for the function $f$ and accumulates the results of $f$.
+Based on that, one can derive the following estimator:
 
 \begin{align*}
 F_N=\frac{b-a}{N}\sum_{i=1}^{N}f(X_i)
@@ -78,22 +97,23 @@ E[F_N] &=E\left[\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}\right]\\
 &=\frac{1}{N}\sum_{i=1}^{N}\int_{a}^{b}\frac{f(x)}{p(x)}\,p(x)\,dx\\ &=\int_{a}^{b}f(x)\,dx 
 \end{align*}
 
-Now, one gives a quick overview of the advantages the integrations offers and quickly explains why these are useful.
+Now, one gives a quick overview of the advantages and disadvantages and quickly explains why these are useful.
 
-In \cite{veach_robust_1997}, Veach pointed out essential advantages of the Monte-Carlo integration.
+Veach \cite{veach_robust_1997} pointed out the essential advantages and disadvantages of the Monte-Carlo integration.
 The first point mentioned was the convergence rate of the estimator.
 He showed that the estimator converges with the rate of $O(N^{-1/2})$ for high dimensional integrals with discontinuities.
-A vital attribute described in the thesis was that the convergence of an estimator with an infinity amount of variance is slow but guaranteed.
-However, reducing the error by half requires four times more samples which opposes a problematic concern.
+This vital attribute even applies to an estimator with infinite variance. 
+In other words, convergence is slow but guaranteed.
+Nonetheless, based on that, one can determine the required samples to reduce the error by half.
+Accordingly, one can conclude that it needs four times more samples to decrease the error while increasing runtime substantially.
+However, Veach presented optimisations which allow for a more efficient convergence, see the upcoming section.
 The second benefit is the simplicity of the algorithm.
 He explained that this qualifies for flexible design with an integrator that is a black box.
-This fact is essential as one can separate function from technical details.
+This fact is essential as one can separate procedure from technical details.
 The result is that the algorithm's implementation happens once, and the meaning of the data is unrelated, making it suitable for various problems requiring integration.
 The last two traits are that Monte-Carlo can theoretically handle any domain, even an infinite-dimensional space, and work with integrands with singularities.
 
-These benefits mentioned are the reason for the use of this method in computing light integrals.
-
-\subsection{Optimisation}
+\subsection*{Optimisation}
 
 The final part of the Monte-Carlo integration is about optimisations, as these play a considerable part in making this technique feasible for multiple applications.
 
@@ -111,7 +131,9 @@ Before exploring techniques for variance reduction, one must clarify what effici
 Veach explained that one tries to find an estimator where variance and runtime are neglectable, and the eq.~\ref{eq:estimator-eff} describes this as a trade-off with $V[F]$ being the variance and $T[F]$ time required to determine $F$; \cite{veach_robust_1997}.
 Accordingly, an estimator can become more efficient if it reduces runtime or variance.
 
-\paragraph{Importance Sampling} has the principle to find a probability density function $p(x)$ which is similar to the integrand $f(x)$.
+\subsubsection*{Importance Sampling}
+
+Importance Sampling has the principle to find a probability density function $p(x)$ which is similar to the integrand $f(x)$.
 Optimally, the $p(x) \propto f(x)$ and considering equation eq.~\ref{eq:mc-estimator} it would give this configuration.
 
 \begin{align*}
@@ -130,7 +152,9 @@ The decrease is due to increasing the likelihood of sampling areas where the int
 There are some constraints for $p(x)$ where it must match the behaviour of the integrand and its upper bound with $\forall x : p(x) > f(x)$.
 Caution, selecting an incorrect $p(x)$ can have the opposite effect leading to more variance.
 
-\paragraph{Adaptive sample placement} is another option to increase the efficiency of an estimator.
+\subsubsection*{Adaptive sample placement}
+
+Adaptive sample placement is another option to increase the efficiency of an estimator.
 The basic idea is to sample more complicated or contributing regions based on previous samples.
 However, the main disadvantage pointed out by \cite{veach_robust_1997} is the introduction of bias to the estimator that could lead, as an example, to image artefacts.
 
@@ -140,28 +164,30 @@ A quick excurse to elaborate on the problem of bias.
 \beta = E[F]-\int f(x)\,dx
 \end{align*}
 
-It describes the difference between the expected value and the exact value of the integral; recall the original estimator fulfilled the property $E[F]=\int\,f(x)\,dx$ and is therefore unbias.
-Nonetheless, as explained in \cite{kalos_monte_2008}, it does not matter if an estimator is biased if it helps by a significant amount with variance.
+The bias of an estimator describes the difference between the expected value and the exact value of an integral.
+For example, the original derived estimator had the property $E[F]=\int\,f(x)\,dx$ and is therefore unbias.
+Modifying the equation, for example, not accounting for a particular value range, will change the expected value and automatically bias the other values.
+If the bias is overly large, it causes issues like variance or even another result which is not desirable.
+Nonetheless, as explained in \cite{kalos_monte_2008}, it does not matter if an estimator is biased if it helps increase its efficiency without showing a significant difference, making it feasible for more applications.
 
-Russian roulette is one possible technique that can be incorporated well.
-The technique intends to reduce sampling regions where the integrand is low as these contribute less to the final result.
-
+Russian roulette is a possible technique for reducing samples for regions where the integrand is low and therefore contributes less to the final result.
 In \cite{pharr_physically_2017} the authors elaborated that skipping low values does not matter because the expected value is still correct on average.
-Another fact they explained is that Russian roulette does not reduce variance (it can even increase it), but it improves efficiency by not evaluating less important regions; hence runtime improves.
+Another fact they explained is that Russian roulette does not reduce variance (it can even increase it), but it improves efficiency by not evaluating less important regions; hence the runtime improves.
 
 \section{Light Integrals}
 
 Performing light transport simulations requires a formalisation of light.
-For Path-Tracing, one utilises tools from physics to create a framework.
+For Path Tracing, one utilises tools from physics to create a framework.
 Duin \cite{duin_beleuchtungsalgorithmen_1993} described different models of light and how each of them comes with particular strengths in modelling the light's behaviour.
 He elaborated that these models, like particle dualism, are outstanding in describing the nature of light but are not necessary for computer graphics where optics and radiometry are sufficient to model light at its core.
 Based on that, he stressed the idea of light propagation and explained how light traverses the scene and interacts with other objects.
-The scene is a formal description containing elements like an object, light rays, volumetrics and more. 
+A \textit{scene} is a formal description containing elements like an object, light rays and volumetrics.
+An \textit{object} is a geometric model consisting of triangles representing a shell of a real object.
 
-\subsection{Rendering Equation}
+\subsection*{Rendering Equation}
 
 In 1986 Kajiya \cite{kajiya_rendering_1986} proposed the famous rendering equation that describes light propagation based on physics radiative heat transfer literature.
-As a general geometrical optics approximation, its purpose is to evaluate the leaving equilibrium radiance at a point $p$ in the direction $\omega_o$ from all in-coming directions $\omega_i$ with a cosine term and $f(p, \omega_o, \omega_i)$ as the reflectance function.
+As a general geometrical optics approximation, its purpose is to evaluate the leaving equilibrium radiance at a point $p$ in the direction $\omega_o$ from all in-coming directions $\omega_i$ with a cosine term for the projection of the solid angle and a reflectance function $f(p, \omega_o, \omega_i)$ describing attenuation of the light.
 
 \begin{align}
 L_o(x,\omega_o)=L_e(x,\omega_o)+\int_{S^2}f_r(x,\omega_o,\omega_i)\,L_i(x,\omega_i)\,\left|\cos\theta_i\right|\,d\omega_i
@@ -169,13 +195,15 @@ L_o(x,\omega_o)=L_e(x,\omega_o)+\int_{S^2}f_r(x,\omega_o,\omega_i)\,L_i(x,\omega
 \end{align}
 
 See that eq.~\ref{eq:rendering} is a recursive formulation where the in-coming directions are again integrals determined at other points in the scene.
-That is why there is no immediate solution to the rendering equation; however, Ray-Tracing with Monte-Carlo integration, known as Path-Tracing, builds the foundation to solve such a simulation problem.
+That is why there is no immediate solution to the rendering equation; however, Ray Tracing with Monte-Carlo integration, known as Path Tracing, builds the foundation to solve such a simulation problem.
 
-\subsection{Three-Point Form}
+\subsection*{Three-Point Form}
 
-The current rendering equation is not suitable for deriving the path integral.
-An additional step is needed to present an integral over areas, the so-called three-point form; \cite{veach_robust_1997}.
-Therefore, one replaces all terms in the eq.~\ref{eq:rendering} containing a direction $\omega$, recall that $\omega=\widehat{x'-x}$.
+The rendering equation is ideal for understanding the concept of light propagation; however, unflexible to derive estimators because it is an integral over a solid angle.
+Thus, let one prepare an integral over areas, the so-called three-point form; \cite{veach_robust_1997}.
+Based on that, one will derive the path integral, providing more freedom in constructing an estimator.
+
+The first step is to replace all terms in the eq.~\ref{eq:rendering} containing a direction $\omega=\widehat{x'-x}$ with $x'\rightarrow x$:
 
 \begin{align*}
 L(x,\omega)=L(x'\rightarrow x)\quad\wedge\quad f_r(x,\omega_o,\omega_i)=f_r(x''\rightarrow x'\rightarrow x)
@@ -191,35 +219,35 @@ d\omega=\frac{|\cos\theta'|}{\|x'-x\|^2}dA(x') \Rightarrow |\cos\theta|\,d\omega
 
 However, this is not yet correct because two points must be visible.
 The function $V$ is a visibility function that verifies that two points are from each other visible.
-One utilises the visibility function and a factor of the previous equation for a geometry term $G$. If two points are not mutually visible, then the function is 0.
+One utilises the visibility function and the previous equation for a geometry term $G$. If two points are not mutually visible, then the function is 0.
 
 \begin{align*}
 G(x'\leftrightarrow x)=V(x'\leftrightarrow x)\frac{|\cos\theta|\,|\cos\theta'|}{\|x'-x\|^2}
 \end{align*}
 
-If one substitutes all terms in eq.~\ref{eq:rendering} then one gets the three-point form.
+Substituting all terms in eq.~\ref{eq:rendering} gives the three-point Form.
 
 \begin{align}
-L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{A}L(x''\rightarrow x')\,f_r(x''\rightarrow x'\rightarrow x)\,G(x''\leftrightarrow x')\,dA(x')
+L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{A}L(x''\rightarrow x')\,f_r(x''\rightarrow x'\rightarrow x)\,G(x''\leftrightarrow x')\,dA(x'')
 \label{eq:three-point}
 \end{align}
 
-\subsection{Path Integral}
+\subsection*{Path Integral}
 
-The path integral is an alternative representation of the rendering equation that comprehensively explains detailed rendering characteristics.
-Its introduction aims to assemble the foundation for a local sampling technique used in the implementation of this thesis.
+An alternative representation of the rendering equation is the path integral.
+It explains detailed rendering characteristics comprehensively, including a local sampling technique used in the implementation of this thesis.
 
 Deriving the integral is intuitive as one can take the eq.~\ref{eq:three-point} and recursively replace the incoming radiance with the equation itself.
-The most challenging part is rearranging the equation, so one conceptually shows the pattern.
-The next part will present the integral in multiple elements.
+Rearranging the new infinite recursive equation, one can separate it into multiple elements that govern a particular function.
 
 \begin{align}
 L(x_1\rightarrow x_0)=\sum_{n=1}^\infty P(\bar{x}_n)
 \label{eq:path-integral}
 \end{align}
 
-The equation \ref{eq:path-integral} represents the path integral.
-It summates the radiance of all contributing paths, which gives the value obtained by the camera plane.
+The eq.~\ref{eq:path-integral} represents the path integral.
+Its task is to find the in-coming radiance at $x_0$ regarding a path $\bar{x}_n=x_0,x_1,\dotso,x_n$ with $n+1$ vertices.
+Notice that it summates the total radiance of paths $P(\bar{x})$, which gives the accumulated total radiance obtained by a point $x_0$ on the camera plane.
 The summation is over an infinite domain where only the subset of paths with finite length is of interest.
 
 \begin{align}
@@ -227,15 +255,15 @@ P(\bar{x}_n)=\underbrace{\int_A \int_A \dots \int_A}_{n-1}\left(L_e(x_n\rightarr
 \label{eq:path-radiance}
 \end{align}
 
-Consequentially, eq.~\ref{eq:path-radiance} is the amount of radiance of a path $\bar{x}_n=x_0,x_1,\dotso,x_n$ with $n+1$ vertices.
-It demands solving multiple nested integrals over areas.
+Eq.~\ref{eq:path-radiance} is the radiance of a paths $\bar{x}_n$.
+It demands solving multiple nested integrals over areas representing all possible paths with almost any combination of vertices $x_n$ forming a valid path to a light source or the scene enclosure.
 
 \begin{align}
 T(\bar{x}_n)=\prod_{k=1}^{n-1}f(x_{k+1}\rightarrow x_k\rightarrow x_{k-1})G(x_{k+1}\leftrightarrow x_{k})
 \label{eq:path-throughput}
 \end{align}
 
-As explained by \cite{pharr_physically_2017}, the throughput expresses the fraction of received radiance from a light source.
+Eq.~\ref{eq:path-throughput} gives the throughput $T(\bar{x}_n)$ that expresses the fraction of received radiance from a light source; \cite{pharr_physically_2017}.
 This part is essential for the Monte-Carlo estimator as it explains how to keep track of the throughput state during the rendering process.
 
 Now, one summarises the benefits before the subsequent section explains how the path integral incorporates the Monte-Carlo algorithm.
@@ -248,14 +276,14 @@ The construction of such paths is not limited to local information.
 That qualifies for an open selection process of path vertices.
 Last, it provides a framework to work with the probability density of paths.
 
-\section{Path Tracing}
+\section{Path Tracing} \label{sec:path-tracing}
 
-Path tracing is a possible rendering algorithm to create synthetic images.
-It uses ray tracing and Monte-Carlo integration to compute photorealistic images.
-For this, it needs a formula that has to be solved.
-One has now covered both, which allows the introduction of a local sampling technique to compute images.
+\textit{Path tracing} is a rendering algorithm used for image synthesis.
+It employs ray tracing and Monte-Carlo integration to compute paths with corresponding vertices.
+At each vertex, one evaluates an illumination model.
+The algorithm gives a formal definition of assembling paths for rendering.
 
-A \textit{local sampling technique} is a method that constructs vertices of the path one at a time based on local information; \cite{veach_robust_1997}.
+A \textit{local sampling technique} is a definition that describes the construction of paths based on local information one at a time; \cite{veach_robust_1997}.
 The easiest way is to sample directions regarding a probability density function.
 One uses ray tracing to find the next vertex position.
 This approach also solves the visibility problem, constructing only valid paths.
@@ -273,7 +301,7 @@ Therefore, one has to make the conversion to calculate the correct probability o
 
 The figure \ref{fig:path-vertices} depicts the configuration of path vertices.
 Vertex $x$ is the point of interest, and $x'$ is a potential successor.
-In the current framework, one does sample a direction $\omega$ and cast a ray from $x$ towards $x'$.
+In the present framework, one does sample a direction $\omega$ and cast a ray from $x$ towards $x'$.
 Currently, one has only the probability of $\omega$. 
 However, the following conversion term is applied to find the probability of $x'$.
 
@@ -281,102 +309,93 @@ However, the following conversion term is applied to find the probability of $x'
 p(x')=p(\omega)\frac{|\cos\theta'|}{\|x'-x\|^2}
 \end{align*}
 
-The authors of \cite{pharr_physically_2017} illustrated how integrating the probability density function in eq.~\ref{eq:path-radiance} causes the geometry function $G$ to partially cancel out with mentioned conversion.
-However, be careful as the last vertex of a path is a light source.
-This vertex originates from a distribution over the surface of the light.
+The authors \cite{pharr_physically_2017} illustrated how applying the conversion term to the probability density function in eq.~\ref{eq:path-radiance} causes the geometry function $G$ to cancel out partially because of the last vertex at the light source.
+Remember, the last vertex originates from a distribution over the light's surface area; hence, one does not apply the conversion.
 
 \begin{align*}
 \frac{f(x_{n}\rightarrow x_{n-1}\rightarrow x_{n-2})G(x_n\leftrightarrow x_{n-1})}{p(x_n)}\,\left(\prod_{k=1}^{n-2}\frac{f(x_{k+1}\rightarrow x_{k}\rightarrow x_{k-1})|\cos\theta_{k}|}{p(\widehat{x_{k+1}-x_{k}})}\right)
 \end{align*}
 
-Using eq.~\ref{eq:path-throughput} gives the final throughput term for the current use sampling framework.
+Using eq.~\ref{eq:path-throughput} gives the final throughput term for the present sampling framework.
 Note that throughput is a combination of the reflectance function, the cosine and the probability of the incoming direction.
 
-\subsection{Limitations}
+%\subsection*{Limitations}
 
-As discussed in \cite{veach_robust_1997} path sampling is a simple and general method, but it has some limits.
-Some paths do not have a correct sampling option and even advanced approaches like bi-direction path tracing struggle with these paths.
-There is also another category of ray tracing problems that are not solvable on Turing complete machines.
+%Choosing a local sampling technique does constrain paths to the local information one provides.
+%Accordingly, only a subset of valid visible paths contributes to the final image, resulting in the issue that one cannot appropriately represent all light effects.
+%Veach \cite{veach_robust_1997} discussed the limitations of rendering algorithms, even demonstrating distinct scenarios where the sampling is flawed.
 
-However, this does not oppose any problems as most paths are possible for simple scenes.
-Nonetheless, see \cite{veach_robust_1997} for further details on that topic.
-
-\section{Disney Illumination Model}
+\section{Disney Illumination Model} \label{sec:disney-illumination-model}
 
 Now, one will cover the Disney bidirectional distribution function (BSDF) resembling the illumination model.
 Before elaborating on this model, one will give a general overview of relevant topics.
 
-\subsection{Illumination Models}
+\subsection*{Illumination Models}
 
-In computer graphics, illumination models provide a specification to find the directional dependent radiance of a point; \cite{duin_beleuchtungsalgorithmen_1993}. 
-An alternative name is the shading model because the purpose of such a model is to describe how a surface responds to light.
-One got already acquainted with a general illumination model, the rendering equation.
+In computer graphics, illumination models, sometimes called shading models, provide a specification to find the directional dependent radiance of a point; \cite{duin_beleuchtungsalgorithmen_1993}, or in other words, determine how a surface responds to light.
 
-In \cite{duin_beleuchtungsalgorithmen_1993}, the authors mentioned three phases of shading models.
-The last phase is interesting because it covers global illumination effects using optics combined with rendering algorithms like ray tracing.
-One must choose an illumination model with path tracing as the selected rendering algorithm.
+For global illumination, one already selected path tracing as the rendering algorithm.
+Now, one has to pick a shading model that accurately represents surface properties with correct responses.
+Only then it is possible to re-create global illumination effects.
 
-There are many different approaches to creating an equation that resembles light interaction.
-Developing abstractions and categorising light behaviours is ideal for minimising the complexity.
+In the past decades, research developed many models that can successfully represent different types of surfaces.
+The Disney shading model is one of these.
 
-\subsection{Conservation of Energy}
+\subsection*{Conservation of Energy}
 
-In physics, light is a quantum object; hence the energy of such object is described by $E = h \cdot f$ where $E$ is energy, $h$ the Plank constant and $f$ is the frequency.
-Due to that, it requires working with energy appropriately as this is necessary to create physically accurate or even plausible images.
-The law states that a quantity, here energy, must stay constant in a closed system, which applies to a ray-tracing scene.
-Accordingly, if a light quantum hits an object, a part converts to other forms of energy like heat whilst keeping the rest for itself.
-Consequently, light appears darker for certain material traits.
-Therefore, considering light models that are energy conserving helps to create realistic images without ad hoc solutions.
+The conservation of energy states that a quantity, here energy of light, must stay constant in a closed system, which is, in this case, a ray-traced scene.
 
-\subsection{Microfacet Theory}
+Note that light is a quantum object; hence the energy of such object is described by $E = h \cdot f$ where $E$ is energy, $h$ the Plank constant and $f$ is the frequency.
+Due to that, one has to handle conversions of energy appropriate; otherwise, a synthesised image will be inaccurate.
 
-Towbridge and Reitz \cite{trowbridge_average_1975} presented a model for rough surfaces for the ray-tracing theory.
-Material surfaces consist of microscopic details where the structure and alignment of these details determine the appearance.
-A \textit{better name} is facet, which are flat shapes that reflect a portion of incoming light depending on the orientation of the facet.
+Accordingly, if a light quantum hits an object, a part converts to heat, and another part energises atoms of the surface.
+The light quantum keeps the amount of energy left after these conversions.
+Therefore, considering light models that are energy conserving helps to create realistic coherent images without ad hoc solutions.
+
+\subsection*{Microfacet Theory}
+
+Trowbridge and Reitz \cite{trowbridge_average_1975} presented a model for the ray tracing theory describing rough surfaces.
+It assumes that surfaces consist of microscopic details where the structure and alignment determine the appearance, hence the surface's response.
+One describes the microscopic details with so-called facets.
+These facets are flat shapes that only reflect light.
+Thus, only a portion of the incoming light reflects on rough surfaces because all these facets have arbitrary orientations.
 Research further refined the model because it produced \textit{realistic} results and accurately represented surface-light interactions.
 
 \begin{figure}[h]
 \centering
-\includegraphics[width=0.66\textwidth]{microfacet-model.png}
-\caption[]{Microfacet Model}
+\includegraphics[width=0.6\textwidth]{microfacet-model.png}
+\caption[]{Microfacet Model \cite{heitz_understanding_2014}}
 \label{fig:microfacet-normal}
 \end{figure}
 
-On will now elaborate on the different parts of a surface model with microscopic details based on \cite{heitz_understanding_2014}.
-The macro-surface and macro-normal belong to a polygon, the actual geometry of a three-dimensional mesh.
-Now, one uses a normal distribution $D$ to represent the micro-surface surface and describe a microfacet-normal with a particular orientation.
-In addition, one requires a shadowing-masking function $G$, the dark shaded area, that describes the self-shadowing of the micro-surface and non-visible facets due to orientation.
-Accordingly, the projected area only includes the visible area of the micro-surface.
+The fig.~\ref{fig:microfacet-normal} depicts the configuration of the microfacets and the actual geometry.
+As one can observe, one utilises a function $D(\omega_m)$ that describes the microscopic details (microfacets) dependent on the geometric normal $\omega_m$.
+$D$ is a normal distribution function giving the probability of a facet having a particular direction.
+However, this is not enough to fully describe the microfacet surface.
+One has to account for self-shadowing and non-visible facets due to orientation.
+Hence, a shadowing-masking function $G$ models this behaviour.
+The last part of the figure is the distribution of visible microfacets $D_{\omega_o}$.
+It is a projection of the microfacet surface regrading the direction $\omega_o$.
 
-\subsection{Philosophy}
+\subsection*{Philosophy}
 
-Creating a physically-based shading model intuitive for the artist will sacrifice some physical accuracy since not every possible parameter of a complex analytical model qualifies for abstractions.
+Burley \cite{burley_physically_2012} gave a detailed overview of the goals of the new illumination model.
+He created a set of guidelines that shaped the decision-making process to restrict the selection of light models (analytical and empirical) for a new illumination model.
+The most notable fact is that the model is not required to be physically accurate in favour of art directable materials.
+A final product is an illumination model that follows physics principles and should be physically plausible whilst fulfilling the need for artistic controls.
 
-However, this was no problem for Disney because they stated in \cite{burley_physically_2012} that a model should be art directable and not necessarily physically accurate.
-They elaborated that the philosophy is to develop a \textit{principled} and not a strictly physically correct model.
-Therefore, the Disney BSDF follows five principles.
+Accordingly, Burley presented five principles for the Disney BRDF \cite{burley_physically_2012}.
 The model should be intuitive and have a minimal amount of parameters where each parameter ranges between zero and one.
 The parameters can go beyond the range, and a combination of all is robust and plausible to a certain extent.
 
-In total, there are ten parameters in the first paper, but this changed with the addition of the second paper \cite{burley_extending_2015}, which introduced a transmissive behaviour and integrated subsurface scattering for the model.
+In the original paper, Burley \cite{burley_physically_2012} settled down with ten parameters to control the appearance.
+However, one assumes that this changed with the latest paper that introduced transmission and subsurface scattering; \cite{burley_extending_2015}. 
 
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.75\textwidth]{materials.png}
-\caption[]{Disney BSDF parameters with the left to right, increasing the influence of one parameter whilst others are constant}
-\label{fig:materials}
-\end{figure}
+\subsection*{Light Responses}
 
-Disney used the MERL BRDF database to create the light responses which contains captured data of materials for different light-camera configurations; \cite{matusik_data-driven_2003}, \cite{burley_physically_2012}.
+Burley used the MERL BRDF database which contains captured data of materials for different light-camera configurations to observe and evaluate physic models; \cite{matusik_data-driven_2003}, \cite{burley_physically_2012}.
 Burley gave an in-depth view of the gathered observations to illustrate the decision-making process.
 One will summarise the different lobes and components Disney uses for their material.
-
-\subsection{Light Responses}
-
-This section will cover the different light responses and models incorporated into the Disney BSDF illumination model.
-Therefore, one will use the abstraction of light lobes that separate a response into categories.
-There are five categories present in the Disney model: diffuse, retro-reflective, specular and transmissive.
-See fig.~\ref{fig:lobes}.
 
 \begin{figure}[h]
 \centering
@@ -385,35 +404,67 @@ See fig.~\ref{fig:lobes}.
 \label{fig:lobes}
 \end{figure}
 
-The reason for this abstraction is the reduction of complexity that comes with the nature of light.
-Regardless, natural materials often are a combination of all categories; \cite{cook_reflectance_1982}.
+One will follow the idea that light is categorisable into so-called light lobes.
+This abstraction allows for the selection of different models governing a specific lobe's behaviour.
+Regardless, natural materials often combine all categories; \cite{cook_reflectance_1982}.
+Nevertheless, the abstraction enables one to handle the complexity.
+There are five categories present in the Disney model: diffuse, retro-reflective, specular and transmissive.
 
-The approach presented in the 2012 paper \cite{burley_physically_2012} was to analyse measured data and compare the observations with widely acknowledged empirical and analytical models.
-Accordingly, they combined models describing a specific light lobe to create a shading model representing all lobes inherently.
-Because of this strategy, they were capable of changing parts of the shading model in the 2015 paper \cite{burley_extending_2015} without creating an entirely new one.
+\subsubsection*{Diffuse and Retro-Reflection}
 
-Next, one will summarise the observations and decisions presented by Burley and for a more in-depth understanding, see the papers \cite{burley_physically_2012}, \cite{burley_extending_2015}.
-The \textbf{diffuse} lobe represents a matte surface appearance.
-A commonly used model is the Lambertian reflectance which describes uniformly scattered light.
-A representation of this reflectance is a technical model utilising Lambert's cosine law; (page 115, eq. 4a) \cite{lambert_lamberts_1892}.
-However, natural materials do not show this behaviour in a pure form.
-Therefore, Burley added a Fresnel factor to control the light grazing angles.
-The result was a more physically plausible response, but the edges were too dark for smooth materials.
-Therefore, they developed their empirical model for the retro-reflections to re-create the response at grazing angles which describes reflected light along the incident direction; \cite{berns_event_2021}.
-However, in 2015 they refactored the diffuse and retro-reflection lobes due to the introduction of subsurface scattering.
-Another reason was to preserve the microfacet effects and increase the brightness of the retro-reflective response to avoid unnatural darkening.
-The other primary lobe is \textbf{specular}, where they utilised a microfacet model.
-Accordingly, based on the observations and a careful comparison of models, they settled down with General Trowbridge Reitz as their normal distribution $D$ based on the GGX model presented by Walter \cite{walter_microfacet_2007}.
-It was the only model that could generate high peaks and long tails for the specular lobe.
-Another motivation for this model was the support for importance sampling, which is crucial to converge faster with render and an existing closed-form solution to calculate the $D$ term.
-In 2015, they revisited the equation and accounted for anisotropic material behaviour; (Revision history) \cite{burley_physically_2012}.
-Now, one needs a geometric shadowing and masking function $G$ in addition to the normal distribution of the facet normals.
-They selected the Smith Masking function because it conforms to their needs sufficiently.
-Besides that, Heitz analysed shadowing functions and elaborated on the usage of the Smith Shadowing function and that the model is overestimating shadows, leading to a darker appearance. \cite{heitz_understanding_2014}.
-The last part is the Fresnel term $F$ modelling light responses at grazing angles and handling refractions.
-Burley decided that the Schlick Approximation \cite{schlick_inexpensive_1994} of the Fresnel term is enough for light responses at grazing angles as the error was neglectable. 
-However, this changed with the introduction of the transmissive lobe.
-The inaccuracies for low values for the index of refraction caused the non-plausible refraction.
-Nonetheless, the Fresnel term is expensive to calculate; therefore, only the primary specular lobes utilise the more accurate term.
-Burley also supplemented the specular part with a secondary lobe.
-Its purpose is to overlay a clearcoat layer for non-metallic materials. 
+The diffuse surface response generally represents any light that hits a non-metallic surface, which is then absorbed and re-emitted.
+The absorption of specific wavelengths has two effects.
+A surface reflects other wavelengths and can re-emit light due to the energised atoms.
+Burley did a comparison \cite{burley_physically_2012} of the Lambert reflectance \cite{lambert_lamberts_1892} and the measured data.
+He explained that Lambert diffuse loses light's directionality, which yields a constant value.
+Because of that, one cannot correctly represent the surface response at the grazing angle, which needs to become darker or brighter depending on the retro-reflectiveness, which correlates to the surface roughness.
+Thus, he suggested utilising a Fresnel term to re-create the response with the Lambert diffuse and a retro-reflection term.
+To clarify what retro-reflection means it describes reflected light along the incident direction; \cite{berns_event_2021}.
+
+Based on that, Burley \cite{burley_extending_2015} created two lobes, a diffuse lobe with Lambert reflectance and a retro-reflection lobe with a self-developed empirical model, where both utilise a Fresnel weight.
+Besides that, he accounted for subsurface scattering so that the subsurface scattering converges against the diffuse lobe for small scattering distances.
+Additionally, both lobes preserve microfacet effects needed for the specular lobe. 
+
+\subsubsection*{Specular}
+
+The specular lobe utilises the microfacet theory and the observations as decisions correlate to the components of the theory.
+
+Burley \cite{burley_physically_2012} began with the distribution function $D$ and compared multiple traditional models with the measured data.
+He noticed that all models had an issue replicating the peak, especially the highlights' tail (Beckmann, Blinn Phong).
+That is why Walter introduced the popular GGX model, specifically creating broad tails; \cite{walter_microfacet_2007}.
+Nonetheless, it is not wide enough for most materials.
+
+Due to the difficulties, Burley adapted a Generalised-Trowbridge-Reitz (GTR), where an exponent controls the width of the distribution.
+Besides that, the model offered a normalised distribution with a closed-form integral and support for importance sampling.
+A revision in 2014 (B.2 GTR eq. 10) \cite{burley_physically_2012} changed the equation to account for anisotropic material behaviour.
+
+The second term for the microfacets is the Fresnel factor which controls the specular reflection dependent on the angle difference between view and light vector as surface roughness.
+Burley observed that every measured material had specular reflection at a $\theta_d=90$ where some increased significantly.
+
+Therefore, Burley \cite{burley_physically_2012} introduced the Fresnel term utilising the Schlick approximation \cite{schlick_inexpensive_1994}.
+It was sufficient owing to minor errors whilst replacing the overcomplicated entire Fresnel equation.
+The introduction of a transmissive specular lobe \cite{burley_extending_2015} required the use of the entire Fresnel equation because the approximation error led to non-plausible refractions for a low index of refraction.
+However, this change only applies to the primary specular lobes whilst utilising the Schlick approximation for the other lobes.
+
+Lastly, one has to consider the geometry term $G$ that governs the light direction's shadowing and the viewing direction's masking.
+Burley explained \cite{burley_physically_2012} that one cannot directly evaluate the $G$ term because it demands accurate $D$ and $F$ terms as well as a clear separation of the diffuse and specular lobe.
+However, he used the directional albedo of the surface to identify the influence of the $G$ term.
+The result is that most materials have a small albedo value and remain constant as a flat line up to 70 degrees regarding the incoming light's direction.
+Afterwards, depending on the roughness, most materials increased or decreased in directional albedo.
+He stressed that the $G$ factor has a "profound" effect on the albedo and, consequentially, the surface appearance.
+
+Burley used an analytical model using the approach by Smith. 
+It lets one derive the geometry term $G$ from the microfacet distribution $D$ if one facilitates the assumptions about geometric shadowing.
+A solution by Heitz \cite{heitz_understanding_2014} replaced the used version by Burley because he accounted for anisotropy and removed the alpha-roughness conversion; (Addenda) \cite{burley_physically_2012}.
+
+\subsubsection*{Other}
+
+Besides the three major lobes, Disney included two minor to support visual fidelity.
+Both introduced in \cite{burley_physically_2012} remained unchanged; \cite{burley_extending_2015}.
+
+Burley supplemented the primary specular lobe with a secondary lobe to create a clearcoat layer for non-metallic materials adding extra reflections.
+It increases energy by a minimal amount, but this is not a problem as it has a substantial visual impact.
+
+One added a sheen lobe for extra grazing reflections to compensate for potentially missing specular or diffuse responses.
+Accordingly, it has a Fresnel-like shape only effect grazing angles.
+It is possible to tint the sheen towards the base colour.
