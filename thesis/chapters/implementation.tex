@@ -1,16 +1,78 @@
 \chapter{Implementation}
 
-\href{https://microsoft.github.io/DirectX-Specs/d3d/Raytracing.html#intro}{A}
-\href{https://developer.nvidia.com/rtx/ray-tracing/optix}{B}
-\href{https://www.khronos.org/blog/vulkan-ray-tracing-final-specification-release}{C}
+Path tracing is expensive because path construction requires tracing multiple rays in a scene.
+One repeats this procedure for all pixels of an image.
+Elaborating on the idea of tracing rays, one utilises ray casts to send a ray into a scene. 
+Based on that, one can find an object with the corresponding intersection point.
+For that, one employs intersection tests against the present geometry of objects in the scene description.
 
-\cite{benthin_realtime_2006}
+The challenge with tracing many rays is that a computer must process these calculations as fast and efficient as possible.
+For example, if an image has the dimension 1024x1024 and one samples only one path per pixel, then there are already a million paths to be calculated. 
+Depending on the path length, the algorithm has to find $n$ intersection point.
+Extending the problem with a more complex scene description or increasing light calculations per intersection point, the effort to calculate a path becomes much more problematic.
+
+Accordingly, one must consider two factors to achieve a foreseeable time for image synthesis.
+The first point is ray tracing libraries that offer required acceleration structures, efficient algorithms for ray tracing, and a convenient interface.
+Secondly, one should consider the aspect of parallelisation.
 
 \section{Tools and Libraries}
 
-\section{Path Tracing Routine}
+First, one likes to take a closer look at ray tracing libraries.
+All the present libraries follow the same core principle, providing primary ray tracing primitives like acceleration structures and ray tracing itself with a programmable pipeline.
+The programmable components of these pipelines are shader programs that govern the hit and miss logic for graphic units or abstract classes and lambda functions for CPU implementations.
+Important to note is that GPU libraries tend to be more verbose, demanding more explicit source code regarding general data management.
 
-\section{Surface Interactions}
+The second topic is parallel computing.
+It has become an essential field in computer graphics over the last decades as hardware performance does not follow Moore's law anymore; \cite{theis_end_2017}.
+Consequently, experts adapted software design and introduced specialised hardware components.
+Accordingly, CPUs can process multiple serial tasks owing to an increase in core count and cache, enabling "lightweight" parallelism.
+Nonetheless, GPUs as specialised hardware became popular for massive parallelism, especially in computer graphics.
+In recent years, graphics card vendors extended the architecture for machine learning and ray tracing support, making GPUs very interesting for path tracer implementation.
+
+Before diving into the concrete tools, one will specify some requirements.
+The first objective is fast rendering so one can iterate through changes frequently.
+Fast rendering is beneficial if one chooses high sample counts to check for potential image artefacts like fireflies, as images should converge correctly.
+Secondly, the used library should offer high abstraction so that no technical intricacies of the library lead to problems and therefore accelerate the development speed.
+The last requirement is libraries must support C++ because of suitable tools and resources.
+Based on this, one can try to make a decision.
+
+First, one wants to determine whether to use the graphics cards or the processor for the implementation.
+The performance and rendering speed depends solely on the library and possible parallel computing.
+Therefore, the premise is that the library's choice is not decisive because the algorithms and data structures can be virtually equivalent \cite{bico_optix_2016}.
+Hence, with simplified conditions, only the parallelisation provided by the corresponding hardware would determine the final runtime. 
+Due to a certain degree of guaranteed parallelism that a graphics card provides, one uses a corresponding GPU library for the implementation.
+
+\begin{wraptable}{l}{6cm}
+    \begin{tabular}{|c|c|}\hline
+        Nvidia        & OptiX     \\ \hline
+        Microsoft     & DXR       \\ \hline
+        Khronos Group & Vulkan-RT \\ \hline
+        Intel         & Embree    \\ \hline
+    \end{tabular}
+    \caption{libraries}
+    \label{fig:libraries}
+\end{wraptable}
+
+One further examined selected libraries for a graphics card implementation (see fig.~\ref{fig:libraries}).
+The pre-selection of the four libraries is because of a mature ray tracing API with various potential features to enable fast ray tracing.
+
+The essential requirement for one is a straightforward interface so that rapid development is favoured.
+However, as already mentioned, the interfaces are often verbose, and the libraries expect prior knowledge of graphics card programming.
+Apart from that, there were no other expectations or limitations.
+Therefore, one favoured a wrapper library that streamlines the corresponding parts, such as function calls or data management.
+A suitable library, OptiX Wrapper Library (OWL), was found, which led to the decision to use OptiX.
+
+Finally, one would like to list the tools and libraries used.
+It will be not explained in more detail why one used the respective versions or tools.
+
+\begin{itemize}
+    \item CMake 3.22.0
+    \item C++20 and CUDA 17
+    \item CUDA Runtime 11.7
+    \item OptiX Ray Tracing API (SDK 7.4.0)
+\end{itemize}
+
+\section{Routines}
 
 \section{Disney BSDF}
 
