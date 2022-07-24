@@ -15,7 +15,7 @@ Accordingly, one must consider two factors to achieve a foreseeable time for ima
 The first point is ray tracing libraries that offer required acceleration structures, efficient algorithms for ray tracing, and a convenient interface.
 Secondly, one should consider the aspect of parallelisation.
 
-\section{Tools and Libraries}
+\section{Ray Tracing Libraries}
 
 First, one likes to take a closer look at ray tracing libraries.
 All the present libraries follow the same core principle, providing primary ray tracing primitives like acceleration structures and ray tracing itself with a programmable pipeline.
@@ -60,7 +60,7 @@ The essential requirement for one is a straightforward interface so that rapid d
 However, as already mentioned, the interfaces are often verbose, and the libraries expect prior knowledge of graphics card programming.
 Apart from that, there were no other expectations or limitations.
 Therefore, one favoured a wrapper library that streamlines the corresponding parts, such as function calls or data management.
-A suitable library, OptiX Wrapper Library (OWL), was found, which led to the decision to use OptiX.
+A suitable library, OptiX Wrapper Library (OWL), was found, which led to the decision to use OptiX. 
 
 Finally, one would like to list the tools and libraries used.
 It will be not explained in more detail why one used the respective versions or tools.
@@ -72,10 +72,80 @@ It will be not explained in more detail why one used the respective versions or 
     \item OptiX Ray Tracing API (SDK 7.4.0)
 \end{itemize}
 
-\section{Routines}
+\section{NVidia - OptiX 7}
 
-\section{Disney BSDF}
+Building a path tracer with a ray tracing library requires knowing some terminology and understanding the various parts of the programmable pipeline.
+OptiX is a part of the CUDA programming eco-system and differentiates between host and device code.
+In simple words, host code runs on the processor and device code on a graphics card.
+Accordingly, any source code targeted to the graphics card must be device code and follow the CUDA language specifications.
 
-\subsection{Evaluation}
+In the context of OptiX, the programmable parts are shaders or \textit{programs} that are a part of the device code.
+These programs define specific behaviour for different states in this pipeline provided by the programmer and depending on the application.
+Next, one will briefly explain which program types exist and how one uses these programs.
 
-\subsection{Sampling}
+\begin{figure}[h]
+    \begin{center}
+        \includegraphics[width=\textwidth]{optix-kernel.png}
+    \end{center}
+    \caption{optix pipeline \cite{nvidia_nvidia_2022}}
+    \label{fig:optix-kernel}
+\end{figure}
+
+The \textit{Ray Generation} program is the entry point of the device execution.
+One uses a particular host code function to initiate the device-sided execution.
+From here on, one can call additional functions to build an execution sequence.
+
+A \textit{Intersection} and \textit{Bounds} program are necessary for the acceleration structure.
+If one calls the trace function, it iterates through the data structure until the routine reaches a leaf.
+For custom geometric primitives, one must specify the bounds and intersection programs so that OptiX knows how to process them during iteration.
+The only exceptions are triangles and curves since they are already predefined.
+OWL forms, on top of it, an abstraction for minimum expenditure.
+
+The last two required programs are the \textit{Closest Hit} and \textit{Miss} program.
+Both describe a case each, whether a ray has hit an object or not.
+The execution of these programs starts after a complete iteration through the acceleration structure. 
+After the execution, the application returns to the trace function call.
+The only distinction between the two is that the data from the hit object is available in the closest hit program.
+
+\section{Application Design}
+
+This section intends to give a general overview of the application.
+It describes the individual tasks of the application.
+One will walk through some essential points that shaped the application design.
+Note that the decision was based on simplicity and not necessarily robust and flexible design.
+
+Let one start with a host-only functionality, which is loading mesh and material data.
+Three-dimensional meshes have different representations and need corresponding loaders to bring the vertex normal and position data to memory.
+Besides that, these representations can also contain information about the material data.
+Accordingly, large libraries can load any file format for objects.
+However, this seemed to be convoluted, and thus one decided to use an OBJ loader because of its simplicity. 
+Another argument for the OBJ format was that all object vertices are in global coordinates; if needed, one could also load the normals and UV data.
+One described the materials of the objects via a JSON format.
+
+The next consideration is the exchange of data and where the data should be made available.
+OptiX offers for the exchange of data two strategies.
+The first is the so-called SBT or shader binding table.
+They allow the programmer to bind specific data to a program of the OptiX pipeline.
+An essential difference to the second option is that the data will be only available to the designated program.
+The second option is to create global constants that make the data available everywhere in the device.
+However, the only important attribute is simplicity and creating a global constant containing any data required during the renderer's lifetime is the easiest choice.
+
+The next point is the path tracing itself, especially if one selects a recursive or iterative approach for path tracing.
+Depending on the chosen strategy, the tasks of the programmes look different, i.e. the implementation of the path tracer is in \textit{Closest Hit}  or \textit{Ray Generation} program.
+Intuitively, a recursive approach would be the most straightforward approach because one described path tracing as a recursive formula.
+However, one chooses an iterative version because the path construction is more apparent, and the procedure is easier to understand.
+Hence, the implementation will be in the \textit{Ray Generation} program.
+
+One summarises the different decisions and draws the connection to how these interoperate in the application.
+The host-sided application loads all required data for the tracer, initialises with OWL the OptiX components and uploads the data to the graphics card.
+Afterwards, one launches the path tracing, and the host waits until the result is available through a host device buffer.
+The launch causes an invocation of the \textit{Ray Generation} program per pixel, which controls the calculation of paths that have a vertex on the camera plane associated with the corresponding pixel.
+The \textit{Closest Hit} and \textit{Miss} programs set the necessary state that allows the tracer to load the mesh data in the path tracing routine.
+After the device has finished all calculations, the host can read the result and write it to a predefined destination. 
+
+The last parts of this chapter explain essential aspects of the path tracer in more detail and provide a language-agnostic pseudocode.
+\section{Path Construction Routine}
+
+\section{Disney Evaluation Routines}
+
+\section{Disney Sampling Routine}
