@@ -72,7 +72,7 @@ It will be not explained in more detail why one used the respective versions or 
     \item OptiX Ray Tracing API (SDK 7.4.0)
 \end{itemize}
 
-\section{NVidia - OptiX 7}
+\section{Nvidia OptiX 7}
 
 Building a path tracer with a ray tracing library requires knowing some terminology and understanding the various parts of the programmable pipeline.
 OptiX is a part of the CUDA programming eco-system and differentiates between host and device code.
@@ -87,7 +87,7 @@ Next, one will briefly explain which program types exist and how one uses these 
     \begin{center}
         \includegraphics[width=\textwidth]{optix-kernel.png}
     \end{center}
-    \caption{optix pipeline \cite{nvidia_nvidia_2022}}
+    \caption{optix pipeline}
     \label{fig:optix-kernel}
 \end{figure}
 
@@ -131,7 +131,7 @@ The second option is to create global constants that make the data available eve
 However, the only important attribute is simplicity and creating a global constant containing any data required during the renderer's lifetime is the easiest choice.
 
 The next point is the path tracing itself, especially if one selects a recursive or iterative approach for path tracing.
-Depending on the chosen strategy, the tasks of the programmes look different, i.e. the implementation of the path tracer is in \textit{Closest Hit}  or \textit{Ray Generation} program.
+Depending on the chosen strategy, the tasks of the programs look different, i.e. the implementation of the path tracer is in \textit{Closest Hit}  or \textit{Ray Generation} program.
 Intuitively, a recursive approach would be the most straightforward approach because one described path tracing as a recursive formula.
 However, one chooses an iterative version because the path construction is more apparent, and the procedure is easier to understand.
 Hence, the implementation will be in the \textit{Ray Generation} program.
@@ -143,9 +143,81 @@ The launch causes an invocation of the \textit{Ray Generation} program per pixel
 The \textit{Closest Hit} and \textit{Miss} programs set the necessary state that allows the tracer to load the mesh data in the path tracing routine.
 After the device has finished all calculations, the host can read the result and write it to a predefined destination. 
 
-The last parts of this chapter explain essential aspects of the path tracer in more detail and provide a language-agnostic pseudocode.
+The last parts of this chapter explain essential aspects of the path tracer in more detail and provide a language-agnostic pseudo-code.
+
 \section{Path Construction Routine}
 
-\section{Disney Evaluation Routines}
+First, one will discuss the path construction routine in more detail.
+The entire pseudo-code can be found in the appendix and should be self-explanatory.
+However, one would like to detail the individual parts and explain why one chose this structure.
 
-\section{Disney Sampling Routine}
+Foremost, one would like to talk about the state of a path.
+The state is essential for determining how much a given path contributes to the outcome.
+The three crucial metrics are radiance, throughput and depth.
+Radiance is the total energy sent along the path.
+Now, one recollects that light reflects or is re-emitted by several materials.
+For this reason, one must also take the throughput into account.
+Otherwise, a throughput of $1$ would mean that surfaces do not affect light's energy state.
+In this specific case, it serves as a coefficient to weigh the radiance and thus indicates the received energy by the camera.
+If one considers energy conservation, it is possible to create more robust models for light simulation because less extreme values for the throughput occur.
+The last point is the depth of the path.
+In general, one can say that paths with a high depth contribute less to the final result than those with short depths.
+One can justify this statement with the throughput.
+Let one recall the eq.~\ref{eq:path-throughput}. 
+The throughput is a product of the individual reflectance values, a cosine of the incoming direction with $\omega_i$ and the value of the density distribution function.
+To put this in simpler terms, let's say we have a reflectance of $0.8$ and a radiance of $1$. So, paths with a depth of $2$ contribute more to the final result than those with a depth of $16$.
+
+Next, one will explain the individual steps of the routine.
+The initial step is to execute a \texttt{TraceRay} function because the task is to find the subsequent vertex of the path.
+Remember the visibility function $V(x \leftrightarrow x')$ eq.~\ref{eq:geometry-term} gives a value of either $0$ or $1$ depending on if two points are visible from each other.
+Because one utilises ray tracing, the visibility function always has the value of $1$.
+Note that this process is not mandatory, as one can theoretically randomly pick two points in the scene and construct based on that segments of the path.
+However, it turns out that ray tracing is the most efficient approach to finding paths. 
+Of course, there are extensions to this procedure like bidirectional path tracing that modify the strategy to find paths with another approach.
+The following step is to check if the traced ray hits an object.
+If it is a miss, one samples the environment's radiance.
+Otherwise, one checks if the object is a light, which would also mean sampling the radiance and terminating the construction.
+One previously mentioned that one has to handle lights differently, see 
+eq.~\ref{eq:path-throughput}.
+However, in this case, one found the light through a traced ray from a vertex, which means that the probability density originates from the distribution of solid angles.
+Hence, no special care for lights, but if one introduces multi-importance sampling (MIS) and samples from the collection of lights, it would be a PDF over areas.
+This fact is crucial to remember because otherwise, one will miscalculate.
+The final scenario is a standard surface hit, separated into three parts.
+Loading intersection information with all values in global space and mesh data is self-explanatory.
+Based on that hit information, one is sampling in local space the material to find the next direction for the ray cast as well as the reflectance and PDF value.
+The new direction is in local space, and one can transform it into global space.
+
+One will clarify local and global space; see fig.~\ref{fig:local-space}.
+
+\begin{figure}[h]
+    \begin{center}
+        \includegraphics[width=0.4\textwidth]{local-space-coordinates.png}
+    \end{center}
+    \caption{local shading space coordinates}
+    \label{fig:local-space}
+\end{figure}
+
+One must decide which orthogonal vector basis to utilise for the light calculations.
+The first option is the global basis vectors determined by the normal $N_G$, which is already sufficient for the calculations.
+However, one has decided to employ local basis vectors with a normal $N_S = (0,0,1)$ for more straightforward and explicit computations.
+For example, in the formula, $\cos(\vec{v})=v.z$, the cosine is the Z-component of the vector.
+
+The last step in the path construction is once Russian Roulette.
+This function uses throughput and randomness to determine whether the path should end early and thus not contribute to the final result.
+Notably, a small throughput should favour termination to reduce calculations for values with a minimal effect on the image's appearance.
+
+The steps repeat until the path terminates because of a miss, light source hit, Russian Roulette or a path depth that equals or exceeds the maximum depth.
+Perhaps also worth mentioning is that the maximum path depth intends to prevent paths from being trapped and possibly terminated after many iterations of path construction.
+Of course, this problem can only occur if Russian Roulette cannot terminate the path.
+
+\section{Disney Materials}
+
+
+
+\subsection*{Sampling Routine}
+
+
+
+\subsection*{Evaluation Routines}
+
+

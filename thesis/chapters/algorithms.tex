@@ -1,0 +1,82 @@
+\chapter*{Algorithms}
+
+\begin{algorithm}
+    \caption{Disney Sampling Routine}
+    \label{alg:disney-sampling}
+    \begin{algorithmic}[1] % The number tells where the line numbering should start
+        \Procedure{SampleDisney}{$mesh, wo$}
+            \State $material \gets mesh.material$ 
+            \State $lobes \gets \Call{CalculateLobePdf}{material}$
+            \State $cdf \gets \Call{CreateCdf}{lobes}$
+            \State $p \gets \Call{Random}$
+            \State
+            \State $reflectance \gets 0$
+            \State $pdf \gets 0$
+            \State $wo \gets (0,0,0)$
+            \State
+            \If{$p \le \Call{Get}{cdf, 0}$}
+                \State $(f, pdf) \gets \Call{SampleSpecularBrdf}{material,\;wo}$
+            \ElsIf{$p \le \Call{Get}{cdf, 1}$}
+                \State $(f, pdf) \gets \Call{SampleClearcoat}{material,\;wo}$
+            \ElsIf{$p \le \Call{Get}{cdf, 2}$}
+                \State $(f, pdf) \gets \Call{SampleDiffuse}{material,\;wo}$
+            \ElsIf{$p \le \Call{Get}{cdf, 3}$}
+                \State $(f, pdf) \gets \Call{SampleSpecularBtdf}{material,\;wo}$
+            \EndIf
+            \State
+            \State $reflectance \gets reflectance + \Call{EvaluateSheen}{material,\;wo}$
+            \State
+            \Return (reflectance, pdf, wo)
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \small
+    \caption{Path Construction Routine}
+    \label{alg:path-construction}
+    \begin{algorithmic}[1] % The number tells where the line numbering should start
+        \Procedure{TracePath}{$ray$}
+            \LineComment{global state of path}
+            \State $radiance \gets 0$ 
+            \State $throughput \gets 1$
+            \State $depth \gets 0$
+            \State
+            \LineComment{state of the current path segment (per ray data)}
+            \State $prd \gets \Call{Init}$
+            \State
+            \LineComment{construct path based on local information}
+            \While{$depth\not=maxDepth$}
+                \State
+                \LineComment{Find path segment}
+                \State $prd \gets \Call{TraceRay}{accelerationStructure,\;ray}$
+                \State $depth \gets depth + 1$
+                \State
+                \LineComment{Check for early termination}
+                \If{$prd.scatterEvent = empty$}
+                \LineComment{Sample environment, set radiance and break}
+                \ElsIf{$prd.scatterEvent = light$}
+                \LineComment{Sample light, set radiance and break}
+                \EndIf
+                \State
+                \LineComment{Prepare Mesh Data}
+                \State $mesh \gets \Call{LoadMeshData}{prd.mId}$
+                \State $wo \gets \Call{ToLocal}{prd.n,\;prd.wo}$
+                \State
+                \LineComment{Evaluate Material}
+                \State $(reflectance,\;pdf,\;wi) \gets \Call{SampleMaterial}{mesh,\;wo}$
+                \State $wi \gets \Call{ToGlobal}{prd.n,\;wi}$
+                \State
+                \LineComment{Evaluate new contribution}
+                \State $throughput \gets throughput \cdot reflectance \cdot \cos(wi) \cdot \frac{1}{pdf}$
+                \If{\Call{RussianRoulette}{throughput}}
+                \LineComment{Break due to small contribution}
+                \EndIf
+                \State $ray \gets \Call{Init}{prd.p,\;wi}$
+                \State
+            \EndWhile
+            \State
+            \Return $radiance * throughput$
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}

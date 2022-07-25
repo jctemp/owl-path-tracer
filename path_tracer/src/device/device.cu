@@ -171,7 +171,7 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
 
         //ray = radiance_ray{v_p, wi, t_min, t_max};
 
-        beta *= f * abs(cos_theta(local_wi)) * abs(cos_theta(local_wo)) / pdf;
+        beta *= f * abs(cos_theta(local_wi)) / pdf;
 
 
 

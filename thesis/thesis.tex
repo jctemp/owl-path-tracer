@@ -12,6 +12,7 @@
 \usepackage{algorithmicx}
 \usepackage{breakcites}
 \usepackage{blindtext}
+\usepackage{algorithm}
 \usepackage{listings}
 \usepackage{graphicx}
 \usepackage{hyperref}
@@ -25,14 +26,16 @@
 \usepackage{lipsum}
 \usepackage{float}
 
+\algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
+
 % ━━  Global Variables   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 \def \wordmark{logostaffel-wi/word-mark-wi-black.png}
 \def \logo{logostaffel-wi/h-wi-title.png}
 \def \firstname{Jamie}
 \def \surname{Temple}
-\def \papertitle{Global Illumination}
-\def \papersubtitle{Path Tracing with the Disney Illumination Model}
+\def \papertitle{Disney Illumination Model}
+\def \papersubtitle{A practical implementation with Path Tracing}
 
 \graphicspath{ {assets/} }
 
@@ -66,7 +69,6 @@
 \tableofcontents
 % \listoffigures
 % \listoftables
-% \blinddocument
 
 \include{chapters/introduction.tex}
 \newpage
@@ -78,6 +80,8 @@
 \newpage
 \include{chapters/conclusion.tex}
 \newpage
+\appendix
+\include{chapters/algorithms.tex}
 
 \bibliographystyle{apalike}  % Schlüssel als Buchstaben
 \bibliography{bachelor_thesis.bib}      % Literaturverzeichnis

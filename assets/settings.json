@@ -1,7 +1,7 @@
 {
     "scene": "cornell-box",
     "buffer_size": [1024, 1024],
-    "max_samples": 8196,
+    "max_samples": 1024,
     "max_path_depth": 64,
     "environment_use": false,
     "environment_auto": false,
@@ -16,6 +16,6 @@
           1.0,
           0.0
         ],
-        "step_size" : 0.1
+        "step_size" : 1
     }
 }
