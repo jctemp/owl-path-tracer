@@ -1,19 +1,20 @@
 \chapter{Literature review}
 
 This chapter should give the reader an overview of the components required for global illumination.
-One will give an introduction to all required topics for path tracing. Nonetheless, for the sake of the scope, it is not as detailed as technical literature. 
+One will give an introduction to all required topics for path tracing. Nonetheless, for the sake of the scope, it is not as detailed as technical literature.
 Hence, if concepts or terms are unclear, one has to revise those accordingly.
 
 \section{Rendering}
 
 \begin{figure}[h]
-\centering
-\includegraphics[width=0.9\textwidth]{rendering.png}
-\caption[]{rendering composition \cite{duin_beleuchtungsalgorithmen_1993}}
-\label{fig:rendering}
+    \begin{center}
+        \includegraphics[width=0.9\textwidth]{rendering.png}
+    \end{center}
+    \caption[]{rendering composition \cite{duin_beleuchtungsalgorithmen_1993}}
+    \label{fig:rendering}
 \end{figure}
 
-Rendering is the process of synthesising images. 
+Rendering is the process of synthesising images.
 It consists of an illumination model and a rendering algorithm.
 Together they enable one to synthesise images with different properties depending on the selected model or algorithm.
 Thus, one has to be careful when selecting these components because, depending on the use case, less or more sophisticated components are desirable.
@@ -24,7 +25,7 @@ The following sections will elaborate on these components.
 
 \section{Monte Carlo Integration}
 
-In the book, \textit{Physically Based Rendering} \cite{pharr_physically_2017}, the authors explained that the integral, as a complex mathematical operator, opposes a challenge in computer science leading to numerous issues. 
+In the book, \textit{Physically Based Rendering} \cite{pharr_physically_2017}, the authors explained that the integral, as a complex mathematical operator, opposes a challenge in computer science leading to numerous issues.
 Furthermore, they described that traditional methods like trapezoidal integration and the midpoint method are sufficient for low-dimensional and differentiable functions; however, these methods show a poor convergence rate for functions not fulfilling the criteria.
 Nonetheless, approximations with numerical methods are the only solution to evaluate such terms due to the finite resources computers have.
 
@@ -39,27 +40,27 @@ A \textbf{random variable} is a function that maps a random process to a real-va
 The \textbf{cumulative distribution function} $F(x)$ gives the probability for a random variable $X$ that is less than or equal to a value $x$.
 
 \begin{align*}
-F(X)=Pr\{X\le x\}
+    F(X)=Pr\{X\le x\}
 \end{align*}
 
 Using calculus, one can differentiate $F(x)$, if possible, yielding the \textbf{probability density function} $f(x)$.
 The density function describes the likelihood for a random variable to be in an interval $[a,b]$.
 
 \begin{align*}
-f(x)=\frac{dF(x)}{dx}
+    f(x)=\frac{dF(x)}{dx}
 \end{align*}
 
-The \textbf{expected value} is a weighted average, which is evaluable for a random variable.
+The \textbf{expected value} is a weighted average, which one can evaluate for a random number.
 This requires the cumulative distribution $F(x)$ and corresponding density function $f(x)$.
 
 \begin{align*}
-E[X]=\int_{\Omega}F(x)\,f(x)\,dx
+    E[X]=\int_{\Omega}F(x)\,f(x)\,dx
 \end{align*}
 
 The final metric is the \textbf{variance} which gives the mean squared deviation.
 
 \begin{align*}
-V[X]=E\left[(x-E[x])^2\right]
+    V[X]=E\left[(x-E[x])^2\right]
 \end{align*}
 
 \subsection*{Monte-Carlo Estimator}
@@ -67,7 +68,7 @@ V[X]=E\left[(x-E[x])^2\right]
 Given is:
 
 \begin{align*}
-F=\int f(x)\,dx\quad\text{where}\quad f:D \mapsto R
+    F=\int f(x)\,dx\quad\text{where}\quad f:D \mapsto R
 \end{align*}
 
 The task is to find an answer for the integral where $f(x)$ is a function that can take on any form.
@@ -77,24 +78,24 @@ Now, one uses the random variable $X$ as an input for the function $f$ and accum
 Based on that, one can derive the following estimator:
 
 \begin{align*}
-F_N=\frac{b-a}{N}\sum_{i=1}^{N}f(X_i)
+    F_N=\frac{b-a}{N}\sum_{i=1}^{N}f(X_i)
 \end{align*}
 
 Currently, the estimator allows only for uniformly sampled values in an interval.
 However, to generalise it, select a random variable with a probability density $p(x)$ that can weight $f(x)$.
 
 \begin{align}
-F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)} \label{eq:mc-estimator}
+    F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)} \label{eq:mc-estimator}
 \end{align}
 
 Elaborating on eq.~\ref{eq:mc-estimator}, one can identify $F_N$ as a random variable which depends on the size of $N$, and $N$ sets the number of samples.
 Note that $F_N \approx F$ and $F_N$ will be accurate on average.
 One can show the accuracy with the expected value.
 
-\begin{align*} 
-E[F_N] &=E\left[\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}\right]\\
-&=\frac{1}{N}\sum_{i=1}^{N}E\left[\frac{f(X_i)}{p(X_i)}\right]\\
-&=\frac{1}{N}\sum_{i=1}^{N}\int_{a}^{b}\frac{f(x)}{p(x)}\,p(x)\,dx\\ &=\int_{a}^{b}f(x)\,dx 
+\begin{align*}
+    E[F_N] & =E\left[\frac{1}{N}\sum_{i=1}^{N}\frac{f(X_i)}{p(X_i)}\right]     \\
+           & =\frac{1}{N}\sum_{i=1}^{N}E\left[\frac{f(X_i)}{p(X_i)}\right]     \\
+           & =\frac{1}{N}\sum_{i=1}^{N}\int_{a}^{b}\frac{f(x)}{p(x)}\,p(x)\,dx \\ &=\int_{a}^{b}f(x)\,dx
 \end{align*}
 
 Now, one gives a quick overview of the advantages and disadvantages and quickly explains why these are useful.
@@ -102,7 +103,7 @@ Now, one gives a quick overview of the advantages and disadvantages and quickly 
 Veach \cite{veach_robust_1997} pointed out the essential advantages and disadvantages of the Monte-Carlo integration.
 The first point mentioned was the convergence rate of the estimator.
 He showed that the estimator converges with the rate of $O(N^{-1/2})$ for high dimensional integrals with discontinuities.
-This vital attribute even applies to an estimator with infinite variance. 
+This vital attribute even applies to an estimator with infinite variance.
 In other words, convergence is slow but guaranteed.
 Nonetheless, based on that, one can determine the required samples to reduce the error by half.
 Accordingly, one can conclude that it needs four times more samples to decrease the error while increasing runtime substantially.
@@ -124,8 +125,8 @@ The goal is to increase the efficiency of an estimator by reducing variance or r
 Before exploring techniques for variance reduction, one must clarify what efficiency means.
 
 \begin{align}
-\epsilon[F]=\frac{1}{V[F]\,T[F]}
-\label{eq:estimator-eff}
+    \epsilon[F]=\frac{1}{V[F]\,T[F]}
+    \label{eq:estimator-eff}
 \end{align}
 
 Veach explained that one tries to find an estimator where variance and runtime are neglectable, and the eq.~\ref{eq:estimator-eff} describes this as a trade-off with $V[F]$ being the variance and $T[F]$ time required to determine $F$; \cite{veach_robust_1997}.
@@ -137,14 +138,14 @@ Importance Sampling has the principle to find a probability density function $p(
 Optimally, the $p(x) \propto f(x)$ and considering equation eq.~\ref{eq:mc-estimator} it would give this configuration.
 
 \begin{align*}
-\frac{f(X_i)}{p(X_i)}=\frac{f(X_i)}{c\,f(X_i)}=\frac{1}{c} \Rightarrow F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{1}{c}
+    \frac{f(X_i)}{p(X_i)}=\frac{f(X_i)}{c\,f(X_i)}=\frac{1}{c} \Rightarrow F_N=\frac{1}{N}\sum_{i=1}^{N}\frac{1}{c}
 \end{align*}
 
 Leftover is a constant of proportionality $c$.
 The proportionality of $p(x)$ and the current configuration of the summation demands that the normalisation must be the integral's value; \cite{veach_robust_1997}.
 
 \begin{align*}
-c=\frac{1}{\int\,f(x)\,dx}
+    c=\frac{1}{\int\,f(x)\,dx}
 \end{align*}
 
 Based on that, the authors of the book \cite{kalos_monte_2008} conclude that a $p(x)$ similar to $f(x)$ will lead to a tremendous variance reduction.
@@ -158,10 +159,10 @@ Adaptive sample placement is another option to increase the efficiency of an est
 The basic idea is to sample more complicated or contributing regions based on previous samples.
 However, the main disadvantage pointed out by \cite{veach_robust_1997} is the introduction of bias to the estimator that could lead, as an example, to image artefacts.
 
-A quick excurse to elaborate on the problem of bias.
+A quick excursus to elaborate on the problem of bias.
 
 \begin{align*}
-\beta = E[F]-\int f(x)\,dx
+    \beta = E[F]-\int f(x)\,dx
 \end{align*}
 
 The bias of an estimator describes the difference between the expected value and the exact value of an integral.
@@ -190,8 +191,8 @@ In 1986 Kajiya \cite{kajiya_rendering_1986} proposed the famous rendering equati
 As a general geometrical optics approximation, its purpose is to evaluate the leaving equilibrium radiance at a point $p$ in the direction $\omega_o$ from all in-coming directions $\omega_i$ with a cosine term for the projection of the solid angle and a reflectance function $f(p, \omega_o, \omega_i)$ describing attenuation of the light.
 
 \begin{align}
-L_o(x,\omega_o)=L_e(x,\omega_o)+\int_{S^2}f_r(x,\omega_o,\omega_i)\,L_i(x,\omega_i)\,\left|\cos\theta_i\right|\,d\omega_i
-\label{eq:rendering}
+    L_o(x,\omega_o)=L_e(x,\omega_o)+\int_{S^2}f_r(x,\omega_o,\omega_i)\,L_i(x,\omega_i)\,\left|\cos\theta_i\right|\,d\omega_i
+    \label{eq:rendering}
 \end{align}
 
 See that eq.~\ref{eq:rendering} is a recursive formulation where the in-coming directions are again integrals determined at other points in the scene.
@@ -206,7 +207,7 @@ Based on that, one will derive the path integral, providing more freedom in cons
 The first step is to replace all terms in the eq.~\ref{eq:rendering} containing a direction $\omega=\widehat{x'-x}$ with $x'\rightarrow x$:
 
 \begin{align*}
-L(x,\omega)=L(x'\rightarrow x)\quad\wedge\quad f_r(x,\omega_o,\omega_i)=f_r(x''\rightarrow x'\rightarrow x)
+    L(x,\omega)=L(x'\rightarrow x)\quad\wedge\quad f_r(x,\omega_o,\omega_i)=f_r(x''\rightarrow x'\rightarrow x)
 \end{align*}
 
 The arrow emphasises the direction of light flow; \cite{veach_robust_1997}.
@@ -214,7 +215,7 @@ The next step is to change the integral domain over an area $A$, which also chan
 In \cite{kajiya_rendering_1986}, there are self-describing figures that show the configuration of the points and directions.
 
 \begin{align*}
-d\omega=\frac{|\cos\theta'|}{\|x'-x\|^2}dA(x') \Rightarrow |\cos\theta|\,d\omega=\frac{|\cos\theta|\,|\cos\theta'|}{\|x'-x\|^2}dA(x')
+    d\omega=\frac{|\cos\theta'|}{\|x'-x\|^2}dA(x') \Rightarrow |\cos\theta|\,d\omega=\frac{|\cos\theta|\,|\cos\theta'|}{\|x'-x\|^2}dA(x')
 \end{align*}
 
 However, this is not yet correct because two points must be visible.
@@ -222,15 +223,15 @@ The function $V$ is a visibility function that verifies that two points are from
 One utilises the visibility function and the previous equation for a geometry term $G$. If two points are not mutually visible, then the function is 0.
 
 \begin{align}
-G(x'\leftrightarrow x)=V(x'\leftrightarrow x)\frac{|\cos\theta|\,|\cos\theta'|}{\|x'-x\|^2}
-\label{eq:geometry-term}
+    G(x'\leftrightarrow x)=V(x'\leftrightarrow x)\frac{|\cos\theta|\,|\cos\theta'|}{\|x'-x\|^2}
+    \label{eq:geometry-term}
 \end{align}
 
 Substituting all terms in eq.~\ref{eq:rendering} gives the three-point Form.
 
 \begin{align}
-L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{A}L(x''\rightarrow x')\,f_r(x''\rightarrow x'\rightarrow x)\,G(x''\leftrightarrow x')\,dA(x'')
-\label{eq:three-point}
+    L(x'\rightarrow x)=L_e(x'\rightarrow x)+\int_{A}L(x''\rightarrow x')\,f_r(x''\rightarrow x'\rightarrow x)\,G(x''\leftrightarrow x')\,dA(x'')
+    \label{eq:three-point}
 \end{align}
 
 \subsection*{Path Integral}
@@ -242,8 +243,8 @@ Deriving the integral is intuitive as one can take the eq.~\ref{eq:three-point} 
 Rearranging the new infinite recursive equation, one can separate it into multiple elements that govern a particular function.
 
 \begin{align}
-L(x_1\rightarrow x_0)=\sum_{n=1}^\infty P(\bar{x}_n)
-\label{eq:path-integral}
+    L(x_1\rightarrow x_0)=\sum_{n=1}^\infty P(\bar{x}_n)
+    \label{eq:path-integral}
 \end{align}
 
 The eq.~\ref{eq:path-integral} represents the path integral.
@@ -252,16 +253,16 @@ Notice that it summates the total radiance of paths $P(\bar{x})$, which gives th
 The summation is over an infinite domain where only the subset of paths with finite length is of interest.
 
 \begin{align}
-P(\bar{x}_n)=\underbrace{\int_A \int_A \dots \int_A}_{n-1}\left(L_e(x_n\rightarrow x_{n-1})\,T(\bar{x}_n) \right)dA(x_2)\dotso dA(x_n)
-\label{eq:path-radiance}
+    P(\bar{x}_n)=\underbrace{\int_A \int_A \dots \int_A}_{n-1}\left(L_e(x_n\rightarrow x_{n-1})\,T(\bar{x}_n) \right)dA(x_2)\dotso dA(x_n)
+    \label{eq:path-radiance}
 \end{align}
 
 Eq.~\ref{eq:path-radiance} is the radiance of a paths $\bar{x}_n$.
 It demands solving multiple nested integrals over areas representing all possible paths with almost any combination of vertices $x_n$ forming a valid path to a light source or the scene enclosure.
 
 \begin{align}
-T(\bar{x}_n)=\prod_{k=1}^{n-1}f(x_{k+1}\rightarrow x_k\rightarrow x_{k-1})G(x_{k+1}\leftrightarrow x_{k})
-\label{eq:path-throughput}
+    T(\bar{x}_n)=\prod_{k=1}^{n-1}f(x_{k+1}\rightarrow x_k\rightarrow x_{k-1})G(x_{k+1}\leftrightarrow x_{k})
+    \label{eq:path-throughput}
 \end{align}
 
 Eq.~\ref{eq:path-throughput} gives the throughput $T(\bar{x}_n)$ that expresses the fraction of received radiance from a light source; \cite{pharr_physically_2017}.
@@ -273,7 +274,7 @@ Veach \cite{veach_robust_1997} provided a detailed overview of the path integral
 The first point he described is that one can derive new rendering algorithms employing general-purpose integration techniques like importance sampling.
 The second benefit is a geometric primitive, the path, which makes computation more comfortable.
 Another benefit of working with paths is that they are more exact and complete regarding light transportations, as one uses the whole trajectory of light rather than distinct segments.
-The construction of such paths is not limited to local information. 
+The construction of such paths is not limited to local information.
 That qualifies for an open selection process of path vertices.
 Last, it provides a framework to work with the probability density of paths.
 
@@ -294,27 +295,28 @@ The only problem now is that one would sample paths using a solid angle and reco
 Therefore, one has to make the conversion to calculate the correct probability of a path.
 
 \begin{figure}[h]
-\centering
-\includegraphics[width=0.33\textwidth]{sampling-configuration.png}
-\caption[]{configuration of path vertices}
-\label{fig:path-vertices}
+    \begin{center}
+        \includegraphics[width=0.33\textwidth]{sampling-configuration.png}
+    \end{center}    
+    \caption[]{configuration of path vertices}
+    \label{fig:path-vertices}
 \end{figure}
 
 The figure \ref{fig:path-vertices} depicts the configuration of path vertices.
 Vertex $x$ is the point of interest, and $x'$ is a potential successor.
 In the present framework, one does sample a direction $\omega$ and cast a ray from $x$ towards $x'$.
-Currently, one has only the probability of $\omega$. 
+Currently, one has only the probability of $\omega$.
 However, the following conversion term is applied to find the probability of $x'$.
 
 \begin{align*}
-p(x')=p(\omega)\frac{|\cos\theta'|}{\|x'-x\|^2}
+    p(x')=p(\omega)\frac{|\cos\theta'|}{\|x'-x\|^2}
 \end{align*}
 
 The authors \cite{pharr_physically_2017} illustrated how applying the conversion term to the probability density function in eq.~\ref{eq:path-radiance} causes the geometry function $G$ to cancel out partially because of the last vertex at the light source.
 Remember, the last vertex originates from a distribution over the light's surface area; hence, one does not apply the conversion.
 
 \begin{align*}
-\frac{f(x_{n}\rightarrow x_{n-1}\rightarrow x_{n-2})G(x_n\leftrightarrow x_{n-1})}{p(x_n)}\,\left(\prod_{k=1}^{n-2}\frac{f(x_{k+1}\rightarrow x_{k}\rightarrow x_{k-1})|\cos\theta_{k}|}{p(\widehat{x_{k+1}-x_{k}})}\right)
+    \frac{f(x_{n}\rightarrow x_{n-1}\rightarrow x_{n-2})G(x_n\leftrightarrow x_{n-1})}{p(x_n)}\,\left(\prod_{k=1}^{n-2}\frac{f(x_{k+1}\rightarrow x_{k}\rightarrow x_{k-1})|\cos\theta_{k}|}{p(\widehat{x_{k+1}-x_{k}})}\right)
 \end{align*}
 
 Using eq.~\ref{eq:path-throughput} gives the final throughput term for the present sampling framework.
@@ -337,7 +339,7 @@ In computer graphics, illumination models, sometimes called shading models, prov
 
 For global illumination, one already selected path tracing as the rendering algorithm.
 Now, one has to pick a shading model that accurately represents surface properties with correct responses.
-Only then it is possible to re-create global illumination effects.
+With that, it is possible to re-create global illumination effects.
 
 In the past decades, research developed many models that can successfully represent different types of surfaces.
 The Disney shading model is one of these.
@@ -363,10 +365,11 @@ Thus, only a portion of the incoming light reflects on rough surfaces because al
 Research further refined the model because it produced \textit{realistic} results and accurately represented surface-light interactions.
 
 \begin{figure}[h]
-\centering
-\includegraphics[width=0.6\textwidth]{microfacet-model.png}
-\caption[]{Microfacet Model \cite{heitz_understanding_2014}}
-\label{fig:microfacet-normal}
+    \begin{center}
+        \includegraphics[width=0.6\textwidth]{microfacet-model.png}
+    \end{center}
+    \caption[]{Microfacet Model \cite{heitz_understanding_2014}}
+    \label{fig:microfacet-normal}
 \end{figure}
 
 The fig.~\ref{fig:microfacet-normal} depicts the configuration of the microfacets and the actual geometry.
@@ -376,7 +379,7 @@ However, this is not enough to fully describe the microfacet surface.
 One has to account for self-shadowing and non-visible facets due to orientation.
 Hence, a shadowing-masking function $G$ models this behaviour.
 The last part of the figure is the distribution of visible microfacets $D_{\omega_o}$.
-It is a projection of the microfacet surface regrading the direction $\omega_o$.
+It is a projection of the microfacet surface regarding the direction $\omega_o$.
 
 \subsection*{Philosophy}
 
@@ -390,7 +393,7 @@ The model should be intuitive and have a minimal amount of parameters where each
 The parameters can go beyond the range, and a combination of all is robust and plausible to a certain extent.
 
 In the original paper, Burley \cite{burley_physically_2012} settled down with ten parameters to control the appearance.
-However, one assumes that this changed with the latest paper that introduced transmission and subsurface scattering; \cite{burley_extending_2015}. 
+However, one assumes that this changed with the latest paper that introduced transmission and subsurface scattering; \cite{burley_extending_2015}.
 
 \subsection*{Light Responses}
 
@@ -399,10 +402,11 @@ Burley gave an in-depth view of the gathered observations to illustrate the deci
 One will summarise the different lobes and components Disney uses for their material.
 
 \begin{figure}[h]
-\centering
-\includegraphics[width=0.75\textwidth]{bsdf-lobes.png}
-\caption[]{light lobes}
-\label{fig:lobes}
+    \begin{center}
+        \includegraphics[width=0.75\textwidth]{bsdf-lobes.png}
+    \end{center}
+    \caption[]{light lobes}
+    \label{fig:lobes}
 \end{figure}
 
 One will follow the idea that light is categorisable into so-called light lobes.
@@ -424,7 +428,7 @@ To clarify what retro-reflection means it describes reflected light along the in
 
 Based on that, Burley \cite{burley_extending_2015} created two lobes, a diffuse lobe with Lambert reflectance and a retro-reflection lobe with a self-developed empirical model, where both utilise a Fresnel weight.
 Besides that, he accounted for subsurface scattering so that the subsurface scattering converges against the diffuse lobe for small scattering distances.
-Additionally, both lobes preserve microfacet effects needed for the specular lobe. 
+Additionally, both lobes preserve microfacet effects needed for the specular lobe.
 
 \subsubsection*{Specular}
 
@@ -454,7 +458,7 @@ The result is that most materials have a small albedo value and remain constant 
 Afterwards, depending on the roughness, most materials increased or decreased in directional albedo.
 He stressed that the $G$ factor has a "profound" effect on the albedo and, consequentially, the surface appearance.
 
-Burley used an analytical model using the approach by Smith. 
+Burley used an analytical model using the approach by Smith.
 It lets one derive the geometry term $G$ from the microfacet distribution $D$ if one facilitates the assumptions about geometric shadowing.
 A solution by Heitz \cite{heitz_understanding_2014} replaced the used version by Burley because he accounted for anisotropy and removed the alpha-roughness conversion; (Addenda) \cite{burley_physically_2012}.
 
