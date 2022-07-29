@@ -23,8 +23,8 @@ inline __both__ float d_gtr1(vec3 const& wh, float alpha)
 inline __both__ vec3 sample_gtr1_ndf(vec3 const& wo, vec3 const& wi, float a, vec2 const& u)
 {
     auto const alpha2{sqr(a)};
-    auto const cos_theta{sqrt(max(0.0f, (1.0f - powf(alpha2, 1.0f - u[0])) / (1.0f - alpha2)))};
-    auto const sin_theta{sqrt(max(0.0f, 1.0f - sqr(cos_theta)))};
+    auto const cos_theta{sqrt(fmax(0.0f, (1.0f - powf(alpha2, 1.0f - u[0])) / (1.0f - alpha2)))};
+    auto const sin_theta{sqrt(fmax(0.0f, 1.0f - sqr(cos_theta)))};
     auto const phi{two_pi * u[1]};
 
     auto wh{to_sphere_coordinates(sin_theta, cos_theta, phi)};

@@ -1,9 +1,14 @@
 #ifndef PATH_TRACER_DISNEY_HELPER_CUH
 #define PATH_TRACER_DISNEY_HELPER_CUH
 
+inline __both__ vec3 rgbToLin(const vec3& color)
+{
+    return vec3{powf(color.x, 2.2f), powf(color.y, 2.2f), pow(color.z, 2.2f)};
+}
+
 inline __both__ float luminance(const vec3& color)
 {
-    return owl::dot(vec3{0.2126f, 0.7152f, 0.0722f}, color);
+	return owl::dot(vec3{ 0.2126f, 0.7152f, 0.0722f }, color);
 }
 
 inline __both__ float clamp(float x, float low, float high)
@@ -33,13 +38,13 @@ inline __both__ float relative_eta(vec3 const& wo, float ior,
 
 inline __both__ float roughness_to_alpha(float roughness)
 {
-    return max(alpha_min, clamp(sqr(roughness), 0.0f, 1.0f));
+    return fmax(alpha_min, clamp(sqr(roughness), 0.0f, 1.0f));
 }
 
 inline __both__ vec2 roughness_to_alpha(float roughness, float anisotropy)
 {
     auto const aspect{sqrt(1.0f - 0.9f * anisotropy)};
-    return {max(alpha_min, sqr(roughness) / aspect), max(alpha_min, sqr(roughness) * aspect)};
+    return {fmax(alpha_min, sqr(roughness) / aspect), fmax(alpha_min, sqr(roughness) * aspect)};
 }
 
 /// used for bsdf specular lobe

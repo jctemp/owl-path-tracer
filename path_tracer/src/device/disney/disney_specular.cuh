@@ -61,6 +61,25 @@ __both__ float d_gtr_2(vec3 const& wm, float ax, float ay)
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
+__both__ vec3 sample_gtr2_ndf(vec3 const& wo, float ax, float ay, vec2 const& u)
+{
+    auto cos_theta{ 0.0f };
+    auto phi{ (two_pi) * u[1] };
+    
+    phi = atan(ay / ax * tan(two_pi * u[1] + inv_pi));
+    if (u[1] > .5f) phi += pi;
+    
+    auto sinPhi = sin(phi), cosPhi = cos(phi);
+    auto const alphax2{ sqr(ax)}, alphay2{sqr(ay)};
+    auto const alpha2{ 1 / (sqr(cosPhi) / alphax2 + sqr(sinPhi) / alphay2) };
+    auto tanTheta2 = alpha2 * u[0] / (1 - u[0]);
+    
+    cos_theta = 1 / sqrt(1 + tanTheta2);
+    auto sin_theta = sqrt(fmax(0.f, 1.f - sqr(cos_theta)));
+    auto wh{ to_sphere_coordinates(sin_theta, cos_theta, phi) };
+    return normalize(wh);
+}
+
 /// Sampling the Trowbridge-Reitz distribution of visible normals [2]
 /// it allows for better sampling only relevant normals for the microfacet
 __both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, vec2 const& u)
@@ -84,10 +103,10 @@ __both__ vec3 sample_gtr2_vndf(vec3 const& wo, float ax, float ay, vec2 const& u
     b = (1.0f - s) * sqrt(1.0f - sqr(t)) + s * b;
 
     // re-projection onto hemisphere
-    auto const nh{t * T + b * B + sqrt(max(0.0f, 1.0f - sqr(t) - sqr(b))) * N};
+    auto const nh{t * T + b * B + sqrt(fmax(0.0f, 1.0f - sqr(t) - sqr(b))) * N};
 
     // transforming the normal back to the ellipsoid configuration
-    return normalize(vec3{ax * nh.x, ay * nh.y, max(0.0f, nh.z)});
+    return normalize(vec3{ax * nh.x, ay * nh.y, fmax(0.0f, nh.z)});
 }
 
 /// \brief Specular lobe describe with mircofacets using Trowbridge-Reitz distribution [0][2][3]
@@ -122,7 +141,8 @@ __both__ vec3 eval_disney_specular_brdf(material_data const& m, vec3 const& wo, 
     auto const g{g2_smith_correlated(wo, wi, ax, ay)};
     auto const f{lerp( c_spec, {1.0f}, schlick_weight(dot(wi, wh)))};
 
-    pdf = d * g1_smith(wo, ax, ay) * max(0.0f, dot(wo, wh)) / (4.0f * cos_theta(wo));
+    pdf = d * g1_smith(wo, ax, ay) * fmax(0.0f, dot(wo, wh)) / (4.0f * cos_theta(wo));
+    // pdf = d / (4 * cos_theta(wh));
 
     // not using cos_theta(wi) because one multiplies later the love with it
     return d * g * f / (4.0f * abs(cos_theta(wo)));
@@ -133,7 +153,10 @@ inline __both__ vec3 sample_disney_specular_brdf(material_data const& m, vec3 co
 {
     auto const a{roughness_to_alpha(m.roughness, m.anisotropic)};
     auto const ax{a.x}, ay{a.y};
-    auto wh = sample_gtr2_vndf(wo, ax, ay, random.rng<vec2>());
+    
+    auto wh = sample_gtr2_ndf(wo, ax, ay, random.rng<vec2>());
+    // auto wh = sample_gtr2_ndf(wo, ax, ay, random.rng<vec2>());
+    
     if (dot(wo, wh) < 0.0f) wh = -wh;
     wi = reflect(wo, wh);
 
@@ -201,17 +224,21 @@ inline __both__ vec3 sample_disney_specular_bsdf(material_data const& m, vec3 co
     // auto wh = sample_gtr2_vndf(wo, a.x, a.y, random.rng<vec2>());
     // auto wh = vec3{0,0,1};
     auto wh = sample_gtr2_bsdf(roughness_to_alpha(m.specular_transmission_roughness), random.rng<vec2>());
-
     if (cos_theta(wo) < 0.0f && !same_hemisphere(wo, wh)) wh = -wh;
 
     float eta_i{}, eta_t{};
-    auto const eta{relative_eta(wo, m.ior, eta_i, eta_t)};
-    auto const R{fresnel_equation(wo, wh, eta_i, eta_t)};
-    auto const T{1.0f - R};
+    auto const eta{ relative_eta(wo, m.ior, eta_i, eta_t) };
+    auto const R{ fresnel_equation(wo, wh, eta_i, eta_t) };
+    auto const T{ 1.0f - R };
     auto const pr = R, pt = T;
 
     if (!refract(wo, wh, eta, wi) || random() < pr / (pr + pt))
+    {
+        auto const a{ roughness_to_alpha(m.roughness, m.anisotropic) };
+        auto const ax{ a.x }, ay{ a.y };
+        wh = sample_gtr2_ndf(wo, ax, ay, random.rng<vec2>());
         wi = normalize(reflect(wo, wh));
+    }
 
     return eval_disney_specular_bsdf(m, wo, wh, wi, pdf);
 }

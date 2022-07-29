@@ -96,43 +96,46 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
     /// total accumulation of existent radiance
     vec3 radiance{0.0f};
 
+    /// keeps tracks of the throughput of a ray, throughput = f * cos(theta) / pdf
+    vec3 throughput{1.0f};
 
-    /// keeps tracks of the throughput of a ray, it is weighting the radiance <br>
-    /// beta = f * cos(theta) / pdf
-    vec3 beta{1.0f};
-
+	/// initialise ray payload
     hit_data hd;
     material_data ms;
     per_ray_data prd{random, scatter_event::none, &hd, &ms};
     int32_t sampled_lobe{DISNEY_SAMPLED_LOBE_NONE};
 
+	// path construction loop
     for (int32_t depth{0}; depth < launch_params.max_path_depth; ++depth)
     {
-        /// find closest intersection
+        /// find next vertex of path
         owl::traceRay(launch_params.world, ray, prd);
 
         /// miss then terminate the path and sample environment
         if (prd.scatter_event == scatter_event::miss)
         {
             if (launch_params.environment_use && launch_params.environment_map)
-                radiance += sample_environment(ray.direction) * beta;
+                radiance += sample_environment(ray.direction);
             else if (launch_params.environment_auto)
-                radiance += lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f)) * beta;
+                radiance += lerp(vec3{1.0f}, vec3{0.5f, 0.7f, 1.0f}, 0.5f * (ray.direction.y + 1.0f));
             else
-                radiance += launch_params.environment_color * launch_params.environment_intensity * beta;
+                radiance += launch_params.environment_color;
+
+            radiance *= launch_params.environment_intensity;
+			
             break;
         }
 
-        /// hit light?
         material_data material{};
         if (hd.material_index >= 0)
         {
             get_data(material, launch_params.material_buffer, hd.material_index, material_data);
         }
 
+        /// light then terminate the path
         if (material.emission > 0.0f)
         {
-            radiance = material.emission * beta;
+            radiance = material.emission;
             break;
         }
 
@@ -144,20 +147,23 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         load_triangle_vertices(hd.mesh_index, indices, hd.barycentric, v_p, v_gn);
         load_triangle_normals(hd.mesh_index, indices, hd.barycentric, v_n);
 
+        /// prepare data for sampling
         vec3 wo{hd.wo}, wi{};
 
         vec3 T{}, B{};
-        onb(v_gn, T, B);
+        onb(v_n, T, B);
 
         vec3 local_wo{to_local(T, B, v_n, wo)}, local_wi{};
 
         float pdf{};
         vec3 f{};
-
+		
+        /// sample material to get reflectance (f), direction (wi), and pdf
         f = sample_disney(material, local_wo, prd.random,
                 local_wi, pdf, sampled_lobe);
 
         wi = to_world(T, B, v_n, local_wi);
+		
         /// terminate or catching de-generate paths
         if (pdf < 1E-5f)
             break;
@@ -169,24 +175,21 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
             continue;
         }
 
-        //ray = radiance_ray{v_p, wi, t_min, t_max};
-
-        beta *= f * abs(cos_theta(local_wi)) / pdf;
-
-
+        /// update throughput
+        throughput *= f * abs(cos_theta(local_wi)) / pdf;
+        ray = radiance_ray{ v_p, wi, t_min, t_max };
+		
 
         /// terminate path by random
-        auto const beta_max{owl::max(beta.x, owl::max(beta.y, beta.z))};
+        auto const beta_max{owl::max(throughput.x, owl::max(throughput.y, throughput.z))};
         if (sampled_lobe != DISNEY_SAMPLED_LOBE_GLASS && depth > 3 )
         {
             float q{owl::max(.05f, 1 - beta_max)};
             if (prd.random() > q) break;
         }
-
-        ray = radiance_ray{v_p, wi, t_min, t_max};
     }
 
-    return radiance;
+    return radiance * throughput;
 }
 
 OPTIX_RAYGEN_PROGRAM(ray_gen)()
@@ -217,7 +220,7 @@ OPTIX_RAYGEN_PROGRAM(ray_gen)()
 
     // take the average of all samples per pixel and apply gamma correction
     color *= 1.0f / static_cast<float>(launch_params.max_samples);
-    color = o_saturate(pow(color, 1.0f / 2.2f));
+    // color = o_saturate(pow(color, 1.0f / 2.2f));
 
     // save result into the buffer
     const int fbOfs = pixelId.x + self.fb_size.x * (self.fb_size.y - 1 - pixelId.y);

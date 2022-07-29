@@ -28,7 +28,8 @@ __both__ vec3 eval_disney_sheen(material_data const& m, vec3 const& wo, vec3 con
     /// is that one uses the base_color directly instead of a linear version        <br>
     ///                                                                             <br>
 
-    auto const lum{luminance(m.base_color)};
+	
+    auto const lum{luminance(rgbToLin(m.base_color))};
     auto const cos_theta_d{owl::dot(wi, wh)};
     auto const tint{(lum > 0.0f) ? m.base_color / lum : vec3{1.0f}};
 
