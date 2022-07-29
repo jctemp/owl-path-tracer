@@ -14,26 +14,26 @@
 /// \returns Extra reflectance for grazing angles.
 __both__ vec3 eval_disney_sheen(material_data const& m, vec3 const& wo, vec3 const& wi)
 {
-    if (m.sheen <= 0.0f) return vec3{0.0f};
+	if (m.sheen <= 0.0f) return vec3{ 0.0f };
 
-    /// Handle the possible degenerated half-vector resulting in a zero dot product
-    auto wh{wi + wo};
-    if (all_zero(wh)) return vec3{0.0f};
-    wh = owl::normalize(wh);
+	/// Handle the possible degenerated half-vector resulting in a zero dot product
+	auto wh{ wi + wo };
+	if (all_zero(wh)) return vec3{ 0.0f };
+	wh = owl::normalize(wh);
 
-    ///                                                                             <br>
-    /// Sheen tint has not really been touched in the Disney papers. As it is not   <br>
-    /// that relevant as an optional component. Revising the BRDF Explorer one can  <br>
-    /// find out how to calculate the sheen tint. Difference to this implementation <br>
-    /// is that one uses the base_color directly instead of a linear version        <br>
-    ///                                                                             <br>
+	///                                                                             <br>
+	/// Sheen tint has not really been touched in the Disney papers. As it is not   <br>
+	/// that relevant as an optional component. Revising the BRDF Explorer one can  <br>
+	/// find out how to calculate the sheen tint. Difference to this implementation <br>
+	/// is that one uses the base_color directly instead of a linear version        <br>
+	///                                                                             <br>
 
-	
-    auto const lum{luminance(rgbToLin(m.base_color))};
-    auto const cos_theta_d{owl::dot(wi, wh)};
-    auto const tint{(lum > 0.0f) ? m.base_color / lum : vec3{1.0f}};
 
-    return lerp(vec3{1.0f}, tint, m.sheen_tint) * m.sheen * schlick_weight(cos_theta_d);
+	auto const lum{ luminance(rgbToLin(m.base_color)) };
+	auto const cos_theta_d{ owl::dot(wi, wh) };
+	auto const tint{ (lum > 0.0f) ? m.base_color / lum : vec3{1.0f} };
+
+	return lerp(vec3{ 1.0f }, tint, m.sheen_tint) * m.sheen * schlick_weight(cos_theta_d);
 }
 
 
