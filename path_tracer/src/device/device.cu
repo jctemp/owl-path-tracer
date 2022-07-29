@@ -167,8 +167,10 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         load_triangle_indices(hd.mesh_index, hd.primitive_index, indices);
         load_triangle_vertices(hd.mesh_index, indices, hd.barycentric, v_p, v_gn);
         load_triangle_normals(hd.mesh_index, indices, hd.barycentric, v_n);
-        if (prd.hd->has_texture)
+        if (prd.hd->has_texture == true)
+        {
             load_texture_base_color(hd.mesh_index, indices, hd.barycentric, hd.texture, material);
+        }
 
         /// prepare data for sampling
         vec3 wo{hd.wo}, wi{};
@@ -275,6 +277,10 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
     {
         prd.hd->has_texture = self.has_texture;
         prd.hd->texture = self.texture;
+    }
+    else
+    {
+        prd.hd->has_texture = false;
     }
 
     prd.scatter_event = scatter_event::hit;
