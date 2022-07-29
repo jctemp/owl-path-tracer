@@ -1,39 +1,40 @@
 {
-    "camera": {
-        "look_from": [
-            3.0,
-            1.0,
-            0.0
-        ],
-        "look_at": [
-            0.0,
-            1.0,
-            0.0
-        ],
-        "look_up": [
-            0.0,
-            1.0,
-            0.0
-        ],
-        "vertical_fov": 50
-    },
-    "materials": [
-        {
-            "name": "sphere",
-            "base_color": [ 0.8, 0.8, 0.8 ],
-            "subsurface": 0.0,
-            "metallic": 0.5,
-            "specular": 0.0,
-            "specular_tint": 0.0,
-            "roughness": 0.2,
-            "anisotropic": 0.2,
-            "sheen": 1.0,
-            "sheen_tint": 0.0,
-            "clearcoat": 0.5,
-            "clearcoat_gloss": 0.5,
-            "ior": 1.5,
-            "specular_transmission": 1.0,
-            "specular_transmission_roughness": 0.0
-        }
-    ]
+  "camera": {
+    "look_from": [
+      3.0,
+      1.0,
+      0.0
+    ],
+    "look_at": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "look_up": [
+      0.0,
+      1.0,
+      0.0
+    ],
+    "vertical_fov": 50
+  },
+  "materials": [
+    {
+      "name": "sphere",
+      "base_color": [ 1.0, 1.0, 1.0 ],
+      "subsurface": 0.0,
+      "metallic": 0.0,
+      "specular": 0.0,
+      "specular_tint": 0.0,
+      "roughness": 1.0,
+      "anisotropic": 0.0,
+      "sheen": 0.0,
+      "sheen_tint": 0.0,
+      "clearcoat": 0.0,
+      "clearcoat_gloss": 0.0,
+      "ior": 1.5,
+      "specular_transmission": 0.0,
+      "specular_transmission_roughness": 0.0,
+      "emission": 0.0
+    }
+  ]
 }

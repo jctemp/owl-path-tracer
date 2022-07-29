@@ -1,21 +1,21 @@
 {
-    "scene": "cornell-box",
-    "buffer_size": [1024, 1024],
-    "max_samples": 1024,
-    "max_path_depth": 64,
-    "environment_use": false,
-    "environment_auto": false,
-    "environment_color": [1, 1, 1],
-    "environment_intensity": 0,
-    "test" : {
-        "name": "demo",
-        "material_name" : "sphere",
-        "attribute_name" : "specular_transmission",
-        "material_type" : 2,
-        "values" : [
-          1.0,
-          0.0
-        ],
-        "step_size" : 1
-    }
+  "scene": "sphere",
+  "buffer_size": [ 1024, 1024 ],
+  "max_samples": 4096,
+  "max_path_depth": 32,
+  "environment_use": true,
+  "environment_auto": true,
+  "environment_color": [ 1, 1, 1 ],
+  "environment_intensity": 1,
+  "test": {
+    "name": "sample_gtr2_ndf",
+    "material_name": "sphere",
+    "attribute_name": "specular_transmission_roughness",
+    "material_type": 2,
+    "values": [
+      0.0,
+      1.0
+    ],
+    "step_size": 1
+  }
 }
