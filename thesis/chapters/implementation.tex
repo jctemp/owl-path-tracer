@@ -1,193 +1,274 @@
 \chapter{Implementation}
 
-Path tracing is expensive because path construction requires tracing multiple rays in a scene.
-One repeats this procedure for all pixels of an image.
-Elaborating on the idea of tracing rays, one utilises ray casts to send a ray into a scene. 
-Based on that, one can find an object with the corresponding intersection point.
-For that, one employs intersection tests against the present geometry of objects in the scene description.
+This chapter presents the decisions and selected approaches for implementation, intending to give an overview of what the application does and how one conducts rendering.
+One wants to illustrate the complexity of a path tracer and define goals and potential problems.
 
-The challenge with tracing many rays is that a computer must process these calculations as fast and efficient as possible.
-For example, if an image has the dimension 1024x1024 and one samples only one path per pixel, then there are already a million paths to be calculated. 
-Depending on the path length, the algorithm has to find $n$ intersection point.
-Extending the problem with a more complex scene description or increasing light calculations per intersection point, the effort to calculate a path becomes much more problematic.
+The thesis aims to create a path tracer with the Disney illumination model so that one can analyse the illumination model whilst having maximum control over the path tracer.
+The requirements are that the path tracer can render images \textit{fast} and that the source code is \textit{understandable}.
+Having something fast and understandable becomes tricky; therefore, one must make compromises.
 
-Accordingly, one must consider two factors to achieve a foreseeable time for image synthesis.
-The first point is ray tracing libraries that offer required acceleration structures, efficient algorithms for ray tracing, and a convenient interface.
-Secondly, one should consider the aspect of parallelisation.
+As explained earlier, path tracing can become computationally expensive.
+The expense is because of three factors: path construction process, pixel samples, and light calculations.
+Depending on how one defines these factors, they pose a problem for \textit{fast} path tracing.
+
+One has to utilise two powerful tools: a ray tracing library and parallel computing.
+To give some context, let one first illustrate the necessity for parallelism and then elaborate on ray tracing libraries.
+
+\section{Parallelism}
+
+Now, one gives a rough insight into parallelism, what it means and why it is relevant for path tracing.
+
+The field of parallel computing to enable parallelism has become essential in computer science over the last decades as hardware performance does not follow Moore's law anymore; \cite{theis_end_2017}.
+For clarification, one specifies the term \textit{parallelism}.
+It describes the proper simultaneous execution of two distinct instruction streams; \cite{laplante_encyclopedia_2017}.
+In other words, hardware with more than one execution unit (processing core) can simultaneously execute multiple tasks.
+Accordingly, introducing multi-core central processing units (CPU) qualifies for parallelism but in a narrow scope.
+However, one should remember that manufacturers have optimised CPUs for serial processing, unlike the graphics processing unit (GPU).
+GPUs are specialised for a high throughput of tasks by providing many cores and threads for execution.
+If an application exhibits data-level parallelism, these processors accelerate; \cite{laplante_encyclopedia_2017}.
+
+One defines path tracing as an application with data-level parallelism because the path construction process qualifies for independent path calculations.
+Note that data management, underlying algorithms and data structures, and particular hardware acceleration determine the degree of parallelism.
+For the following, one assumes that GPUs allow a level of parallelism in order of magnitudes, which results in a performance increase.
 
 \section{Ray Tracing Libraries}
 
-First, one likes to take a closer look at ray tracing libraries.
-All the present libraries follow the same core principle, providing primary ray tracing primitives like acceleration structures and ray tracing itself with a programmable pipeline.
-The programmable components of these pipelines are shader programs that govern the hit and miss logic for graphic units or abstract classes and lambda functions for CPU implementations.
-Important to note is that GPU libraries tend to be more verbose, demanding more explicit source code regarding general data management.
+Ray Tracing libraries offer generic tools to execute ray tracing efficiently \cite{nvidia_nvidia_2022}, \cite{intel_embree_2022}, \cite{khronos_vulkan_2022}, \cite{microsoft_directx-spec_2022}.
+They are available for a processor and a graphics card implementation.
+The fact that makes these libraries unique is that they have state-of-the-art algorithms and data structures optimally implemented to reduce processing time whilst providing great flexibility because of a  programmable pipeline.
+This pipeline has a predefined procedure where one can program components to define custom logic and behaviour.
+Additionally, the libraries tend to be verbose and expose technical details, making the handling of the libraries less intuitive but allowing for more refined controls.
 
-The second topic is parallel computing.
-It has become an essential field in computer graphics over the last decades as hardware performance does not follow Moore's law anymore; \cite{theis_end_2017}.
-Consequently, experts adapted software design and introduced specialised hardware components.
-Accordingly, CPUs can process multiple serial tasks owing to an increase in core count and cache, enabling "lightweight" parallelism.
-Nonetheless, GPUs as specialised hardware became popular for massive parallelism, especially in computer graphics.
-In recent years, graphics card vendors extended the architecture for machine learning and ray tracing support, making GPUs very interesting for path tracer implementation.
+One further simplifies the selection process by assuming that the choice of a ray tracing library has little to no performance impact because the algorithms and data structures can be virtually equivalent; \cite{bico_optix_2016}.
 
-Before diving into the concrete tools, one will specify some requirements.
-The first objective is fast rendering so one can iterate through changes frequently.
-Fast rendering is beneficial if one chooses high sample counts to check for potential image artefacts like fireflies, as images should converge correctly.
-Secondly, the used library should offer high abstraction so that no technical intricacies of the library lead to problems and therefore accelerate the development speed.
-The last requirement is libraries must support C++ because of suitable tools and resources.
-Based on this, one can try to make a decision.
+\section{Tools}
 
-First, one wants to determine whether to use the graphics cards or the processor for the implementation.
-The performance and rendering speed depends solely on the library and possible parallel computing.
-Therefore, the premise is that the library's choice is not decisive because the algorithms and data structures can be virtually equivalent \cite{bico_optix_2016}.
-Hence, with simplified conditions, only the parallelisation provided by the corresponding hardware would determine the final runtime. 
-Due to a certain degree of guaranteed parallelism that a graphics card provides, one uses a corresponding GPU library for the implementation.
+Finally, one can decide upon the various tools available to implement a path tracer with the Disney illumination model.
+To make the decision-making more reasonable, one gives an example demonstrating the difficulties of rendering.
 
-\begin{wraptable}{l}{6cm}
-    \begin{tabular}{|c|c|}\hline
-        Nvidia        & OptiX     \\ \hline
-        Microsoft     & DXR       \\ \hline
-        Khronos Group & Vulkan-RT \\ \hline
-        Intel         & Embree    \\ \hline
-    \end{tabular}
-    \caption{libraries}
-    \label{fig:libraries}
-\end{wraptable}
+One would like to render a scene with multiple triangles meshes that totalled a million triangles.
+The image should have a resolution of 1024x1024 pixels with one hundred twenty-eight samples per pixel, and one has constructed the scene in a way that paths have exactly three vertices and two segments on average.
 
-One further examined selected libraries for a graphics card implementation (see fig.~\ref{fig:libraries}).
-The pre-selection of the four libraries is because of a mature ray tracing API with various potential features to enable fast ray tracing.
+At first glance, it seems like a trivial task.
+Nonetheless, one analyses the example by breaking it into parts, beginning with the triangle meshes.
+As one maybe knows, intersection tests for every triangle in the scene is a computationally expensive action.
+Because of this, one utilises a ray tracing library offering an acceleration structure that reduces the number of tests and thus makes rendering \textit{faster}.
+In recent years, GPU manufacturers extended hardware with special-purpose components for ray tracing or machine learning, another factor that increases performance for these tests.
+Because of that, it makes the hardware undeniably computationally faster for these purposes, making a GPU already a preferred choice.
+Next, one will examine the image resolution, sample count and path calculations (\ref{sec:path-tracing}).
+These three metrics are driving factors determining the number of operations necessary to calculate the image.
+An operation, in this context, is an abstract unit resembling something like a floating-point calculation on a processing unit.
+Besides, one supposes that a ray cast and the light calculations at a vertex count separately as one operation to simplify the estimation.
+With the current example, one has about a million pixels and one hundred twenty-eight samples per pixel, requiring the application to calculate one hundred twenty-eight million paths.
+Accordingly, one must find these paths' vertices and segments, resulting in four operations per path and a billion operations in total.
 
-The essential requirement for one is a straightforward interface so that rapid development is favoured.
-However, as already mentioned, the interfaces are often verbose, and the libraries expect prior knowledge of graphics card programming.
-Apart from that, there were no other expectations or limitations.
-Therefore, one favoured a wrapper library that streamlines the corresponding parts, such as function calls or data management.
-A suitable library, OptiX Wrapper Library (OWL), was found, which led to the decision to use OptiX. 
+Due to such scenarios, one decided to have GPU implementation because it qualifies for massively parallel computation.
+In addition, ray tracing libraries have excellent GPU support.
+The most promising benefit of a GPU implementation is the development feedback loop.
+A flexible feedback loop is crucial because it enables one to render multiple images in a shorter time, making further image comparison more accessible.
+Accordingly, it assists in an analysis of a series of images.
+Another benefit is that one can increase the sample count without waiting hours to finish rendering an image, resulting in more iteration during the implementation.
+On the opposite side, one has to consider the pitfalls of GPU programming and the libraries' verbose API.
+First, development support concerning GPU programming is quite limited regarding general practices like debugging and unit testing.
+The other part is the verbosity which introduces more complexity during development.
+Nonetheless, the second requirement is the comprehensibility of the source code.
 
-Finally, one would like to list the tools and libraries used.
-It will be not explained in more detail why one used the respective versions or tools.
+To partially circumvent the pitfalls, one demands another layer of abstraction, a wrapper library for the ray tracing libraries, simplifying the usage.
+Furthermore, one will use the C++ programming language for the application due to a wide range of additional libraries and optional controls.
+Note that selecting a ray tracing library where the GPU-sided programming is similar to the syntax of C++ helps with the source code's coherence.
 
-\begin{itemize}
+The so-called OptiX Wrapper Library (OWL) is a library that satisfies the new demands, which indirectly selects OptiX as the ray tracing library.
+Because of the wrapper, data access and function calls of OptiX are more straightforward.
+The used programming language is CUDA, a \textit{subset} of the C++ language supporting most language features.
+In addition, it is feasible to target the GPU and CPU with the compilation of source code, theoretically allowing for hybrid implementations.
+
+\begin{list}{-}{}
     \item CMake 3.22.0
     \item C++20 and CUDA 17
     \item CUDA Runtime 11.7
     \item OptiX Ray Tracing API (SDK 7.4.0)
-\end{itemize}
+\end{list}
 
-\section{Nvidia OptiX 7}
+\section{CUDA and OptiX}
 
-Building a path tracer with a ray tracing library requires knowing some terminology and understanding the various parts of the programmable pipeline.
-OptiX is a part of the CUDA programming eco-system and differentiates between host and device code.
-In simple words, host code runs on the processor and device code on a graphics card.
-Accordingly, any source code targeted to the graphics card must be device code and follow the CUDA language specifications.
+For this section, one has to discuss general ideas and principles of CUDA and OptiX because of the OWL library.
 
-In the context of OptiX, the programmable parts are shaders or \textit{programs} that are a part of the device code.
-These programs define specific behaviour for different states in this pipeline provided by the programmer and depending on the application.
-Next, one will briefly explain which program types exist and how one uses these programs.
+First, one likes to sharpen the understanding of CUDA.
+One will simplify the description because these are sufficient for the implementation.
+The GPU programming model \cite{nvidia_cuda_2022} distinguishes between a host (CPU-sided application) and a device (GPU-sided application).
+This model introduces a strict separation of source code, memory and execution.
+However, both sides can transfer data over the bus connection to ensure communication.
+Accordingly, the CPU-sided application must prepare data and upload it to the GPU so that it can process the data.
+Besides, one has to begin the execution of the device, which is possible through special functions called kernels.
+Kernels are callable from the host that causes the execution of device code $N$ times in parallel by $N$ different threads.
+Hence, threads represent the execution of one kernel.
+The abstraction of threads provides a primitive for parallel programming where every thread has a unique index.
+Consequently, one can work with linear buffers and address distinct elements through the threads index.
+Nonetheless, it requires caution because race conditions can still happen.
+
+Now, one give a introduction to OptiX \cite{nvidia_nvidia_2022}.
+NVIDIA states that OptiX 7 builds upon the CUDA technology to facilitate ray tracing.
+The provided ray tracing pipeline is especially noteworthy because of the programmable component.
+The components are called programs, encapsulating a code block that expresses the program's application-dependent behaviour.
+Next, one will briefly present the vital program types and the usage of these programs.
 
 \begin{figure}[h]
     \begin{center}
         \includegraphics[width=\textwidth]{optix-kernel.png}
     \end{center}
-    \caption{optix pipeline}
+    \caption{optix pipeline \cite{nvidia_nvidia_2022}}
     \label{fig:optix-kernel}
 \end{figure}
 
-The \textit{Ray Generation} program is the entry point of the device execution.
+The \textit{ray generation} program is the entry point of the device execution.
 One uses a particular host code function to initiate the device-sided execution.
 From here on, one can call additional functions to build an execution sequence.
 
-A \textit{Intersection} and \textit{Bounds} program are necessary for the acceleration structure.
-If one calls the trace function, it iterates through the data structure until the routine reaches a leaf.
-For custom geometric primitives, one must specify the bounds and intersection programs so that OptiX knows how to process them during iteration.
-The only exceptions are triangles and curves since they are already predefined.
-OWL forms, on top of it, an abstraction for minimum expenditure.
+A \textit{intersection} program is necessary for the acceleration structure traversal.
+OptiX performs intersection tests during the traversal, using the program's implementation.
+There is native support for triangle, curve and sphere primitives.
+However, one can extend it with custom primitive types.
+Note that OWL forms, on top of it, an abstraction for minimum expenditure.
 
-The last two required programs are the \textit{Closest Hit} and \textit{Miss} program.
-Both describe a case each, whether a ray has hit an object or not.
-The execution of these programs starts after a complete iteration through the acceleration structure. 
-After the execution, the application returns to the trace function call.
-The only distinction between the two is that the data from the hit object is available in the closest hit program.
+The last two required programs are the \textit{closest hit} and \textit{miss} program.
+The names are self-explanatory, but for completeness, one will mention them.
+A \textit{closest hit} program gets called if a traced ray has one or multiple intersection points, providing the nearest intersection.
+One can access information about the intersection point and the corresponding object inside the program.
+A \textit{miss} program gets called if a traced ray has no intersection.
+Note that both have access to the data of the ray.
+The execution of these programs starts after a completed traversal.
 
 \section{Application Design}
 
-This section intends to give a general overview of the application.
-It describes the individual tasks of the application.
-One will walk through some essential points that shaped the application design.
-Note that the decision was based on simplicity and not necessarily robust and flexible design.
+This section intends to give a general overview of the application, where one describes the individual tasks.
+Furthermore, one will walk through some essential points that shaped the application.
 
-Let one start with a host-only functionality, which is loading mesh and material data.
+One begins with a host-only functionality, loading mesh and material data.
 Three-dimensional meshes have different representations and need corresponding loaders to bring the vertex normal and position data to memory.
 Besides that, these representations can also contain information about the material data.
-Accordingly, large libraries can load any file format for objects.
-However, this seemed to be convoluted, and thus one decided to use an OBJ loader because of its simplicity. 
-Another argument for the OBJ format was that all object vertices are in global coordinates; if needed, one could also load the normals and UV data.
-One described the materials of the objects via a JSON format.
+Accordingly, large libraries can load many file formats.
+However, it seemed to be convoluted, and thus one decided to use the OBJ format because of its simplicity.
+Another argument for that format was that all object vertices are in global coordinates; therefore, one has not had to handle transforms.
+The normal and UV data are also optionally available.
+For materials, one only needed a simple format to represent the Disney parameters' values and the object's corresponding name.
+Hence, one decided to use the JSON format.
 
-The next consideration is the exchange of data and where the data should be made available.
-OptiX offers for the exchange of data two strategies.
+The next consideration is the exchange of data (host-device communication) and where the data should be available.
+OptiX offers two strategies.
 The first is the so-called SBT or shader binding table.
-They allow the programmer to bind specific data to a program of the OptiX pipeline.
-An essential difference to the second option is that the data will be only available to the designated program.
+It allows the programmer to bind specific data to a program of the OptiX pipeline.
+An essential difference to the second option is that the data will only be available to the designated program.
 The second option is to create global constants that make the data available everywhere in the device.
-However, the only important attribute is simplicity and creating a global constant containing any data required during the renderer's lifetime is the easiest choice.
+For this thesis, the critical attribute is clarity.
+Creating a global constant containing any data required during the renderer's lifetime is the easiest choice, making user-defined data types obsolete to a certain extent.
 
-The next point is the path tracing itself, especially if one selects a recursive or iterative approach for path tracing.
-Depending on the chosen strategy, the tasks of the programs look different, i.e. the implementation of the path tracer is in \textit{Closest Hit}  or \textit{Ray Generation} program.
-Intuitively, a recursive approach would be the most straightforward approach because one described path tracing as a recursive formula.
-However, one chooses an iterative version because the path construction is more apparent, and the procedure is easier to understand.
-Hence, the implementation will be in the \textit{Ray Generation} program.
+The next point is the path tracing itself, especially if one selects a recursive or iterative implementation.
+Accordingly, the tasks of the programs, \textit{closest hit} and \textit{ray generation} change.
+Intuitively, a recursive implementation would be the most straightforward approach because one described path tracing as a recursive formula.
+However, one chooses an iterative implementation because the path construction is more apparent, and the procedure is easier to understand.
+Hence, the implementation will be in the \textit{ray generation} program.
 
-One summarises the different decisions and draws the connection to how these interoperate in the application.
-The host-sided application loads all required data for the tracer, initialises with OWL the OptiX components and uploads the data to the graphics card.
-Afterwards, one launches the path tracing, and the host waits until the result is available through a host device buffer.
-The launch causes an invocation of the \textit{Ray Generation} program per pixel, which controls the calculation of paths that have a vertex on the camera plane associated with the corresponding pixel.
-The \textit{Closest Hit} and \textit{Miss} programs set the necessary state that allows the tracer to load the mesh data in the path tracing routine.
-After the device has finished all calculations, the host can read the result and write it to a predefined destination. 
+One summarises the different decisions to demonstrate how these interoperate in the application.
+The host-sided application loads all required data for the path tracer, initialises with OWL the OptiX components and uploads the data to the graphics card.
+Afterwards, one launches the rendering, and the host waits until the result is available through a host device buffer.
+The launch causes an invocation of the \textit{ray generation} program for every pixel, which controls the calculation of paths that have a vertex on the camera plane associated with the corresponding pixel.
+The \textit{closest hit} and \textit{miss} programs set the necessary state that allows the path tracer to load the mesh data in the device-sided path tracing routine through a global constant.
+After the device has finished all calculations, the host can read the result and write it to a predefined destination.
 
-The last parts of this chapter explain essential aspects of the path tracer in more detail and provide a language-agnostic pseudo-code.
+\section{Colours}
+
+Early, one expressed light as a quantum object where the energy consists of a constant and the frequency.
+With a particular frequency present in light, one can determine a wavelength $\lambda$ that can describe colour in the light's visible spectrum.
+The visible spectrum is a continuous infinite range of wavelengths, and light represents all wavelengths equally with the correct emitter.
+
+The problem with such an infinitely large quantity is that computers cannot represent such ranges.
+Accordingly, one has to perform quantisation and limited values.
+Hence, it is crucial to select an appropriate colour model to represent a wide range of colours and provide a primitive to convert these values representable by computer monitors.
+
+Nonetheless, one does not aim to employ a sophisticated colour model because of the required knowledge in colour theory and radiometry to understand such a model.
+That is why one chooses simple RGB values to describe the different colours.
+One knows that working with these values is inaccurate but sufficient for this thesis.
+Note that it benefits three-component vectors to represent these colours.
+
+Keep in mind that this topic becomes very complex because it is not only about accurately depicting light.
+One has to account for human perception.
 
 \section{Path Construction Routine}
 
-First, one will discuss the path construction routine in more detail.
-The entire pseudo-code can be found in the appendix and should be self-explanatory.
-However, one would like to detail the individual parts and explain why one chose this structure.
+The path construction routine builds the core of a path tracer.
+It governs the strategy of finding vertices.
+One mentioned early that the path tracer has a local sampling strategy that utilises ray tracing.
+The following will present the individual parts of the routine; see appendix alg.~\ref{alg:path-construction}.
 
-Foremost, one would like to talk about the state of a path.
-The state is essential for determining how much a given path contributes to the outcome.
-The three crucial metrics are radiance, throughput and depth.
-Radiance is the total energy sent along the path.
-Now, one recollects that light reflects or is re-emitted by several materials.
-For this reason, one must also take the throughput into account.
-Otherwise, a throughput of $1$ would mean that surfaces do not affect light's energy state.
-In this specific case, it serves as a coefficient to weigh the radiance and thus indicates the received energy by the camera.
-If one considers energy conservation, it is possible to create more robust models for light simulation because less extreme values for the throughput occur.
-The last point is the depth of the path.
-In general, one can say that paths with a high depth contribute less to the final result than those with short depths.
-One can justify this statement with the throughput.
-Let one recall the eq.~\ref{eq:path-throughput}. 
-The throughput is a product of the individual reflectance values, a cosine of the incoming direction with $\omega_i$ and the value of the density distribution function.
-To put this in simpler terms, let's say we have a reflectance of $0.8$ and a radiance of $1$. So, paths with a depth of $2$ contribute more to the final result than those with a depth of $16$.
+\subsection*{State}
 
-Next, one will explain the individual steps of the routine.
-The initial step is to execute a \texttt{TraceRay} function because the task is to find the subsequent vertex of the path.
-Remember the visibility function $V(x \leftrightarrow x')$ eq.~\ref{eq:geometry-term} gives a value of either $0$ or $1$ depending on if two points are visible from each other.
-Because one utilises ray tracing, the visibility function always has the value of $1$.
-Note that this process is not mandatory, as one can theoretically randomly pick two points in the scene and construct based on that segments of the path.
-However, it turns out that ray tracing is the most efficient approach to finding paths. 
-Of course, there are extensions to this procedure like bidirectional path tracing that modify the strategy to find paths with another approach.
-The following step is to check if the traced ray hits an object.
-If it is a miss, one samples the environment's radiance.
-Otherwise, one checks if the object is a light, which would also mean sampling the radiance and terminating the construction.
-One previously mentioned that one has to handle lights differently, see 
-eq.~\ref{eq:path-throughput}.
-However, in this case, one found the light through a traced ray from a vertex, which means that the probability density originates from the distribution of solid angles.
-Hence, no special care for lights, but if one introduces multi-importance sampling (MIS) and samples from the collection of lights, it would be a PDF over areas.
-This fact is crucial to remember because otherwise, one will miscalculate.
-The final scenario is a standard surface hit, separated into three parts.
-Loading intersection information with all values in global space and mesh data is self-explanatory.
-Based on that hit information, one is sampling in local space the material to find the next direction for the ray cast as well as the reflectance and PDF value.
-The new direction is in local space, and one can transform it into global space.
+The state of a path is necessary to determine the colour of a pixel.
+One identified three metrics that control a path's contribution to a pixel.
+Accordingly, one will define these metrics.
 
-One will clarify local and global space; see fig.~\ref{fig:local-space}.
+Radiance is a quantity from physics describing the relation of energy to a solid angle and projected area.
+For paths, it will be the energy that a pixel on the camera plane could potentially receive.
+One sets the radiance of a path through light sources, which are surfaces that emit light or the environment.
+For this purpose, one retrieves the colour of the light and adjusts it with a constant of proportionality.
+The throughput attenuates the potential received energy which yields the received energy.
+One uses the eq.~\ref{eq:path-throughput} to track the state correctly.
+The correct state remains valid as long as the values that update the throughput have not degenerated.
+If one does not handle these values, then the throughput will be in an invalid state, causing image artefacts.
+The last state is the path's depth, which describes the number of segments with one vertex on the camera plane and another on a light source.
+It correlates to the throughput as the value potentially decreases with every added dimension.
+Thus, one can interpret that paths with a high depth count contribute less to the result.
+
+\subsection*{Ray Casting}
+
+Ray casting is the selected method to find vertices for a path.
+For this, one uses a ray $r(t)$ starting from a point $\vec{a}$ and sends it in the direction $\vec{b}$ to find an intersection point.
+The application tests the ray against the geometry's acceleration structure, and one uses the \texttt{TraceRay} function to initiate the procedure.
+One can pass a user-defined data type as a ray payload to access the intersection and object data.
+The ray payload can hold any data required for the following steps.
+
+\begin{align*}
+    r(t) = \vec{a} + \vec{b} \cdot t
+\end{align*}
+
+The selected method is not mandatory because the selection of a surface point can happen arbitrarily.
+Hence, one could potentially employ a method that randomly selects a point in the scene.
+The major drawback is that segments are not always valid, leading to additional tests to verify the visibility.
+Using ray casts to find vertices will invariably result in valid paths.
+To relate that to the geometric term eq.~\ref{eq:geometry-term}, the visibility term $V(x \leftrightarrow x')$ will be equal to one, simplifying the equation correspondingly.
+
+Refining the current method can positively impact performance and visual fidelity; see bidirectional path tracing.
+Another possible extension is to use ray cast for other visibility tests, like shadow rays, to test for a light source occlusion, enabling multi-importance sampling.
+
+\subsection*{Intersection Cases}
+
+The next step in path construction is handling three intersection cases.
+For this, one will distinguish between ray hit and miss, and in the case of a hit, one will refine the distinction between surfaces or lights.
+One will start with the ray miss case, followed by the light hit case and finalised with a regular hit.
+
+The ray miss case is straightforward to handle.
+Because of no intersection, the path must terminate, and one must update the current path's radiance.
+Depending on available options, one samples an environment map or uses a uniform colour and multiplies it with an intensity factor.
+After the radiance calculation, one terminates the path construction by breaking the loop due to the iterative implementation.
+For a recursive implementation, it would have been a return.
+
+The light hit case is similar to the first case.
+One can assess the material data through the ray payload to get the emission strength.
+The emission strength is a constant value across the area of the light.
+Accordingly, the radiance is equal to the emission strength.
+Note that one did not sample the light; thus, there is no special handling of the probability density required; see eq.~\ref{eq:path-throughput}.
+After one has updated the radiance, the path terminates.
+
+A regular hit causes the routine to continue with the sampling and then repeats the construction loop.
+One accesses material, mesh and ray metadata through the ray payload for the sampling and provides variables for the following steps.
+
+\subsection*{Sampling}
+
+This step determines the further course of a path.
+One uses a material sampler to get all relevant information (reflectance, probability density and incoming direction) for the upcoming iteration and updates.
+
+The sampling uses local shading coordinates; \cite{pharr_physically_2017}.
+It requires converting the outgoing direction provided by the ray data from global coordinates to the local shading coordinates.
+It also means that one has to conduct a transformation of the sampled incoming direction to global coordinates.
 
 \begin{figure}[h]
     \begin{center}
@@ -197,27 +278,75 @@ One will clarify local and global space; see fig.~\ref{fig:local-space}.
     \label{fig:local-space}
 \end{figure}
 
-One must decide which orthogonal vector basis to utilise for the light calculations.
-The first option is the global basis vectors determined by the normal $N_G$, which is already sufficient for the calculations.
-However, one has decided to employ local basis vectors with a normal $N_S = (0,0,1)$ for more straightforward and explicit computations.
-For example, in the formula, $\cos(\vec{v})=v.z$, the cosine is the Z-component of the vector.
+Next, one will elaborate on how to achieve the conversion and why it is beneficial.
+The idea is that one can construct with the geometric normal $N_G$ a basis in the vector space $\mathbb{R}^3$ so that there are three orthogonal vectors in global coordinates.
+The other basis describes the shading coordinates with a shading normal $N_S = (0,0,1)$ and the corresponding tangent and bitangent for the other axis.
+Note that one does not need the shading coordinates for the light calculations, but they help make formulas more straightforward and explicit for computations.
+For example, in the formula, $\cos(\theta_{\vec{v}})=v.z$, the cosine is the Z-component of the vector.
 
-The last step in the path construction is once Russian Roulette.
-This function uses throughput and randomness to determine whether the path should end early and thus not contribute to the final result.
+\subsection*{Random Termination}
+
+The last step in the path construction is the Russian Roulette.
+This function uses throughput and randomness to determine whether the path should terminate early and thus not contribute to the final result.
 Notably, a small throughput should favour termination to reduce calculations for values with a minimal effect on the image's appearance.
 
-The steps repeat until the path terminates because of a miss, light source hit, Russian Roulette or a path depth that equals or exceeds the maximum depth.
-Perhaps also worth mentioning is that the maximum path depth intends to prevent paths from being trapped and possibly terminated after many iterations of path construction.
-Of course, this problem can only occur if Russian Roulette cannot terminate the path.
+\section{Disney Routines}
 
-\section{Disney Materials}
+Throughout the two publications \cite{burley_physically_2012} \cite{burley_extending_2015}, Disney gave information regarding material observations and results and used models for light responses.
+Regardless, they did not explain everything, leaving some points open for interpretation.
+One compensated for the lack of information with other papers and other open source implementations.
+Besides that, the most challenging part is to have a strategy implementing the Disney BSDF illumination model.
+The strategy was to implement every lobe of the illumination model separately.
+This separation allowed one to assess the surface responses of the individual lobes.
+The assessment had a loose form, so no formal verification proved the correctness.
+Nonetheless, the separate implementation leads to the fact that every lobe has its routine to evaluate reflectance and probability density function using a pair of incoming and outgoing directions.
+In addition, there is a sampling routine that samples an incoming direction and encapsulates the evaluation.
+Accordingly, one constructed the Disney BSDF sampling routine with all lobes implemented.
+The following will elaborate on the mentioned points.
 
+\subsection*{Light Lobes}
 
+This section will present thoughts and observations rather than an implementation.
+Note that implementation depends on the underlying algorithm and further required features.
 
-\subsection*{Sampling Routine}
+For the lobes, one primarily oriented the implementation on the provided equations and references in the Disney papers.
+One included all references in the appendix \ref{app:references} used for the implementation.
+Additionally, one examined the source code of other renderer's implementations for unclear sections not explained by other references.
+It is vital to be mindful of adopting concepts of other renderers because they do not necessarily fit into the rendering framework.
+A fascinating observation was that every renderer handled sampling and evaluation differently.
+Most of the \texttt{C++} implementations followed an OOP pattern, whereas some had a functional approach or a custom adaptation.
+This variety, in general, made it difficult to derive a coherent implementation, and one can summarise that there is no defacto standard for a material implementation with a corresponding path tracer.
 
+\subsection*{BSDF Sampling}
 
+The sampling of the Disney illumination model turned out to be more difficult than expected compared to the lobes.
+They have an illustration (fig. 4 \cite{burley_extending_2015}) that gives an idea of how to combine the lobes.
+For more optimisation in the implementation, they decided on a unified model that blends in between the different models rather than one general model; \cite{burley_extending_2015}.
 
-\subsection*{Evaluation Routines}
+The problem is that no explanation or source code elaborates on the method to combine these different models.
+Therefore, one analysed the other renderer's implementations.
+The result is two concepts that one could potentially use.
 
+The first option is to combine the lobes' routines, which means evaluating and mixing the lobes' values (reflectance and probability density).
+However, when doing this, one has to be careful with the quantities, as averaging is not always doable.
+Further, it gets incomprehensible with extensions or changes.
 
+The second option is a more straightforward approach.
+One derives probabilities for the lobes through the material values.
+With these probabilities, one constructs a cumulative distribution so the application can use a random number between $[0,1]$ to select the lobe to sample, which mix materials more intuitively.
+
+% \begin{table}[h]
+%     \begin{center}
+%         \begin{tabularx}{0.9\textwidth}{
+%                 | >{\raggedright\arraybackslash}X
+%                 | >{\raggedright\arraybackslash}X
+%                 | >{\raggedright\arraybackslash}X |}
+%             \hline
+%             \textbf{Aspect}     & \textbf{Option A}        & \textbf{Option B}                   \\ \hline
+%             \textit{sampling}   & per lobe                 & combined                            \\ \hline
+%             \textit{evaluation} & per lobe                 & combined                            \\ \hline
+%             \textit{mix}        & random selection of lobe & averaging values (reflectance, pdf) \\ \hline
+%         \end{tabularx}
+%     \end{center}
+%     \caption{sampling strategies}
+% \end{table}

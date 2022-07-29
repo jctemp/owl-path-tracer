@@ -1,4 +1,31 @@
-\chapter*{Algorithms}
+\chapter{Algorithms}
+
+\begin{algorithm}
+    \caption{Component Evaluation}
+    \label{alg:component-evaluation}
+    \begin{algorithmic}[1]
+        \Procedure{EvaluateCompontent}{$material, wo, wh, wi$}
+        \State $pdf \leftarrow \Call{PdfIncomingDirecton}{wi,\;wh}$
+        \State $reflectance \leftarrow \Call{DisneyFormula}{params}$
+        \State
+        \Return $(reflectance,\;pdf)$
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \caption{Component Sampling}
+    \label{alg:component-sampling}
+    \begin{algorithmic}[1]
+        \Procedure{SampleComponent}{$material,\;wo$}
+        \State $wh \leftarrow \Call{SampleHalfVector}{wo}$
+        \State $wi \leftarrow \Call{SampleIncomingDirecton}{wo,\;wh}$
+        \State $(reflectance,\;pdf) \leftarrow \Call{EvaluateCompontent}{material,\;wo,\;wh,\;wi}$
+        \State
+        \Return $(reflectance,\;pdf,\;wi)$
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
 
 \begin{algorithm}
     \caption{Disney Sampling Routine}
@@ -13,13 +40,19 @@
             \State $reflectance \gets 0$
             \State $pdf \gets 0$
             \State $wo \gets (0,0,0)$
-            \State
             \If{$p \le \Call{Get}{cdf, 0}$}
                 \State $(f, pdf) \gets \Call{SampleSpecularBrdf}{material,\;wo}$
             \ElsIf{$p \le \Call{Get}{cdf, 1}$}
                 \State $(f, pdf) \gets \Call{SampleClearcoat}{material,\;wo}$
             \ElsIf{$p \le \Call{Get}{cdf, 2}$}
                 \State $(f, pdf) \gets \Call{SampleDiffuse}{material,\;wo}$
+        \algstore{DisneySampling}
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \begin{algorithmic}[1] % The number tells where the line numbering should start
+        \algrestore{DisneySampling}
             \ElsIf{$p \le \Call{Get}{cdf, 3}$}
                 \State $(f, pdf) \gets \Call{SampleSpecularBtdf}{material,\;wo}$
             \EndIf
@@ -32,7 +65,6 @@
 \end{algorithm}
 
 \begin{algorithm}
-    \small
     \caption{Path Construction Routine}
     \label{alg:path-construction}
     \begin{algorithmic}[1] % The number tells where the line numbering should start
@@ -59,6 +91,13 @@
                 \LineComment{Sample light, set radiance and break}
                 \EndIf
                 \State
+            \algstore{pathConstruction}
+    \end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \begin{algorithmic}[1] % The number tells where the line numbering should start
+        \algrestore{pathConstruction}
                 \LineComment{Prepare Mesh Data}
                 \State $mesh \gets \Call{LoadMeshData}{prd.mId}$
                 \State $wo \gets \Call{ToLocal}{prd.n,\;prd.wo}$
@@ -80,3 +119,4 @@
         \EndProcedure
     \end{algorithmic}
 \end{algorithm}
+
