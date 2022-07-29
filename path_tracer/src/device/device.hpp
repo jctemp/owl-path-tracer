@@ -19,6 +19,9 @@ struct hit_data
     vec2 barycentric;
     vec3 wo;
     float t;
+
+    bool has_texture;
+    cudaTextureObject_t texture;
 };
 
 struct per_ray_data

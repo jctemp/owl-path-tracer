@@ -20,6 +20,8 @@
   "materials": [
     {
       "name": "dragon",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.8, 0.8, 0.8 ],
       "subsurface": 0.0,
       "metallic": 0.0,
@@ -38,6 +40,8 @@
     },
     {
       "name": "ground",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.5, 0.5, 0.5 ],
       "subsurface": 0.0,
       "metallic": 0.0,
@@ -56,6 +60,8 @@
     },
     {
       "name": "areaLight",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.5, 0.5, 0.5 ],
       "subsurface": 0.0,
       "metallic": 0.0,

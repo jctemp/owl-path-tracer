@@ -14,12 +14,13 @@ int main(int argc, char **argv)
 {
     program_data pdata{};
     test_data tdata{};
-    init_program_data(pdata, tdata, std::filesystem::current_path().string() + "/assets");
+    std::string assets_path{ std::filesystem::current_path().string() + "/assets" };
+    init_program_data(pdata, tdata, assets_path);
 
     owl_data data{};
     init_owl_data(data);
 
-    bind_sbt_data(pdata, data);
+    bind_sbt_data(pdata, data, assets_path);
 
     if (tdata.vec_values.empty())
         test_loop(data, pdata, tdata, tdata.flt_values);

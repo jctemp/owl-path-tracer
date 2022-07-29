@@ -16,22 +16,31 @@ json load_json(std::string const& file_path)
     return config;
 }
 
-std::vector<std::tuple<std::string, material_data>> parse_materials(std::string const& config_path)
+std::vector<std::tuple<std::string, material_data, std::string>> parse_materials(std::string const& config_path)
 {
     fmt::print(fg(color::log), "Parsing materials\n");
 
     auto config{load_json(config_path)};
-    auto materials{std::vector<std::tuple<std::string, material_data>>{}};
+    auto materials{std::vector<std::tuple<std::string, material_data, std::string>>{}};
 
     for (auto& material: config["materials"])
     {
         fmt::print(" - {}\n", material["name"]);
         material_data data{};
+        std::string filename{ "" };
 
-        data.base_color = {
-                material["base_color"][0].get<float>(),
-                material["base_color"][1].get<float>(),
-                material["base_color"][2].get<float>()};
+        if (material["use_texture"].get<bool>()) 
+        {
+            filename = material["name"].get<std::string>() + "-textures/" + material["filename"].get<std::string>();
+        }
+        else 
+        {
+            data.base_color = {
+        material["base_color"][0].get<float>(),
+        material["base_color"][1].get<float>(),
+        material["base_color"][2].get<float>() };
+        }
+
         data.subsurface = material["subsurface"].get<float>();
         data.metallic = material["metallic"].get<float>();
         data.specular = material["specular"].get<float>();
@@ -47,7 +56,7 @@ std::vector<std::tuple<std::string, material_data>> parse_materials(std::string 
         data.specular_transmission_roughness = material["specular_transmission_roughness"].get<float>();
         data.emission = material["emission"].get<float>();
 
-        materials.emplace_back(material["name"], data);
+        materials.emplace_back(material["name"], data, filename);
     }
 
     return materials;

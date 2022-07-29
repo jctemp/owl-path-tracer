@@ -36,7 +36,7 @@ struct settings_data
     test_data test{};
 };
 
-std::vector<std::tuple<std::string, material_data>> parse_materials(std::string const& config_path);
+std::vector<std::tuple<std::string, material_data, std::string>> parse_materials(std::string const& config_path);
 
 camera_data parse_camera(std::string const& config_path, ivec2 framebuffer_size);
 

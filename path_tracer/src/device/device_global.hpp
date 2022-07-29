@@ -39,6 +39,8 @@ struct entity_data
 {
     int32_t mesh_index{-1};
     int32_t material_index{-1};
+    bool has_texture{ false };
+    cudaTextureObject_t texture;
 };
 
 struct launch_params_data
@@ -50,6 +52,7 @@ struct launch_params_data
     Buffer vertices_buffer;
     Buffer indices_buffer;
     Buffer normals_buffer;
+    Buffer texcoords_buffer;
 
     OptixTraversableHandle world;
 

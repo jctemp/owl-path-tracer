@@ -8,11 +8,12 @@
 #include <fmt/core.h>
 #include <fmt/color.h>
 #include <filesystem>
+#include <stb_image.h>
 
 extern "C" char device_ptx[];
 
 template <typename T>
-std::vector<T> to_vector(std::vector<std::tuple<std::string, T>> const *data)
+std::vector<T> to_vector(std::vector<std::tuple<std::string, T, std::string>> const *data)
 {
     if (data == nullptr)
         return {};
@@ -20,7 +21,7 @@ std::vector<T> to_vector(std::vector<std::tuple<std::string, T>> const *data)
     std::vector<T> result;
     result.reserve(data->size());
 
-    for (auto const &[name, value] : *data)
+    for (auto const &[name, value, _] : *data)
         result.push_back(value);
 
     return result;
@@ -65,8 +66,10 @@ void init_owl_data(owl_data& data)
     /// create bindable data for triangles
     var_decl triangles_geom_vars
             {
-                    {"mesh_index",     OWL_INT,    OWL_OFFSETOF(entity_data, mesh_index)},
-                    {"material_index", OWL_INT,    OWL_OFFSETOF(entity_data, material_index)},
+                    {"mesh_index",     OWL_INT,     OWL_OFFSETOF(entity_data, mesh_index)},
+                    {"material_index", OWL_INT,     OWL_OFFSETOF(entity_data, material_index)},
+                    {"has_texture",    OWL_BOOL,    OWL_OFFSETOF(entity_data, has_texture)},
+                    {"texture",        OWL_TEXTURE, OWL_OFFSETOF(entity_data, texture)},
                     {nullptr}
             };
 
@@ -107,6 +110,7 @@ void init_owl_data(owl_data& data)
                     {"vertices_buffer",       OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, vertices_buffer)},
                     {"indices_buffer",        OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, indices_buffer)},
                     {"normals_buffer",        OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, normals_buffer)},
+                    {"texcoords_buffer",      OWL_BUFFER,  OWL_OFFSETOF(launch_params_data, texcoords_buffer)},
                     {"world",                 OWL_GROUP,   OWL_OFFSETOF(launch_params_data, world)},
                     {"environment_map",       OWL_TEXTURE, OWL_OFFSETOF(launch_params_data, environment_map)},
                     {"environment_use",       OWL_BOOL,    OWL_OFFSETOF(launch_params_data, environment_use)},
@@ -163,7 +167,7 @@ void init_program_data(program_data& pdata, test_data& tdata, std::string const&
     for (auto const &[name, mesh] : pdata.meshes)
     {
         int32_t position{0};
-        for (auto const &[material_name, material] : pdata.materials)
+        for (auto const &[material_name, material, _] : pdata.materials)
         {
             if (material_name == name)
             {
@@ -177,7 +181,7 @@ void init_program_data(program_data& pdata, test_data& tdata, std::string const&
 }
 
 /// initial create data and bind it to the sbt
-void bind_sbt_data(program_data& pdata, owl_data& data)
+void bind_sbt_data(program_data& pdata, owl_data& data, std::string const& assets_path)
 {
     /// Create sbt data for renderer
     int32_t mesh_id{0};
@@ -188,14 +192,17 @@ void bind_sbt_data(program_data& pdata, owl_data& data)
         auto &vertices{mesh.vertices};
         auto &indices{mesh.indices};
         auto &normals{mesh.normals};
+        auto& texcoods{ mesh.texcoords };
 
         buffer vertex_buffer = create_device_buffer(data.owl_context, OWL_FLOAT3, vertices.size(), vertices.data());
         buffer normal_buffer = create_device_buffer(data.owl_context, OWL_FLOAT3, normals.size(), normals.data());
         buffer index_buffer = create_device_buffer(data.owl_context, OWL_INT3, indices.size(), indices.data());
+        buffer texcoords_buffer = create_device_buffer(data.owl_context, OWL_FLOAT2, texcoods.size(), texcoods.data());
 
         pdata.indices_buffer_list.push_back(index_buffer);
         pdata.vertices_buffer_list.push_back(vertex_buffer);
         pdata.normals_buffer_list.push_back(normal_buffer);
+        pdata.texcoords_buffer_list.push_back(texcoords_buffer);
 
         geom geom_data{owlGeomCreate(data.owl_context, data.triangle_geom)};
         set_triangle_vertices(geom_data, vertex_buffer, vertices.size(), sizeof(vec3));
@@ -203,6 +210,40 @@ void bind_sbt_data(program_data& pdata, owl_data& data)
 
         set_field(geom_data, "mesh_index", mesh_id++);
         set_field(geom_data, "material_index", e.materialId);
+        
+        auto&[tmp0, tmp1, filename] = pdata.materials[e.materialId];
+        if (!filename.empty())
+        {
+            auto file_path = assets_path + "/" + filename;
+
+            if (!std::filesystem::exists(file_path))
+            {
+                fmt::print(fg(color::warn), "Image file {} does not exist. Continue with empty.\n", file_path);
+                return;
+            }
+
+            int32_t width, height, comp;
+            auto buffer{ reinterpret_cast<uint32_t*>(stbi_load(file_path.c_str(), &width,
+                    &height, &comp, STBI_rgb_alpha)) };
+
+            for (int32_t y{ 0 }; y < height / 2; y++)
+            {
+                uint32_t* line_y{ buffer + y * width };
+                uint32_t* mirrored_y{ buffer + (height - 1 - y) * width };
+                for (int x = 0; x < width; x++) std::swap(line_y[x], mirrored_y[x]);
+            }
+
+            texture tex = owlTexture2DCreate(data.owl_context,
+                OWL_TEXEL_FORMAT_RGBA8,
+                width, height, buffer,
+                OWL_TEXTURE_NEAREST,
+                OWL_TEXTURE_CLAMP);
+
+            set_field(geom_data, "texture", tex);
+            set_field(geom_data, "has_texture", true);
+
+            delete[] buffer;
+        }
 
         pdata.geoms.push_back(geom_data);
     }
@@ -220,8 +261,10 @@ void bind_sbt_data(program_data& pdata, owl_data& data)
             pdata.vertices_buffer_list.data())};
     pdata.indices_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER, pdata.indices_buffer_list.size(),
             pdata.indices_buffer_list.data())};
-    pdata.normals_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER,pdata.normals_buffer_list.size(),
+    pdata.normals_buffer = {create_device_buffer(data.owl_context, OWL_BUFFER, pdata.normals_buffer_list.size(),
             pdata.normals_buffer_list.data())};
+    pdata.texcoords_buffer = { create_device_buffer(data.owl_context, OWL_BUFFER, pdata.texcoords_buffer_list.size(),
+        pdata.texcoords_buffer_list.data()) };
 
     /// bind sbt data
     set_field(data.ray_gen_prog, "fb_ptr", pdata.framebuffer);
@@ -237,6 +280,7 @@ void bind_sbt_data(program_data& pdata, owl_data& data)
     set_field(data.lp, "vertices_buffer", pdata.vertices_buffer);
     set_field(data.lp, "indices_buffer", pdata.indices_buffer);
     set_field(data.lp, "normals_buffer", pdata.normals_buffer);
+    set_field(data.lp, "texcoords_buffer", pdata.texcoords_buffer);
     set_field(data.lp, "world", data.world);
     set_field(data.lp, "environment_map", environment_map_texture);
     set_field(data.lp, "environment_use", pdata.environment_use);
@@ -260,10 +304,10 @@ void reset_field(owl_data& odata, program_data& pdata)
 }
 
 /// finds material in material map
-auto get_material(std::vector<std::tuple<std::string, material_data>>& materials, const test_data& test)
+auto get_material(std::vector<std::tuple<std::string, material_data, std::string>>& materials, const test_data& test)
 {// get material with name
     auto material_tuple{
-            std::find_if(std::begin(materials), std::end(materials), [test] (std::tuple<std::string, material_data> const &t)
+            std::find_if(std::begin(materials), std::end(materials), [test] (std::tuple<std::string, material_data, std::string> const &t)
             {
                 return std::get<0>(t) == test.material_name;
             })
@@ -273,7 +317,7 @@ auto get_material(std::vector<std::tuple<std::string, material_data>>& materials
 }
 
 /// modifies material data
-void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data>> &materials,
+void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data, std::string>> &materials,
                 test_data const &test, vec3 value)
 {
     auto material = get_material(materials, test);
@@ -282,7 +326,7 @@ void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std
 }
 
 /// modifies material data
-void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data>> &materials,
+void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data, std::string>> &materials,
                 test_data const &test, float value)
 {
     auto material = get_material(materials, test);

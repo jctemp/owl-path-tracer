@@ -20,6 +20,8 @@
   "materials": [
     {
       "name": "box",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.8, 0.8, 0.8 ],
       "subsurface": 0.0,
       "metallic": 1.0,
@@ -38,12 +40,14 @@
     },
     {
       "name": "sphere",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.8, 0.8, 0.8 ],
       "subsurface": 0.0,
-      "metallic": 0.0,
+      "metallic": 1.0,
       "specular": 0.0,
       "specular_tint": 0.0,
-      "roughness": 0.5,
+      "roughness": 0.2,
       "anisotropic": 0.0,
       "sheen": 0.0,
       "sheen_tint": 0.0,
@@ -56,6 +60,8 @@
     },
     {
       "name": "light",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.8, 0.8, 0.8 ],
       "subsurface": 0.0,
       "metallic": 0.0,
@@ -74,6 +80,8 @@
     },
     {
       "name": "wall_left",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.25000, 0.88600, 0.25400 ],
       "subsurface": 0.0,
       "metallic": 0.0,
@@ -92,6 +100,8 @@
     },
     {
       "name": "wall_right",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.79216, 0.11765, 0.11373 ],
       "subsurface": 0.0,
       "metallic": 0.0,
@@ -110,6 +120,8 @@
     },
     {
       "name": "wall_tbb",
+      "use_texture": false,
+      "filename": "",
       "base_color": [ 0.8, 0.8, 0.8 ],
       "subsurface": 0.0,
       "metallic": 0.0,

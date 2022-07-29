@@ -13,8 +13,8 @@ mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
     // global, no offset, shared by all meshes
     auto const& mesh_vertices{attribute.vertices};
     auto const& mesh_normals{attribute.normals};
-    auto const& mesh_uv{attribute.texcoords};
-
+    auto const& mesh_texcoords{attribute.texcoords};
+  
     // per mesh data with global indices
     auto& indices{shape.mesh.indices};
 
@@ -37,6 +37,7 @@ mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
             // set global vertex ID
             int32_t const vertex_id{index.vertex_index};
             int32_t const normal_id{index.normal_index};
+            int32_t const texcoord_id{ index.texcoord_index };
 
             // check if global ID is mapped
             if (!vertex_mapping.contains(vertex_id))
@@ -60,6 +61,18 @@ mesh* create_mesh(tinyobj::shape_t const& shape, tinyobj::attrib_t const& attrib
                             mesh_normals[3 * static_cast<uint64_t>(normal_id) + 0],
                             mesh_normals[3 * static_cast<uint64_t>(normal_id) + 1],
                             mesh_normals[3 * static_cast<uint64_t>(normal_id) + 2]
+                    );
+                }
+            }
+
+            if (index.texcoord_index >= 0)
+            {
+                // wtf no idea why this works lol
+                while (mesh_ptr->texcoords.size() < mesh_ptr->vertices.size())
+                {
+                    mesh_ptr->texcoords.emplace_back(
+                        mesh_texcoords[2 * static_cast<uint64_t>(texcoord_id) + 0],
+                        mesh_texcoords[2 * static_cast<uint64_t>(texcoord_id) + 1]
                     );
                 }
             }

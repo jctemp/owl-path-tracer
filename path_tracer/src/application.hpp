@@ -51,7 +51,7 @@ struct program_data
 
     camera_data camera;
     
-    std::vector<std::tuple<std::string, material_data>> materials;
+    std::vector<std::tuple<std::string, material_data, std::string>> materials;
     std::vector<std::tuple<std::string, std::shared_ptr<mesh>>> meshes;
     std::vector<entity> entities;
 
@@ -59,6 +59,7 @@ struct program_data
     std::vector<buffer> indices_buffer_list{};
     std::vector<buffer> vertices_buffer_list{};
     std::vector<buffer> normals_buffer_list{};
+    std::vector<buffer> texcoords_buffer_list{};
 
     buffer framebuffer;
 
@@ -66,6 +67,7 @@ struct program_data
     buffer vertices_buffer;
     buffer indices_buffer;
     buffer normals_buffer;
+    buffer texcoords_buffer;
 };
 
 void init_owl_data(owl_data& data);
@@ -74,12 +76,12 @@ void init_owl_world(owl_data& data, std::vector<geom>& geoms);
 
 void init_program_data(program_data& pdata, test_data& tdata, std::string const& assets_path);
 
-void bind_sbt_data(program_data& pdata, owl_data& data);
+void bind_sbt_data(program_data& pdata, owl_data& data, std::string const& assets_path);
 
-void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data>> &materials,
+void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data, std::string>> &materials,
                 test_data const &test, float value);
 
-void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data>> &materials,
+void modify_sbt(owl_data &odata, program_data &pdata, std::vector<std::tuple<std::string, material_data, std::string>> &materials,
                 test_data const &test, vec3 value);
 
 void render_frame(owl_data& data, program_data& pdata, test_data& tdata, std::string const& values);

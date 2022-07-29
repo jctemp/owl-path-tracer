@@ -72,6 +72,27 @@ inline __device__ void load_triangle_normals(int32_t const& mesh_index, ivec3 co
     shading_normal = normalize((1 - barycentric.x - barycentric.y) * n0 + barycentric.x * n1 + barycentric.y * n2);
 }
 
+inline __device__ void load_texture_base_color(int32_t const& mesh_index, ivec3 const& indices, vec2 const& barycentric,
+    cudaTextureObject_t &texture,  material_data& material)
+{
+    auto& launch_params = optixLaunchParams;
+    get_data(auto texcoords_buffer, launch_params.texcoords_buffer, mesh_index, Buffer);
+    get_data(auto tc0, texcoords_buffer, indices.x, vec2);
+    get_data(auto tc1, texcoords_buffer, indices.y, vec2);
+    get_data(auto tc2, texcoords_buffer, indices.z, vec2);
+
+    vec2 uv{ barycentric };
+    vec2 tc{
+        (1.f - uv.x - uv.y) * tc0
+        + uv.x * tc1
+        + uv.y * tc2
+    };
+
+    owl::vec4f const texColor{
+            tex2D<float4>(texture, tc.x, tc.y) };
+    material.base_color = vec3{ texColor };
+}
+
 
 inline __device__ bool visibiliy_test(vec3 const& position, vec3 const& direction, float const& max_distance)
 {
@@ -146,6 +167,8 @@ __device__ vec3 trace_path(radiance_ray& ray, random& random, int32_t& samples)
         load_triangle_indices(hd.mesh_index, hd.primitive_index, indices);
         load_triangle_vertices(hd.mesh_index, indices, hd.barycentric, v_p, v_gn);
         load_triangle_normals(hd.mesh_index, indices, hd.barycentric, v_n);
+        if (prd.hd->has_texture)
+            load_texture_base_color(hd.mesh_index, indices, hd.barycentric, hd.texture, material);
 
         /// prepare data for sampling
         vec3 wo{hd.wo}, wi{};
@@ -247,6 +270,12 @@ OPTIX_CLOSEST_HIT_PROGRAM(triangle_hit)()
 
     prd.hd->material_index = self.material_index;
     prd.hd->mesh_index = self.mesh_index;
+
+    if (self.has_texture)
+    {
+        prd.hd->has_texture = self.has_texture;
+        prd.hd->texture = self.texture;
+    }
 
     prd.scatter_event = scatter_event::hit;
 }
